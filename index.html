@@ -5,553 +5,139 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Grill Inn — Order Online</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
-
-  :root {
-    --black:   #0f0f0f;
-    --charcoal:#1a1a1a;
-    --panel:   #222222;
-    --border:  #2e2e2e;
-    --orange:  #f97316;
-    --red:     #dc2626;
-    --flame:   #ea580c;
-    --white:   #f5f5f5;
-    --muted:   #888;
-    --card-bg: #1e1e1e;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--black);
-    color: var(--white);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-  }
-
-  /* ── HEADER ── */
-  header {
-    background: var(--charcoal);
-    border-bottom: 2px solid var(--flame);
-    padding: 0 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 60px;
-  }
-
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
-    letter-spacing: 2px;
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .cart-btn {
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    padding: 0.5rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    transition: opacity 0.2s;
-  }
-  .cart-btn:hover { opacity: 0.85; }
-  .cart-count {
-    background: white;
-    color: var(--red);
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 800;
-  }
-
-  /* ── HERO ── */
-  .hero {
-    background: linear-gradient(135deg, #1a0a00 0%, #2d0f00 50%, #1a0000 100%);
-    padding: 2.5rem 1rem;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-  }
-  .hero h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2.5rem, 8vw, 4.5rem);
-    letter-spacing: 3px;
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1;
-  }
-  .hero p {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-  }
-  .hero p span {
-    color: var(--orange);
-    font-weight: 600;
-  }
-
-  /* ── CATEGORY NAV ── */
-  .cat-nav {
-    overflow-x: auto;
-    background: var(--charcoal);
-    border-bottom: 1px solid var(--border);
-    padding: 0.6rem 1rem;
-    display: flex;
-    gap: 0.5rem;
-    scrollbar-width: none;
-    position: sticky;
-    top: 60px;
-    z-index: 90;
-  }
-  .cat-nav::-webkit-scrollbar { display: none; }
-  .cat-pill {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 0.35rem 0.9rem;
-    white-space: nowrap;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-  .cat-pill:hover, .cat-pill.active {
-    background: var(--flame);
-    border-color: var(--flame);
-    color: white;
-  }
-
-  /* ── MAIN LAYOUT ── */
-  .main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 1.5rem 1rem 6rem;
-  }
-
-  /* ── CATEGORY SECTION ── */
-  .cat-section { margin-bottom: 2.5rem; }
-  .cat-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
-    letter-spacing: 2px;
-    color: var(--orange);
-    border-left: 4px solid var(--red);
-    padding-left: 0.75rem;
-    margin-bottom: 1rem;
-  }
-
-  .items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.75rem;
-  }
-
-  /* ── ITEM CARD ── */
-  .item-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    transition: border-color 0.2s, transform 0.2s;
-    display: flex;
-    flex-direction: column;
-  }
-  .item-card:hover {
-    border-color: var(--flame);
-    transform: translateY(-2px);
-  }
-
-  .item-img {
-    width: 100%;
-    aspect-ratio: 4/3;
-    object-fit: cover;
-    background: linear-gradient(135deg, #2a1500, #1a0a0a);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-  }
-
-  .item-body {
-    padding: 0.6rem 0.7rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-  }
-
-  .item-name {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--white);
-    line-height: 1.3;
-  }
-
-  .item-desc {
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-
-  .item-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: auto;
-    padding-top: 0.4rem;
-  }
-
-  .item-price {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--orange);
-  }
-
-  .add-btn {
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    border: none;
-    border-radius: 6px;
-    color: white;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 700;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
-  }
-  .add-btn:hover { opacity: 0.8; }
-
-  .qty-ctrl {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-  .qty-ctrl button {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--white);
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 700;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .qty-ctrl button:hover { border-color: var(--orange); color: var(--orange); }
-  .qty-num {
-    font-size: 0.85rem;
-    font-weight: 700;
-    min-width: 16px;
-    text-align: center;
-    color: var(--orange);
-  }
-
-  /* ── FLOATING CART ── */
-  .cart-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    padding: 0.9rem 1.5rem;
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    z-index: 200;
-    box-shadow: 0 -4px 20px rgba(249,115,22,0.3);
-  }
-  .cart-bar.visible { display: flex; }
-  .cart-bar-left { font-size: 0.85rem; font-weight: 600; }
-  .cart-bar-right { font-size: 0.9rem; font-weight: 700; }
-
-  /* ── CART DRAWER ── */
-  .overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 300;
-  }
-  .overlay.open { display: block; }
-
-  .drawer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: var(--charcoal);
-    border-top: 2px solid var(--flame);
-    border-radius: 16px 16px 0 0;
-    max-height: 90vh;
-    overflow-y: auto;
-    z-index: 400;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    padding: 1.5rem 1rem 2rem;
-  }
-  .drawer.open { transform: translateY(0); }
-
-  .drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.2rem;
-  }
-  .drawer-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
-    letter-spacing: 1px;
-    color: var(--orange);
-  }
-  .close-btn {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--white);
-    cursor: pointer;
-    font-size: 1.2rem;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .cart-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.7rem 0;
-    border-bottom: 1px solid var(--border);
-    gap: 0.5rem;
-  }
-  .cart-item-name { font-size: 0.85rem; font-weight: 600; flex: 1; }
-  .cart-item-price { font-size: 0.85rem; color: var(--orange); font-weight: 700; min-width: 60px; text-align: right; }
-
-  .cart-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 0 0.5rem;
-    font-weight: 700;
-    font-size: 1rem;
-  }
-  .cart-total span:last-child { color: var(--orange); font-size: 1.1rem; }
-
-  /* ── CHECKOUT FORM ── */
-  .checkout-section { margin-top: 1rem; }
-  .checkout-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.2rem;
-    letter-spacing: 1px;
-    color: var(--orange);
-    margin-bottom: 0.8rem;
-  }
-
-  .order-type-btns {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  .otype-btn {
-    background: var(--panel);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 0.6rem 0.3rem;
-    text-align: center;
-    transition: all 0.2s;
-  }
-  .otype-btn:hover { border-color: var(--flame); color: var(--white); }
-  .otype-btn.selected { background: var(--flame); border-color: var(--flame); color: white; }
-  .otype-icon { font-size: 1.2rem; display: block; margin-bottom: 0.2rem; }
-
-  .form-group { margin-bottom: 0.8rem; }
-  .form-group label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 0.3rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .form-group input, .form-group textarea {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--white);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    padding: 0.65rem 0.8rem;
-    width: 100%;
-    transition: border-color 0.2s;
-    outline: none;
-  }
-  .form-group input:focus, .form-group textarea:focus { border-color: var(--orange); }
-  .form-group textarea { resize: none; rows: 2; }
-
-  .place-btn {
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    border: none;
-    border-radius: 10px;
-    color: white;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    padding: 0.9rem;
-    width: 100%;
-    margin-top: 0.5rem;
-    transition: opacity 0.2s;
-    letter-spacing: 0.5px;
-  }
-  .place-btn:hover { opacity: 0.85; }
-  .place-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* ── SUCCESS SCREEN ── */
-  .success-screen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: var(--black);
-    z-index: 999;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 2rem;
-  }
-  .success-screen.show { display: flex; }
-  .success-icon { font-size: 4rem; margin-bottom: 1rem; }
-  .success-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.5rem;
-    letter-spacing: 2px;
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-  }
-  .success-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.3rem; }
-  .success-order { color: var(--orange); font-weight: 700; font-size: 1.1rem; margin-bottom: 2rem; }
-  .new-order-btn {
-    background: linear-gradient(135deg, var(--orange), var(--red));
-    border: none;
-    border-radius: 10px;
-    color: white;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    padding: 0.8rem 2rem;
-  }
-
-  /* ── EMPTY CART ── */
-  .empty-cart {
-    text-align: center;
-    padding: 2rem 0;
-    color: var(--muted);
-  }
-  .empty-cart-icon { font-size: 3rem; margin-bottom: 0.5rem; }
-
-  /* ── NOTE BOX ── */
-  .note-box {
-    background: rgba(249,115,22,0.1);
-    border: 1px solid rgba(249,115,22,0.3);
-    border-radius: 8px;
-    color: var(--orange);
-    font-size: 0.78rem;
-    padding: 0.6rem 0.8rem;
-    margin-bottom: 0.8rem;
-  }
-
-  /* ── SPINNER ── */
-  .spinner {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  @media (min-width: 600px) {
-    .items-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-    .drawer { max-width: 480px; left: 50%; transform: translateX(-50%) translateY(100%); right: auto; width: 100%; }
-    .drawer.open { transform: translateX(-50%) translateY(0); }
-    .cart-bar { max-width: 480px; left: 50%; transform: translateX(-50%); right: auto; border-radius: 12px 12px 0 0; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+:root{--black:#0f0f0f;--charcoal:#1a1a1a;--panel:#222;--border:#2e2e2e;--orange:#f97316;--red:#dc2626;--flame:#ea580c;--white:#f5f5f5;--muted:#888;--card-bg:#1e1e1e;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--black);color:var(--white);font-family:'Inter',sans-serif;min-height:100vh;}
+header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0 1rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cart-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:8px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:700;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.4rem;}
+.cart-count{background:white;color:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;}
+.hero{background:linear-gradient(135deg,#1a0a00,#2d0f00 50%,#1a0000);padding:2rem 1rem;text-align:center;border-bottom:1px solid var(--border);}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,8vw,4rem);letter-spacing:3px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.hero p{color:var(--muted);font-size:0.85rem;margin-top:0.4rem;}
+.hero p span{color:var(--orange);font-weight:600;}
+.status-banner{padding:0.5rem 1rem;text-align:center;font-size:0.8rem;font-weight:600;}
+.status-open{background:rgba(34,197,94,0.15);color:#4ade80;border-bottom:1px solid rgba(34,197,94,0.2);}
+.status-closed{background:rgba(220,38,38,0.15);color:#f87171;border-bottom:1px solid rgba(220,38,38,0.2);}
+.search-wrap{padding:0.75rem 1rem;background:var(--charcoal);border-bottom:1px solid var(--border);position:sticky;top:60px;z-index:95;}
+.search-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.9rem;padding:0.6rem 0.8rem 0.6rem 2.4rem;outline:none;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--orange);}
+.search-wrap{position:relative;}
+.search-icon{position:absolute;left:1.8rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none;}
+.cat-nav{overflow-x:auto;background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.6rem 1rem;display:flex;gap:0.5rem;scrollbar-width:none;position:sticky;top:112px;z-index:90;}
+.cat-nav::-webkit-scrollbar{display:none;}
+.cat-pill{background:var(--panel);border:1px solid var(--border);border-radius:20px;color:var(--muted);cursor:pointer;font-size:0.75rem;font-weight:600;padding:0.3rem 0.8rem;white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
+.cat-pill:hover,.cat-pill.active{background:var(--flame);border-color:var(--flame);color:white;}
+.main{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 6rem;}
+.popular-section{margin-bottom:2rem;}
+.popular-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;}
+.cat-section{margin-bottom:2rem;}
+.cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;}
+.veg-badge{font-size:0.65rem;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
+.nonveg-badge{font-size:0.65rem;background:rgba(220,38,38,0.15);color:#f87171;border:1px solid rgba(220,38,38,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.6rem;}
+.item-card{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color 0.2s,transform 0.15s;display:flex;flex-direction:column;}
+.item-card:hover{border-color:var(--flame);transform:translateY(-2px);}
+.item-img{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#2a1500,#1a0a0a);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;}
+.item-img img{width:100%;height:100%;object-fit:cover;}
+.item-body{padding:0.55rem 0.65rem;flex:1;display:flex;flex-direction:column;gap:0.25rem;}
+.item-name-row{display:flex;align-items:flex-start;gap:0.3rem;}
+.veg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:2px;}
+.veg-dot.veg{background:#4ade80;box-shadow:0 0 4px rgba(74,222,128,0.5);}
+.veg-dot.nonveg{background:#f87171;box-shadow:0 0 4px rgba(248,113,113,0.5);}
+.item-name{font-size:0.78rem;font-weight:600;color:var(--white);line-height:1.3;}
+.item-desc{font-size:0.68rem;color:var(--muted);}
+.item-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:0.35rem;}
+.item-price{font-size:0.82rem;font-weight:700;color:var(--orange);}
+.add-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:6px;color:white;cursor:pointer;font-size:1rem;font-weight:700;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qty-ctrl{display:flex;align-items:center;gap:0.25rem;}
+.qty-ctrl button{background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--white);cursor:pointer;font-size:0.8rem;font-weight:700;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.qty-ctrl button:hover{border-color:var(--orange);color:var(--orange);}
+.qty-num{font-size:0.82rem;font-weight:700;min-width:14px;text-align:center;color:var(--orange);}
+.note-input{margin-top:0.3rem;width:100%;background:var(--panel);border:1px solid var(--border);border-radius:5px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.7rem;padding:0.3rem 0.5rem;outline:none;resize:none;}
+.note-input:focus{border-color:var(--orange);}
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--orange),var(--red));padding:0.85rem 1.5rem;display:none;align-items:center;justify-content:space-between;cursor:pointer;z-index:200;box-shadow:0 -4px 20px rgba(249,115,22,0.3);}
+.cart-bar.visible{display:flex;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;}
+.overlay.open{display:block;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);border-top:2px solid var(--flame);border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto;z-index:400;transform:translateY(100%);transition:transform 0.3s ease;padding:1.5rem 1rem 2rem;}
+.drawer.open{transform:translateY(0);}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.drawer-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--orange);}
+.close-btn{background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer;font-size:1.1rem;width:30px;height:30px;display:flex;align-items:center;justify-content:center;}
+.cart-item{display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);gap:0.5rem;}
+.cart-item-name{font-size:0.82rem;font-weight:600;flex:1;line-height:1.3;}
+.cart-item-note{font-size:0.68rem;color:var(--muted);margin-top:0.15rem;}
+.cart-item-price{font-size:0.82rem;color:var(--orange);font-weight:700;min-width:55px;text-align:right;}
+.cart-summary{padding:0.75rem 0 0.25rem;}
+.summary-row{display:flex;justify-content:space-between;font-size:0.85rem;padding:0.2rem 0;color:var(--muted);}
+.summary-row.total{color:var(--white);font-weight:700;font-size:1rem;border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.25rem;}
+.summary-row span:last-child{color:var(--orange);}
+.checkout-section{margin-top:0.75rem;}
+.checkout-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px;color:var(--orange);margin-bottom:0.6rem;}
+.order-type-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin-bottom:0.75rem;}
+.otype-btn{background:var(--panel);border:2px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:0.73rem;font-weight:700;padding:0.5rem 0.2rem;text-align:center;transition:all 0.2s;}
+.otype-btn:hover{border-color:var(--flame);color:var(--white);}
+.otype-btn.selected{background:var(--flame);border-color:var(--flame);color:white;}
+.otype-icon{font-size:1.1rem;display:block;margin-bottom:0.15rem;}
+.form-group{margin-bottom:0.7rem;}
+.form-group label{display:block;font-size:0.73rem;font-weight:600;color:var(--muted);margin-bottom:0.25rem;text-transform:uppercase;letter-spacing:0.5px;}
+.form-group input,.form-group select,.form-group textarea{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.88rem;padding:0.6rem 0.75rem;width:100%;outline:none;transition:border-color 0.2s;}
+.form-group select option{background:var(--panel);}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange);}
+.note-box{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:8px;color:var(--orange);font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;}
+.closed-box{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#f87171;font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;text-align:center;}
+.place-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700;padding:0.85rem;width:100%;margin-top:0.5rem;letter-spacing:0.5px;}
+.place-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.empty-cart{text-align:center;padding:2rem 0;color:var(--muted);}
+.empty-cart-icon{font-size:2.5rem;margin-bottom:0.5rem;}
+.success-screen{display:none;position:fixed;inset:0;background:var(--black);z-index:999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;}
+.success-screen.show{display:flex;}
+.success-icon{font-size:3.5rem;margin-bottom:0.75rem;}
+.success-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.4rem;}
+.success-sub{color:var(--muted);font-size:0.85rem;margin-bottom:0.25rem;}
+.success-order{color:var(--orange);font-weight:700;font-size:1rem;margin-bottom:1.5rem;}
+.new-order-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700;padding:0.75rem 2rem;margin-top:1rem;}
+.wa-float{position:fixed;bottom:80px;right:1rem;background:#25d366;border-radius:50%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,0.4);z-index:150;transition:transform 0.2s;}
+.wa-float:hover{transform:scale(1.1);}
+.spinner{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.no-results{text-align:center;padding:3rem 1rem;color:var(--muted);}
+.no-results-icon{font-size:2.5rem;margin-bottom:0.5rem;}
+@media(min-width:600px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));}.popular-grid{grid-template-columns:repeat(4,1fr);}.drawer{max-width:480px;left:50%;transform:translateX(-50%) translateY(100%);right:auto;width:100%;}.drawer.open{transform:translateX(-50%) translateY(0);}.cart-bar{max-width:480px;left:50%;transform:translateX(-50%);right:auto;border-radius:12px 12px 0 0;}}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
   <div class="logo">Grill Inn</div>
-  <button class="cart-btn" onclick="openCart()">
-    🛒 Cart <span class="cart-count" id="cartCount">0</span>
-  </button>
+  <button class="cart-btn" onclick="openCart()">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
 </header>
 
-<!-- HERO -->
+<div id="statusBanner" class="status-banner"></div>
+
 <div class="hero">
   <h1>Order Online</h1>
-  <p>Falkawn &nbsp;|&nbsp; <span>9612992023</span> &nbsp;|&nbsp; Fresh & Hot</p>
+  <p>Falkawn &nbsp;|&nbsp; <span>9612992023</span> &nbsp;|&nbsp; Fresh & Hot 🔥</p>
 </div>
 
-<!-- CATEGORY NAV -->
-<div class="cat-nav" id="catNav"></div>
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" id="searchInput" type="text" placeholder="Search menu items..." oninput="handleSearch(this.value)" style="padding-left:2.2rem;">
+</div>
 
-<!-- MAIN MENU -->
+<div class="cat-nav" id="catNav"></div>
 <div class="main" id="menuMain"></div>
 
-<!-- FLOATING CART BAR -->
 <div class="cart-bar" id="cartBar" onclick="openCart()">
-  <div class="cart-bar-left" id="cartBarLeft">0 items</div>
-  <div class="cart-bar-right" id="cartBarRight">View Cart →</div>
+  <div style="font-size:0.85rem;font-weight:600;" id="cartBarLeft">0 items</div>
+  <div style="font-size:0.9rem;font-weight:700;" id="cartBarRight">View Cart →</div>
 </div>
 
-<!-- OVERLAY -->
-<div class="overlay" id="overlay" onclick="closeCart()"></div>
+<a href="https://wa.me/919612992023" target="_blank" class="wa-float" title="Chat on WhatsApp">💬</a>
 
-<!-- CART DRAWER -->
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
 <div class="drawer" id="drawer">
   <div class="drawer-header">
     <div class="drawer-title">Your Cart</div>
@@ -560,94 +146,86 @@
   <div id="cartContent"></div>
 </div>
 
-<!-- SUCCESS SCREEN -->
 <div class="success-screen" id="successScreen">
   <div class="success-icon">✅</div>
   <div class="success-title">Order Placed!</div>
   <div class="success-sub">Thank you for ordering from</div>
-  <div class="success-sub" style="color:var(--white);font-weight:700;">Grill Inn, Falkawn</div>
+  <div class="success-sub" style="color:var(--white);font-weight:700;font-size:1rem;">Grill Inn, Falkawn</div>
   <div class="success-order" id="successOrder"></div>
-  <div class="success-sub" style="margin-bottom:1.5rem;">Your order is being prepared. We'll be with you shortly!</div>
-  <div class="success-sub">Questions? Call us: <span style="color:var(--orange);font-weight:700;">9612992023</span></div>
-  <br>
+  <div class="success-sub">Your order is being prepared!</div>
+  <div class="success-sub" style="margin-top:0.5rem;">Payment: <span style="color:var(--orange);font-weight:700;">Cash on Delivery</span></div>
+  <div class="success-sub" style="margin-top:0.5rem;">Questions? Call <span style="color:var(--orange);font-weight:700;">9612992023</span></div>
   <button class="new-order-btn" onclick="resetOrder()">Place Another Order</button>
 </div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────
-const SERVER_URL = 'YOUR_CLOUDFLARE_URL_HERE'; // e.g. https://xxxx.trycloudflare.com
-// ────────────────────────────────────────────────────────
+const SERVER_URL = 'YOUR_CLOUDFLARE_URL_HERE';
 
-const MENU = {"Burgers":[{"id":"BUR001","title":"Aloo Tikki Burger","description":"Veg Burger","price":52},{"id":"BUR002","title":"Veg Surprise Burger","description":"Veg Burger","price":94},{"id":"BUR003","title":"Chilli Lava Burger","description":"Veg Burger","price":105},{"id":"BUR004","title":"Crunchy Corn Burger","description":"Veg Burger","price":105},{"id":"BUR005","title":"Crispy Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR006","title":"Paneer Tikka Burger","description":"Veg Burger","price":125},{"id":"BUR007","title":"Peri Peri Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR008","title":"Maha Veggie Burger","description":"Veg Burger","price":135},{"id":"BUR009","title":"Fried Chicken Burger","description":"Chicken Burger","price":105},{"id":"BUR010","title":"Chicken Surprise Burger","description":"Chicken Burger","price":115},{"id":"BUR011","title":"Chicken Chilli Lava Burger","description":"Chicken Burger","price":136},{"id":"BUR012","title":"Tandoori Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR013","title":"Peri Peri Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR014","title":"Premium Fried Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR015","title":"Maha Chicken Burger","description":"Chicken Burger","price":157}],"Wraps":[{"id":"WRP001","title":"Crispy Paneer Wrap","description":"Veg Wrap","price":136},{"id":"WRP002","title":"Tandoori Paneer Tikka Wrap","description":"Veg Wrap","price":136},{"id":"WRP003","title":"Crispy Chicken Wrap","description":"Chicken Wrap","price":146},{"id":"WRP004","title":"Tandoori Chicken Tikka Wrap","description":"Chicken Wrap","price":146}],"Fried Chicken":[{"id":"FCH001","title":"Fried Chicken (2 Pieces)","description":"Fried Chicken","price":188},{"id":"FCH002","title":"Fried Chicken (4 Pieces)","description":"Fried Chicken","price":356},{"id":"FCH003","title":"Fried Chicken (6 Pieces)","description":"Fried Chicken","price":535},{"id":"FCH004","title":"Fried Chicken (9 Pieces)","description":"Fried Chicken","price":745}],"Grilled Chicken":[{"id":"GRC001","title":"Tandoori Grilled Chicken - Half (4 Pieces)","description":"Grilled Chicken","price":349},{"id":"GRC002","title":"Tandoori Grilled Chicken - Full (8 Pieces)","description":"Grilled Chicken","price":649}],"Footlongs":[{"id":"FTL001","title":"Veggie Delight Footlong","description":"Veg Footlong","price":125},{"id":"FTL002","title":"Paneer Tikka Footlong","description":"Veg Footlong","price":146},{"id":"FTL003","title":"Spicy Paneer Footlong","description":"Veg Footlong","price":146},{"id":"FTL004","title":"Deluxe Veggie Footlong","description":"Veg Footlong","price":157},{"id":"FTL005","title":"Peri Peri Paneer Footlong","description":"Veg Footlong","price":157},{"id":"FTL006","title":"Veg Extravaganza Footlong","description":"Veg Footlong","price":157},{"id":"FTL007","title":"Veg Cheese Burst Footlong","description":"Veg Footlong","price":167},{"id":"FTL008","title":"Simply Chicken Footlong","description":"Chicken Footlong","price":146},{"id":"FTL009","title":"Chicken Tikka Footlong","description":"Chicken Footlong","price":157},{"id":"FTL010","title":"Spicy Chicken Footlong","description":"Chicken Footlong","price":157},{"id":"FTL011","title":"Deluxe Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL012","title":"Peri Peri Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL013","title":"Chicken Extravaganza Footlong","description":"Chicken Footlong","price":167},{"id":"FTL014","title":"Chicken Cheese Burst Footlong","description":"Chicken Footlong","price":177}],"Sandwiches":[{"id":"SAN001","title":"Veg Grilled Sandwich","description":"Veg Sandwich","price":105},{"id":"SAN002","title":"Tandoori Paneer Tikka Sandwich","description":"Veg Sandwich","price":125},{"id":"SAN003","title":"Italian Veg Sandwich","description":"Veg Sandwich","price":136},{"id":"SAN004","title":"Chicken Grilled Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN005","title":"Tandoori Chicken Tikka Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN006","title":"Italian Chicken Sandwich","description":"Chicken Sandwich","price":146}],"Pizza":[{"id":"PIZ001","title":"Margherita Pizza - Pan (6 Inch)","description":"Veg Pizza","price":95},{"id":"PIZ002","title":"Margherita Pizza - Regular (9 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ003","title":"Veggie Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":115},{"id":"PIZ004","title":"Veggie Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ005","title":"Tandoori Paneer Tikka Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ006","title":"Tandoori Paneer Tikka Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ007","title":"Teekha Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ008","title":"Teekha Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ009","title":"Indi Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ010","title":"Indi Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ011","title":"Peri Peri Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ012","title":"Peri Peri Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ013","title":"Deluxe Veggie Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ014","title":"Deluxe Veggie Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ015","title":"Mushroom Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ016","title":"Mushroom Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ017","title":"Veg Extravaganza Pizza - Pan (6 Inch)","description":"Veg Pizza","price":178},{"id":"PIZ018","title":"Veg Extravaganza Pizza - Regular (9 Inch)","description":"Veg Pizza","price":292},{"id":"PIZ019","title":"Veg Overloaded Pizza - Pan (6 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ020","title":"Veg Overloaded Pizza - Regular (9 Inch)","description":"Veg Pizza","price":314},{"id":"PIZ021","title":"Chicken Delight Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":136},{"id":"PIZ022","title":"Chicken Delight Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":229},{"id":"PIZ023","title":"Tandoori Chicken Tikka Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ024","title":"Tandoori Chicken Tikka Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ025","title":"Teekha Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ026","title":"Teekha Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ027","title":"Indi Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ028","title":"Indi Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ029","title":"Peri Peri Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ030","title":"Peri Peri Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ031","title":"Deluxe Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ032","title":"Deluxe Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ033","title":"Chicken Seekh Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ034","title":"Chicken Seekh Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ035","title":"Chicken Extravaganza Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":199},{"id":"PIZ036","title":"Chicken Extravaganza Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":335},{"id":"PIZ037","title":"Chicken Overloaded Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":219},{"id":"PIZ038","title":"Chicken Overloaded Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":345}],"Pastas":[{"id":"PAS001","title":"Veg Arrabbiata Penne","description":"Veg Pasta","price":136},{"id":"PAS002","title":"Veg Creamy White Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS003","title":"Mix Sauce Veg Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS004","title":"Chicken Arrabbiata Penne","description":"Chicken Pasta","price":157},{"id":"PAS005","title":"Chicken Creamy White Penne Pasta","description":"Chicken Pasta","price":167},{"id":"PAS006","title":"Mix Sauce Chicken Penne Pasta","description":"Chicken Pasta","price":167}],"Garlic Breads":[{"id":"GRB001","title":"Garlic Bread with Cheese","description":"Veg Garlic Bread","price":115},{"id":"GRB002","title":"Garlic Bread Supreme","description":"Veg Garlic Bread","price":125},{"id":"GRB003","title":"Chicken Garlic Bread with Cheese","description":"Chicken Garlic Bread","price":125},{"id":"GRB004","title":"Chicken Garlic Bread Supreme","description":"Chicken Garlic Bread","price":135}],"Snacks":[{"id":"SNK001","title":"Paneer Pops (6 Pieces)","description":"Veg Snack","price":115},{"id":"SNK002","title":"Paneer Pops (16 Pieces)","description":"Veg Snack","price":209},{"id":"SNK003","title":"Paneer Strips (4 Pieces)","description":"Veg Snack","price":125},{"id":"SNK004","title":"Paneer Strips (8 Pieces)","description":"Veg Snack","price":219},{"id":"SNK005","title":"Chicken Nuggets (6 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK006","title":"Chicken Nuggets (12 Pieces)","description":"Chicken Snack","price":250},{"id":"SNK007","title":"Chicken Popcorn (8 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK008","title":"Chicken Popcorn (16 Pieces)","description":"Chicken Snack","price":252},{"id":"SNK009","title":"Chicken Strips (3 Pieces)","description":"Chicken Snack","price":125}],"Fries":[{"id":"FRI001","title":"French Fries - Regular","description":"Fries","price":62},{"id":"FRI002","title":"French Fries - Large","description":"Fries","price":83},{"id":"FRI003","title":"Peri Peri Fries - Regular","description":"Fries","price":83},{"id":"FRI004","title":"Peri Peri Fries - Large","description":"Fries","price":104},{"id":"FRI005","title":"Hot & Spicy Fries - Regular","description":"Fries","price":83},{"id":"FRI006","title":"Hot & Spicy Fries - Large","description":"Fries","price":104},{"id":"FRI007","title":"Peri Peri Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI008","title":"Hot & Spicy Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI009","title":"Crispy Paneer Overloaded Fries","description":"Loaded Fries","price":146},{"id":"FRI010","title":"Crispy Chicken Overloaded Fries","description":"Loaded Fries","price":157}],"Beverages":[{"id":"BEV001","title":"Coca-Cola","description":"Soft Drink","price":41},{"id":"BEV002","title":"Sprite","description":"Soft Drink","price":41},{"id":"BEV003","title":"Fanta","description":"Soft Drink","price":41},{"id":"BEV004","title":"Iced Tea Lemon","description":"Cold Beverage","price":75},{"id":"BEV005","title":"Fresh Lime Soda","description":"Cold Beverage","price":95},{"id":"BEV006","title":"Mojito","description":"Cold Beverage","price":95},{"id":"BEV007","title":"Mango Delight","description":"Beverage","price":95},{"id":"BEV008","title":"Strawberry Blast","description":"Beverage","price":95},{"id":"BEV009","title":"Cafe Frappe","description":"Beverage","price":105},{"id":"BEV010","title":"Mango Shake","description":"Milkshake","price":105},{"id":"BEV011","title":"Strawberry Shake","description":"Milkshake","price":105},{"id":"BEV012","title":"Chocolate Shake","description":"Milkshake","price":105},{"id":"BEV013","title":"Butterscotch Shake","description":"Milkshake","price":105},{"id":"BEV014","title":"Oreo Shake","description":"Milkshake","price":125},{"id":"BEV015","title":"Kit Kat Shake","description":"Milkshake","price":125},{"id":"BEV016","title":"Packaged Drinking Water","description":"Drinking Water","price":10}],"Desserts":[{"id":"DES001","title":"Ice Cream","description":"Dessert","price":58},{"id":"DES002","title":"Hot Chocolate Fudge","description":"Dessert","price":105},{"id":"DES003","title":"Fruit Sundae","description":"Dessert","price":105}],"Add Ons":[{"id":"ADD001","title":"Extra Cheese","description":"Add-on","price":27},{"id":"ADD002","title":"Cheese Dip","description":"Add-on","price":30}],"Combos":[{"id":"FMB001","title":"Veg Fun Meal Box","description":"Combo Meal","price":279},{"id":"FMB002","title":"Chicken Fun Meal Box","description":"Combo Meal","price":289},{"id":"COM001","title":"Add 2 Pieces Garlic Bread + Coke","description":"Meal Combo Add-on","price":105},{"id":"COM002","title":"Add Fries + Coke Combo","description":"Meal Combo Add-on","price":119},{"id":"COM003","title":"Add 1 Piece Fried Chicken + Coke","description":"Meal Combo Add-on","price":135},{"id":"COM004","title":"Add Chicken Popcorn + Coke","description":"Meal Combo Add-on","price":159}]};
+const REGULAR_PIZZA_IDS = new Set(['PIZ002','PIZ004','PIZ006','PIZ008','PIZ010','PIZ012','PIZ014','PIZ016','PIZ018','PIZ020','PIZ022','PIZ024','PIZ026','PIZ028','PIZ030','PIZ032','PIZ034','PIZ036','PIZ038']);
+const PACKING_CHARGE = 15;
 
-const CAT_ICONS = {
-  "Burgers":"🍔","Wraps":"🌯","Fried Chicken":"🍗","Grilled Chicken":"🍖",
-  "Footlongs":"🥖","Sandwiches":"🥪","Pizza":"🍕","Pastas":"🍝",
-  "Garlic Breads":"🧄","Snacks":"🍟","Fries":"🍟","Beverages":"🥤",
-  "Desserts":"🍨","Add Ons":"➕","Combos":"🎁"
+const DELIVERY_ZONES = [
+  {name: 'Zoram Medical College & Hospital', charge: 0},
+  {name: 'Falkawn (Nearby)', charge: 30},
+  {name: 'Falkawn (Far)', charge: 40},
+  {name: 'Mizoram College of Nursing', charge: 40},
+  {name: 'Muallungthu', charge: 50},
+  {name: 'Kelsih', charge: 100},
+  {name: 'Melriat', charge: 120},
+];
+
+const HOURS = {
+  // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  open:  [11, 11, 11, 11, 11, 11, null],
+  close: [21.5, 21.5, 21.5, 21.5, 21.5, 16, null],
 };
 
-let cart = {};
-let orderType = null;
-let orderCounter = parseInt(localStorage.getItem('grillinn_counter') || '0');
+const POPULAR_IDS = ['BUR001','WRP003','FCH001','PIZ038'];
 
-// ── BUILD MENU ──
-function buildMenu() {
-  const nav = document.getElementById('catNav');
-  const main = document.getElementById('menuMain');
-  const cats = Object.keys(MENU);
+const MENU = {"Veg Burgers":[{"id":"BUR001","title":"Aloo Tikki Burger","description":"Veg Burger","price":52},{"id":"BUR002","title":"Veg Surprise Burger","description":"Veg Burger","price":94},{"id":"BUR003","title":"Chilli Lava Burger","description":"Veg Burger","price":105},{"id":"BUR004","title":"Crunchy Corn Burger","description":"Veg Burger","price":105},{"id":"BUR005","title":"Crispy Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR006","title":"Paneer Tikka Burger","description":"Veg Burger","price":125},{"id":"BUR007","title":"Peri Peri Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR008","title":"Maha Veggie Burger","description":"Veg Burger","price":135}],"Chicken Burgers":[{"id":"BUR009","title":"Fried Chicken Burger","description":"Chicken Burger","price":105},{"id":"BUR010","title":"Chicken Surprise Burger","description":"Chicken Burger","price":115},{"id":"BUR011","title":"Chicken Chilli Lava Burger","description":"Chicken Burger","price":136},{"id":"BUR012","title":"Tandoori Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR013","title":"Peri Peri Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR014","title":"Premium Fried Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR015","title":"Maha Chicken Burger","description":"Chicken Burger","price":157}],"Wraps":[{"id":"WRP001","title":"Crispy Paneer Wrap","description":"Veg Wrap","price":136},{"id":"WRP002","title":"Tandoori Paneer Tikka Wrap","description":"Veg Wrap","price":136},{"id":"WRP003","title":"Crispy Chicken Wrap","description":"Chicken Wrap","price":146},{"id":"WRP004","title":"Tandoori Chicken Tikka Wrap","description":"Chicken Wrap","price":146}],"Fried Chicken":[{"id":"FCH001","title":"Fried Chicken (2 Pieces)","description":"Fried Chicken","price":188},{"id":"FCH002","title":"Fried Chicken (4 Pieces)","description":"Fried Chicken","price":356},{"id":"FCH003","title":"Fried Chicken (6 Pieces)","description":"Fried Chicken","price":535},{"id":"FCH004","title":"Fried Chicken (9 Pieces)","description":"Fried Chicken","price":745}],"Grilled Chicken":[{"id":"GRC001","title":"Tandoori Grilled Chicken - Half (4 Pieces)","description":"Grilled Chicken","price":349},{"id":"GRC002","title":"Tandoori Grilled Chicken - Full (8 Pieces)","description":"Grilled Chicken","price":649}],"Veg Footlongs":[{"id":"FTL001","title":"Veggie Delight Footlong","description":"Veg Footlong","price":125},{"id":"FTL002","title":"Paneer Tikka Footlong","description":"Veg Footlong","price":146},{"id":"FTL003","title":"Spicy Paneer Footlong","description":"Veg Footlong","price":146},{"id":"FTL004","title":"Deluxe Veggie Footlong","description":"Veg Footlong","price":157},{"id":"FTL005","title":"Peri Peri Paneer Footlong","description":"Veg Footlong","price":157},{"id":"FTL006","title":"Veg Extravaganza Footlong","description":"Veg Footlong","price":157},{"id":"FTL007","title":"Veg Cheese Burst Footlong","description":"Veg Footlong","price":167}],"Chicken Footlongs":[{"id":"FTL008","title":"Simply Chicken Footlong","description":"Chicken Footlong","price":146},{"id":"FTL009","title":"Chicken Tikka Footlong","description":"Chicken Footlong","price":157},{"id":"FTL010","title":"Spicy Chicken Footlong","description":"Chicken Footlong","price":157},{"id":"FTL011","title":"Deluxe Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL012","title":"Peri Peri Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL013","title":"Chicken Extravaganza Footlong","description":"Chicken Footlong","price":167},{"id":"FTL014","title":"Chicken Cheese Burst Footlong","description":"Chicken Footlong","price":177}],"Veg Sandwiches":[{"id":"SAN001","title":"Veg Grilled Sandwich","description":"Veg Sandwich","price":105},{"id":"SAN002","title":"Tandoori Paneer Tikka Sandwich","description":"Veg Sandwich","price":125},{"id":"SAN003","title":"Italian Veg Sandwich","description":"Veg Sandwich","price":136}],"Chicken Sandwiches":[{"id":"SAN004","title":"Chicken Grilled Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN005","title":"Tandoori Chicken Tikka Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN006","title":"Italian Chicken Sandwich","description":"Chicken Sandwich","price":146}],"Veg Pizza":[{"id":"PIZ001","title":"Margherita Pizza - Pan (6 Inch)","description":"Veg Pizza","price":95},{"id":"PIZ002","title":"Margherita Pizza - Regular (9 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ003","title":"Veggie Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":115},{"id":"PIZ004","title":"Veggie Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ005","title":"Tandoori Paneer Tikka Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ006","title":"Tandoori Paneer Tikka Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ007","title":"Teekha Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ008","title":"Teekha Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ009","title":"Indi Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ010","title":"Indi Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ011","title":"Peri Peri Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ012","title":"Peri Peri Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ013","title":"Deluxe Veggie Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ014","title":"Deluxe Veggie Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ015","title":"Mushroom Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ016","title":"Mushroom Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ017","title":"Veg Extravaganza Pizza - Pan (6 Inch)","description":"Veg Pizza","price":178},{"id":"PIZ018","title":"Veg Extravaganza Pizza - Regular (9 Inch)","description":"Veg Pizza","price":292},{"id":"PIZ019","title":"Veg Overloaded Pizza - Pan (6 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ020","title":"Veg Overloaded Pizza - Regular (9 Inch)","description":"Veg Pizza","price":314}],"Chicken Pizza":[{"id":"PIZ021","title":"Chicken Delight Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":136},{"id":"PIZ022","title":"Chicken Delight Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":229},{"id":"PIZ023","title":"Tandoori Chicken Tikka Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ024","title":"Tandoori Chicken Tikka Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ025","title":"Teekha Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ026","title":"Teekha Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ027","title":"Indi Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ028","title":"Indi Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ029","title":"Peri Peri Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ030","title":"Peri Peri Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ031","title":"Deluxe Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ032","title":"Deluxe Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ033","title":"Chicken Seekh Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ034","title":"Chicken Seekh Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ035","title":"Chicken Extravaganza Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":199},{"id":"PIZ036","title":"Chicken Extravaganza Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":335},{"id":"PIZ037","title":"Chicken Overloaded Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":219},{"id":"PIZ038","title":"Chicken Overloaded Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":345}],"Pastas":[{"id":"PAS001","title":"Veg Arrabbiata Penne","description":"Veg Pasta","price":136},{"id":"PAS002","title":"Veg Creamy White Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS003","title":"Mix Sauce Veg Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS004","title":"Chicken Arrabbiata Penne","description":"Chicken Pasta","price":157},{"id":"PAS005","title":"Chicken Creamy White Penne Pasta","description":"Chicken Pasta","price":167},{"id":"PAS006","title":"Mix Sauce Chicken Penne Pasta","description":"Chicken Pasta","price":167}],"Garlic Breads":[{"id":"GRB001","title":"Garlic Bread with Cheese","description":"Veg Garlic Bread","price":115},{"id":"GRB002","title":"Garlic Bread Supreme","description":"Veg Garlic Bread","price":125},{"id":"GRB003","title":"Chicken Garlic Bread with Cheese","description":"Chicken Garlic Bread","price":125},{"id":"GRB004","title":"Chicken Garlic Bread Supreme","description":"Chicken Garlic Bread","price":135}],"Veg Snacks":[{"id":"SNK001","title":"Paneer Pops (6 Pieces)","description":"Veg Snack","price":115},{"id":"SNK002","title":"Paneer Pops (16 Pieces)","description":"Veg Snack","price":209},{"id":"SNK003","title":"Paneer Strips (4 Pieces)","description":"Veg Snack","price":125},{"id":"SNK004","title":"Paneer Strips (8 Pieces)","description":"Veg Snack","price":219}],"Chicken Snacks":[{"id":"SNK005","title":"Chicken Nuggets (6 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK006","title":"Chicken Nuggets (12 Pieces)","description":"Chicken Snack","price":250},{"id":"SNK007","title":"Chicken Popcorn (8 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK008","title":"Chicken Popcorn (16 Pieces)","description":"Chicken Snack","price":252},{"id":"SNK009","title":"Chicken Strips (3 Pieces)","description":"Chicken Snack","price":125}],"Fries":[{"id":"FRI001","title":"French Fries - Regular","description":"Fries","price":62},{"id":"FRI002","title":"French Fries - Large","description":"Fries","price":83},{"id":"FRI003","title":"Peri Peri Fries - Regular","description":"Fries","price":83},{"id":"FRI004","title":"Peri Peri Fries - Large","description":"Fries","price":104},{"id":"FRI005","title":"Hot & Spicy Fries - Regular","description":"Fries","price":83},{"id":"FRI006","title":"Hot & Spicy Fries - Large","description":"Fries","price":104},{"id":"FRI007","title":"Peri Peri Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI008","title":"Hot & Spicy Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI009","title":"Crispy Paneer Overloaded Fries","description":"Loaded Fries","price":146},{"id":"FRI010","title":"Crispy Chicken Overloaded Fries","description":"Loaded Fries","price":157}],"Beverages":[{"id":"BEV001","title":"Coca-Cola","description":"Soft Drink","price":41},{"id":"BEV002","title":"Sprite","description":"Soft Drink","price":41},{"id":"BEV003","title":"Fanta","description":"Soft Drink","price":41},{"id":"BEV004","title":"Iced Tea Lemon","description":"Cold Beverage","price":75},{"id":"BEV005","title":"Fresh Lime Soda","description":"Cold Beverage","price":95},{"id":"BEV006","title":"Mojito","description":"Cold Beverage","price":95},{"id":"BEV007","title":"Mango Delight","description":"Beverage","price":95},{"id":"BEV008","title":"Strawberry Blast","description":"Beverage","price":95},{"id":"BEV009","title":"Cafe Frappe","description":"Beverage","price":105},{"id":"BEV010","title":"Mango Shake","description":"Milkshake","price":105},{"id":"BEV011","title":"Strawberry Shake","description":"Milkshake","price":105},{"id":"BEV012","title":"Chocolate Shake","description":"Milkshake","price":105},{"id":"BEV013","title":"Butterscotch Shake","description":"Milkshake","price":105},{"id":"BEV014","title":"Oreo Shake","description":"Milkshake","price":125},{"id":"BEV015","title":"Kit Kat Shake","description":"Milkshake","price":125},{"id":"BEV016","title":"Packaged Drinking Water","description":"Drinking Water","price":10}],"Desserts":[{"id":"DES001","title":"Ice Cream","description":"Dessert","price":58},{"id":"DES002","title":"Hot Chocolate Fudge","description":"Dessert","price":105},{"id":"DES003","title":"Fruit Sundae","description":"Dessert","price":105}],"Add Ons":[{"id":"ADD001","title":"Extra Cheese","description":"Add-on","price":27},{"id":"ADD002","title":"Cheese Dip","description":"Add-on","price":30}],"Combos":[{"id":"FMB001","title":"Veg Fun Meal Box","description":"Combo Meal","price":279},{"id":"FMB002","title":"Chicken Fun Meal Box","description":"Combo Meal","price":289},{"id":"COM001","title":"Add 2 Pieces Garlic Bread + Coke","description":"Meal Combo Add-on","price":105},{"id":"COM002","title":"Add Fries + Coke Combo","description":"Meal Combo Add-on","price":119},{"id":"COM003","title":"Add 1 Piece Fried Chicken + Coke","description":"Meal Combo Add-on","price":135},{"id":"COM004","title":"Add Chicken Popcorn + Coke","description":"Meal Combo Add-on","price":159}]};
 
-  cats.forEach((cat, i) => {
-    // Nav pill
-    const pill = document.createElement('button');
-    pill.className = 'cat-pill' + (i === 0 ? ' active' : '');
-    pill.textContent = (CAT_ICONS[cat] || '🍽️') + ' ' + cat;
-    pill.onclick = () => {
-      document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      document.getElementById('cat-' + i).scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-    nav.appendChild(pill);
+const CAT_ICONS = {"Veg Burgers":"🍔","Chicken Burgers":"🍔","Wraps":"🌯","Fried Chicken":"🍗","Grilled Chicken":"🍖","Veg Footlongs":"🥖","Chicken Footlongs":"🥖","Veg Sandwiches":"🥪","Chicken Sandwiches":"🥪","Veg Pizza":"🍕","Chicken Pizza":"🍕","Pastas":"🍝","Garlic Breads":"🧄","Veg Snacks":"🧆","Chicken Snacks":"🍟","Fries":"🍟","Beverages":"🥤","Desserts":"🍨","Add Ons":"➕","Combos":"🎁"};
 
-    // Section
-    const sec = document.createElement('div');
-    sec.className = 'cat-section';
-    sec.id = 'cat-' + i;
-    sec.innerHTML = `<div class="cat-title">${CAT_ICONS[cat] || '🍽️'} ${cat}</div>`;
+// Build flat item lookup
+const ALL_ITEMS = {};
+Object.values(MENU).flat().forEach(i => ALL_ITEMS[i.id] = i);
 
-    const grid = document.createElement('div');
-    grid.className = 'items-grid';
-
-    MENU[cat].forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'item-card';
-      card.id = 'card-' + item.id;
-      card.innerHTML = `
-        <div class="item-img">${CAT_ICONS[cat] || '🍽️'}</div>
-        <div class="item-body">
-          <div class="item-name">${item.title}</div>
-          <div class="item-desc">${item.description}</div>
-          <div class="item-footer">
-            <div class="item-price">₹${item.price}</div>
-            <button class="add-btn" onclick="addToCart('${item.id}', '${item.title.replace(/'/g,"\\'")}', ${item.price})">+</button>
-          </div>
-        </div>`;
-      grid.appendChild(card);
-    });
-
-    sec.appendChild(grid);
-    main.appendChild(sec);
-  });
+function isVegItem(item) {
+  const d = item.description.toLowerCase();
+  const t = item.title.toLowerCase();
+  return !d.includes('chicken') && !t.includes('chicken') && d !== 'fried chicken' && d !== 'grilled chicken';
 }
 
-// ── CART FUNCTIONS ──
-function addToCart(id, title, price) {
-  if (cart[id]) {
-    cart[id].qty++;
-  } else {
-    cart[id] = { title, price, qty: 1 };
+function isVegCat(cat) {
+  return cat.startsWith('Veg ') || (!cat.startsWith('Chicken ') && !['Fried Chicken','Grilled Chicken'].includes(cat));
+}
+
+// ── OPENING HOURS ──
+function getStatus() {
+  const now = new Date();
+  const day = now.getDay();
+  const hour = now.getHours() + now.getMinutes() / 60;
+  const open = HOURS.open[day];
+  const close = HOURS.close[day];
+  if (open === null) return { open: false, msg: '🔴 Closed today (Saturday). We reopen Sunday at 11:00 AM.' };
+  if (hour < open) return { open: false, msg: `🔴 We open at 11:00 AM today. Orders can be placed during opening hours.` };
+  if (hour >= close) {
+    const msgs = { 4: 'We reopen Sunday at 11:00 AM.', 5: 'We reopen Sunday at 11:00 AM.' };
+    return { open: false, msg: `🔴 We're closed for today. ${msgs[day] || 'We open at 11:00 AM tomorrow.'}` };
   }
-  updateCardBtn(id);
+  const closeStr = close === 21.5 ? '9:30 PM' : '4:00 PM';
+  return { open: true, msg: `🟢 Open now! Closing at ${closeStr} today.` };
+}
+
+// ── CART ──
+let cart = {};
+let orderType = null;
+let orderCounter = parseInt(localStorage.getItem('gi_counter') || '0');
+
+function addToCart(id) {
+  if (cart[id]) cart[id].qty++;
+  else cart[id] = { ...ALL_ITEMS[id], qty: 1, note: '' };
+  refreshCard(id);
   updateCartUI();
 }
 
@@ -655,34 +233,56 @@ function updateQty(id, delta) {
   if (!cart[id]) return;
   cart[id].qty += delta;
   if (cart[id].qty <= 0) delete cart[id];
-  updateCardBtn(id);
+  refreshCard(id);
   updateCartUI();
 }
 
-function updateCardBtn(id) {
+function setNote(id, val) {
+  if (cart[id]) cart[id].note = val;
+}
+
+function refreshCard(id) {
   const card = document.getElementById('card-' + id);
   if (!card) return;
+  const item = ALL_ITEMS[id];
   const footer = card.querySelector('.item-footer');
-  const item = Object.values(MENU).flat().find(i => i.id === id);
   if (cart[id]) {
     footer.innerHTML = `
       <div class="item-price">₹${item.price}</div>
       <div class="qty-ctrl">
-        <button onclick="updateQty('${id}', -1)">−</button>
+        <button onclick="updateQty('${id}',-1)">−</button>
         <span class="qty-num">${cart[id].qty}</span>
-        <button onclick="updateQty('${id}', 1)">+</button>
+        <button onclick="updateQty('${id}',1)">+</button>
       </div>`;
+    // Show note input
+    let noteWrap = card.querySelector('.note-wrap');
+    if (!noteWrap) {
+      noteWrap = document.createElement('div');
+      noteWrap.className = 'note-wrap';
+      noteWrap.innerHTML = `<textarea class="note-input" rows="1" placeholder="Special instructions..." onchange="setNote('${id}',this.value)">${cart[id].note||''}</textarea>`;
+      card.querySelector('.item-body').appendChild(noteWrap);
+    }
   } else {
     footer.innerHTML = `
       <div class="item-price">₹${item.price}</div>
-      <button class="add-btn" onclick="addToCart('${id}', '${item.title.replace(/'/g,"\\'")}', ${item.price})">+</button>`;
+      <button class="add-btn" onclick="addToCart('${id}')">+</button>`;
+    const noteWrap = card.querySelector('.note-wrap');
+    if (noteWrap) noteWrap.remove();
   }
 }
 
-function updateCartUI() {
+function calcTotals() {
   const items = Object.values(cart);
-  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const hasRegularPizza = items.some(i => REGULAR_PIZZA_IDS.has(i.id));
+  const packingCharge = hasRegularPizza ? PACKING_CHARGE : 0;
   const count = items.reduce((s, i) => s + i.qty, 0);
+  return { subtotal, packingCharge, count };
+}
+
+function updateCartUI() {
+  const { subtotal, packingCharge, count } = calcTotals();
+  const total = subtotal + packingCharge;
   document.getElementById('cartCount').textContent = count;
   const bar = document.getElementById('cartBar');
   if (count > 0) {
@@ -694,121 +294,143 @@ function updateCartUI() {
   }
 }
 
-function openCart() {
-  document.getElementById('overlay').classList.add('open');
-  document.getElementById('drawer').classList.add('open');
-  renderDrawer();
-}
-
-function closeCart() {
-  document.getElementById('overlay').classList.remove('open');
-  document.getElementById('drawer').classList.remove('open');
-}
+function openCart() { document.getElementById('overlay').classList.add('open'); document.getElementById('drawer').classList.add('open'); renderDrawer(); }
+function closeCart() { document.getElementById('overlay').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); }
 
 function renderDrawer() {
   const items = Object.entries(cart);
-  const total = items.reduce((s, [, i]) => s + i.price * i.qty, 0);
+  const { subtotal, packingCharge, count } = calcTotals();
+  const total = subtotal + packingCharge;
   const content = document.getElementById('cartContent');
+  const status = getStatus();
 
   if (items.length === 0) {
-    content.innerHTML = `
-      <div class="empty-cart">
-        <div class="empty-cart-icon">🛒</div>
-        <div>Your cart is empty</div>
-        <div style="font-size:0.8rem;margin-top:0.3rem;color:var(--muted)">Add some items to get started!</div>
-      </div>`;
+    content.innerHTML = `<div class="empty-cart"><div class="empty-cart-icon">🛒</div><div>Your cart is empty</div><div style="font-size:0.75rem;margin-top:0.3rem;color:var(--muted)">Browse the menu and add items!</div></div>`;
     return;
   }
 
   let html = '';
   items.forEach(([id, item]) => {
-    html += `
-      <div class="cart-item">
-        <div class="cart-item-name">${item.title}</div>
-        <div class="qty-ctrl">
-          <button onclick="updateQty('${id}', -1); renderDrawer()">−</button>
-          <span class="qty-num">${item.qty}</span>
-          <button onclick="updateQty('${id}', 1); renderDrawer()">+</button>
-        </div>
-        <div class="cart-item-price">₹${item.price * item.qty}</div>
-      </div>`;
+    const dot = isVegItem(item) ? '🟢' : '🔴';
+    html += `<div class="cart-item">
+      <div style="flex:1">
+        <div class="cart-item-name">${dot} ${item.title}</div>
+        ${item.note ? `<div class="cart-item-note">📝 ${item.note}</div>` : ''}
+      </div>
+      <div class="qty-ctrl" style="margin:0 0.5rem;">
+        <button onclick="updateQty('${id}',-1);renderDrawer()">−</button>
+        <span class="qty-num">${item.qty}</span>
+        <button onclick="updateQty('${id}',1);renderDrawer()">+</button>
+      </div>
+      <div class="cart-item-price">₹${item.price * item.qty}</div>
+    </div>`;
   });
 
-  html += `
-    <div class="cart-total"><span>Total</span><span>₹${total}</span></div>
-    <div class="checkout-section">
-      <div class="checkout-title">How would you like your order?</div>
-      <div class="order-type-btns">
-        <button class="otype-btn ${orderType==='Delivery'?'selected':''}" onclick="selectType('Delivery')">
-          <span class="otype-icon">🚚</span>Delivery
-        </button>
-        <button class="otype-btn ${orderType==='Takeaway'?'selected':''}" onclick="selectType('Takeaway')">
-          <span class="otype-icon">🥡</span>Takeaway
-        </button>
-        <button class="otype-btn ${orderType==='Dine In'?'selected':''}" onclick="selectType('Dine In')">
-          <span class="otype-icon">🍽️</span>Dine In
-        </button>
-      </div>
-      <div id="checkoutForm"></div>
-    </div>`;
+  html += `<div class="cart-summary">
+    <div class="summary-row"><span>Sub Total</span><span>₹${subtotal}</span></div>
+    ${packingCharge > 0 ? `<div class="summary-row"><span>Packing Charges (Regular Pizza)</span><span>₹${packingCharge}</span></div>` : ''}
+    <div class="summary-row total"><span>Total</span><span>₹${total}</span></div>
+  </div>`;
+
+  html += `<div class="checkout-section">
+    <div class="checkout-title">How would you like your order?</div>
+    <div class="order-type-btns">
+      <button class="otype-btn ${orderType==='Delivery'?'selected':''}" onclick="selectType('Delivery')"><span class="otype-icon">🚚</span>Delivery</button>
+      <button class="otype-btn ${orderType==='Takeaway'?'selected':''}" onclick="selectType('Takeaway')"><span class="otype-icon">🥡</span>Takeaway</button>
+      <button class="otype-btn ${orderType==='Dine In'?'selected':''}" onclick="selectType('Dine In')"><span class="otype-icon">🍽️</span>Dine In</button>
+    </div>
+    <div id="checkoutForm"></div>
+  </div>`;
 
   content.innerHTML = html;
-  if (orderType) renderCheckoutForm();
+  if (orderType) renderCheckoutForm(total, status);
 }
 
-function selectType(type) {
-  orderType = type;
-  renderDrawer();
-}
+function selectType(type) { orderType = type; renderDrawer(); }
 
-function renderCheckoutForm() {
+function renderCheckoutForm(total, status) {
   const form = document.getElementById('checkoutForm');
-  const deliveryNote = orderType === 'Delivery'
-    ? `<div class="note-box">🛵 Delivery charges applicable. Our team will confirm the amount.</div>` : '';
-  const addressField = orderType === 'Delivery'
-    ? `<div class="form-group">
-        <label>Delivery Address *</label>
-        <textarea id="fAddress" rows="2" placeholder="House no., street, landmark..."></textarea>
-       </div>` : '';
+  const status2 = status || getStatus();
+
+  let zoneOptions = DELIVERY_ZONES.map(z =>
+    `<option value="${z.charge}">${z.name}${z.charge === 0 ? ' — Free' : ` — ₹${z.charge}`}</option>`
+  ).join('');
+
+  const deliveryFields = orderType === 'Delivery' ? `
+    <div class="form-group">
+      <label>Delivery Zone *</label>
+      <select id="fZone" onchange="updateDeliveryTotal()">
+        <option value="">— Select your area —</option>
+        ${zoneOptions}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Full Address *</label>
+      <textarea id="fAddress" rows="2" placeholder="House no., landmark..."></textarea>
+    </div>
+    <div id="deliveryTotalRow" style="display:none" class="note-box"></div>` : '';
 
   form.innerHTML = `
-    ${deliveryNote}
-    <div class="form-group">
-      <label>Your Name *</label>
-      <input type="text" id="fName" placeholder="e.g. Lalremruata">
-    </div>
-    <div class="form-group">
-      <label>Phone Number *</label>
-      <input type="tel" id="fPhone" placeholder="e.g. 9876543210">
-    </div>
-    ${addressField}
-    <div class="form-group">
-      <label>Special Instructions (optional)</label>
-      <textarea id="fNotes" rows="2" placeholder="Extra spicy, no onions, etc."></textarea>
-    </div>
-    <button class="place-btn" id="placeBtn" onclick="placeOrder()">Place Order</button>`;
+    ${!status2.open ? `<div class="closed-box">⚠️ ${status2.msg}<br>You can still browse, but orders are only accepted during opening hours.</div>` : ''}
+    <div class="form-group"><label>Your Name *</label><input type="text" id="fName" placeholder="e.g. Lalremruata"></div>
+    <div class="form-group"><label>Phone Number *</label><input type="tel" id="fPhone" placeholder="e.g. 9876543210"></div>
+    ${deliveryFields}
+    <div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" placeholder="Any special requests for the whole order..."></textarea></div>
+    <div class="note-box">💵 Payment: <strong>Cash on Delivery</strong></div>
+    <button class="place-btn" id="placeBtn" onclick="placeOrder()" ${!status2.open ? 'disabled' : ''}>
+      ${!status2.open ? 'Shop Closed' : 'Place Order'}
+    </button>`;
+}
+
+function updateDeliveryTotal() {
+  const zone = document.getElementById('fZone');
+  const row = document.getElementById('deliveryTotalRow');
+  if (!zone || !row) return;
+  const deliveryCharge = parseInt(zone.value) || 0;
+  const { subtotal, packingCharge } = calcTotals();
+  const grandTotal = subtotal + packingCharge + deliveryCharge;
+  if (zone.value !== '') {
+    row.style.display = 'block';
+    row.innerHTML = `🛵 Delivery: ₹${deliveryCharge} &nbsp;|&nbsp; <strong>Grand Total: ₹${grandTotal}</strong>`;
+  } else {
+    row.style.display = 'none';
+  }
 }
 
 async function placeOrder() {
   const name = document.getElementById('fName')?.value.trim();
   const phone = document.getElementById('fPhone')?.value.trim();
-  const address = document.getElementById('fAddress')?.value.trim() || '';
   const notes = document.getElementById('fNotes')?.value.trim() || '';
+  let address = '';
+  let deliveryCharge = 0;
+  let zoneName = '';
 
   if (!name) { alert('Please enter your name.'); return; }
   if (!phone || phone.length < 10) { alert('Please enter a valid phone number.'); return; }
-  if (orderType === 'Delivery' && !address) { alert('Please enter your delivery address.'); return; }
+
+  if (orderType === 'Delivery') {
+    const zoneEl = document.getElementById('fZone');
+    const addrEl = document.getElementById('fAddress');
+    if (!zoneEl?.value) { alert('Please select your delivery zone.'); return; }
+    if (!addrEl?.value.trim()) { alert('Please enter your delivery address.'); return; }
+    deliveryCharge = parseInt(zoneEl.value);
+    zoneName = zoneEl.options[zoneEl.selectedIndex].text;
+    address = addrEl.value.trim();
+  }
 
   const btn = document.getElementById('placeBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Placing order...';
 
   orderCounter++;
-  localStorage.setItem('grillinn_counter', orderCounter);
+  localStorage.setItem('gi_counter', orderCounter);
   const orderNumber = String(orderCounter).padStart(3, '0');
 
+  const { subtotal, packingCharge } = calcTotals();
+  const grandTotal = subtotal + packingCharge + deliveryCharge;
+
   const items = Object.entries(cart).map(([id, item]) => ({
-    product_retailer_id: item.title,
+    product_retailer_id: item.title + (item.note ? ` [${item.note}]` : ''),
     quantity: item.qty,
     item_price: item.price
   }));
@@ -819,10 +441,14 @@ async function placeOrder() {
     customer_name: name,
     customer_phone: phone,
     order_type: orderType,
-    address: address,
+    address: orderType === 'Delivery' ? `${zoneName} — ${address}` : '',
+    delivery_charge: deliveryCharge,
+    packing_charge: packingCharge,
+    subtotal: subtotal,
+    grand_total: grandTotal,
     notes: notes,
     items: items,
-    order_time: new Date().toLocaleString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: false })
+    order_time: new Date().toLocaleString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})
   };
 
   try {
@@ -833,36 +459,143 @@ async function placeOrder() {
     });
     if (res.ok) {
       closeCart();
-      document.getElementById('successOrder').textContent = 'Order #' + orderNumber;
+      document.getElementById('successOrder').textContent = `Order #${orderNumber} — ₹${grandTotal}`;
       document.getElementById('successScreen').classList.add('show');
       cart = {};
       orderType = null;
       updateCartUI();
       document.querySelectorAll('.item-card').forEach(card => {
         const id = card.id.replace('card-', '');
-        const item = Object.values(MENU).flat().find(i => i.id === id);
+        const item = ALL_ITEMS[id];
         if (item) {
           const footer = card.querySelector('.item-footer');
-          footer.innerHTML = `
-            <div class="item-price">₹${item.price}</div>
-            <button class="add-btn" onclick="addToCart('${item.id}', '${item.title.replace(/'/g,"\\'")}', ${item.price})">+</button>`;
+          if (footer) footer.innerHTML = `<div class="item-price">₹${item.price}</div><button class="add-btn" onclick="addToCart('${id}')">+</button>`;
+          const noteWrap = card.querySelector('.note-wrap');
+          if (noteWrap) noteWrap.remove();
         }
       });
-    } else {
-      throw new Error('Server error');
-    }
-  } catch (e) {
+    } else throw new Error('error');
+  } catch(e) {
     alert('Could not place order. Please call us at 9612992023.');
     btn.disabled = false;
     btn.textContent = 'Place Order';
   }
 }
 
-function resetOrder() {
-  document.getElementById('successScreen').classList.remove('show');
+function resetOrder() { document.getElementById('successScreen').classList.remove('show'); }
+
+// ── SEARCH ──
+function handleSearch(query) {
+  const q = query.toLowerCase().trim();
+  const main = document.getElementById('menuMain');
+  if (!q) { buildMenu(); return; }
+
+  const results = Object.values(MENU).flat().filter(i =>
+    i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q)
+  );
+
+  main.innerHTML = '';
+  if (results.length === 0) {
+    main.innerHTML = `<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "${query}"</div></div>`;
+    return;
+  }
+
+  const sec = document.createElement('div');
+  sec.className = 'cat-section';
+  sec.innerHTML = `<div class="cat-title">🔍 Search Results (${results.length})</div>`;
+  const grid = document.createElement('div');
+  grid.className = 'items-grid';
+  results.forEach(item => grid.appendChild(makeCard(item)));
+  sec.appendChild(grid);
+  main.appendChild(sec);
 }
 
-buildMenu();
+// ── BUILD MENU ──
+function makeCard(item) {
+  const veg = isVegItem(item);
+  const card = document.createElement('div');
+  card.className = 'item-card';
+  card.id = 'card-' + item.id;
+  const inCart = cart[item.id];
+  const footerHTML = inCart
+    ? `<div class="item-price">₹${item.price}</div><div class="qty-ctrl"><button onclick="updateQty('${item.id}',-1)">−</button><span class="qty-num">${inCart.qty}</span><button onclick="updateQty('${item.id}',1)">+</button></div>`
+    : `<div class="item-price">₹${item.price}</div><button class="add-btn" onclick="addToCart('${item.id}')">+</button>`;
+  card.innerHTML = `
+    <div class="item-img">${CAT_ICONS[Object.keys(MENU).find(k => MENU[k].some(i => i.id === item.id))] || '🍽️'}</div>
+    <div class="item-body">
+      <div class="item-name-row">
+        <div class="veg-dot ${veg ? 'veg' : 'nonveg'}"></div>
+        <div class="item-name">${item.title}</div>
+      </div>
+      <div class="item-desc">${item.description}</div>
+      <div class="item-footer">${footerHTML}</div>
+      ${inCart && inCart.note ? `<div class="note-wrap"><textarea class="note-input" rows="1" placeholder="Special instructions..." onchange="setNote('${item.id}',this.value)">${inCart.note}</textarea></div>` : ''}
+    </div>`;
+  return card;
+}
+
+function buildMenu() {
+  const nav = document.getElementById('catNav');
+  const main = document.getElementById('menuMain');
+  nav.innerHTML = '';
+  main.innerHTML = '';
+
+  // Popular section
+  const popularItems = POPULAR_IDS.map(id => ALL_ITEMS[id]).filter(Boolean);
+  if (popularItems.length) {
+    const pill = document.createElement('button');
+    pill.className = 'cat-pill active';
+    pill.textContent = '⭐ Most Popular';
+    pill.onclick = () => { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); document.getElementById('sec-popular').scrollIntoView({behavior:'smooth',block:'start'}); };
+    nav.appendChild(pill);
+
+    const sec = document.createElement('div');
+    sec.className = 'cat-section';
+    sec.id = 'sec-popular';
+    sec.innerHTML = `<div class="cat-title">⭐ Most Popular</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'items-grid';
+    popularItems.forEach(item => grid.appendChild(makeCard(item)));
+    sec.appendChild(grid);
+    main.appendChild(sec);
+  }
+
+  // Category sections
+  Object.entries(MENU).forEach(([ cat, items ], i) => {
+    const pill = document.createElement('button');
+    pill.className = 'cat-pill';
+    const vegBadge = cat.startsWith('Veg ') ? ' 🟢' : cat.startsWith('Chicken ') ? ' 🔴' : '';
+    pill.textContent = (CAT_ICONS[cat] || '🍽️') + ' ' + cat + vegBadge;
+    pill.onclick = () => { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); document.getElementById('sec-' + i).scrollIntoView({behavior:'smooth',block:'start'}); };
+    nav.appendChild(pill);
+
+    const sec = document.createElement('div');
+    sec.className = 'cat-section';
+    sec.id = 'sec-' + i;
+
+    const isVeg = cat.startsWith('Veg ');
+    const isNonVeg = cat.startsWith('Chicken ') || ['Fried Chicken','Grilled Chicken'].includes(cat);
+    const badge = isVeg ? '<span class="veg-badge">🟢 VEG</span>' : isNonVeg ? '<span class="nonveg-badge">🔴 NON-VEG</span>' : '';
+    sec.innerHTML = `<div class="cat-title">${CAT_ICONS[cat] || '🍽️'} ${cat} ${badge}</div>`;
+
+    const grid = document.createElement('div');
+    grid.className = 'items-grid';
+    items.forEach(item => grid.appendChild(makeCard(item)));
+    sec.appendChild(grid);
+    main.appendChild(sec);
+  });
+}
+
+// ── INIT ──
+function init() {
+  const status = getStatus();
+  const banner = document.getElementById('statusBanner');
+  banner.className = 'status-banner ' + (status.open ? 'status-open' : 'status-closed');
+  banner.textContent = status.msg;
+  buildMenu();
+}
+
+init();
 </script>
 </body>
 </html>
