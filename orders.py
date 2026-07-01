@@ -772,6 +772,17 @@ function loadOrders() {
   if (currentTab === 'sales') return;
 
   if (currentTab === 'pending') {
+    // Snapshot any delivery-charge values the user is mid-typing so the
+    // 5-second poll below doesn't wipe them out from under them (this
+    // was the root cause of delivery charges vanishing before Confirm
+    // & Print was clicked — the input got rebuilt at value="0" by the
+    // next poll, and the click read the reset value).
+    const pendingDcValues = {};
+    document.querySelectorAll('[id^="dc-"]').forEach(el => {
+      const id = el.id.slice(3);
+      if (el.value !== '' && el.value !== '0') pendingDcValues[id] = el.value;
+    });
+
     fetch('/api/pending-orders').then(r => r.json()).then(orders => {
       const currentIds = new Set(orders.map(o => o.id));
       if (!isFirstLoad) {
@@ -788,6 +799,12 @@ function loadOrders() {
         return;
       }
       main.innerHTML = orders.map(o => renderOrderCard(o, true)).join('');
+
+      // Restore any in-progress delivery charge entries after the rebuild.
+      Object.keys(pendingDcValues).forEach(id => {
+        const el = document.getElementById('dc-' + id);
+        if (el) el.value = pendingDcValues[id];
+      });
     }).catch(e => console.log('Load error', e));
     return;
   }
