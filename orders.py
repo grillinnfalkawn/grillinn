@@ -2,6 +2,7 @@ from flask import Flask, request, Response
 import win32print
 import sqlite3
 import json
+import os
 from datetime import datetime
 
 app = Flask(__name__)
@@ -10,7 +11,44 @@ app = Flask(__name__)
 PRINTER_NAME = "POS80 (1)"
 DASHBOARD_PASSWORD = "0000"  # change this to whatever you like
 DB_PATH = "orders.db"
+SETTINGS_PATH = "settings.json"
 # ────────────────────────────────────────────────────────
+
+# ── SETTINGS (special hours + announcement banner) ───────
+DEFAULT_SETTINGS = {
+    "special_dates": {
+        # "2026-12-31": {"open": 11, "close": 24, "label": "New Year's Eve — Open till Midnight!"}
+        # "2026-08-15": {"open": None, "close": None, "label": "Closed for Independence Day"}
+    },
+    "banner": {
+        "active": False,
+        "text": "",
+        "emoji": "🎉"
+    }
+}
+
+
+def load_settings():
+    if not os.path.exists(SETTINGS_PATH):
+        save_settings(DEFAULT_SETTINGS)
+        return DEFAULT_SETTINGS
+    try:
+        with open(SETTINGS_PATH, "r") as f:
+            data = json.load(f)
+            # Backfill any missing keys (e.g. after an app update)
+            merged = {**DEFAULT_SETTINGS, **data}
+            merged.setdefault("special_dates", {})
+            merged.setdefault("banner", DEFAULT_SETTINGS["banner"])
+            return merged
+    except Exception as e:
+        print(f"[SETTINGS LOAD ERROR] {e}")
+        return DEFAULT_SETTINGS
+
+
+def save_settings(settings):
+    with open(SETTINGS_PATH, "w") as f:
+        json.dump(settings, f, indent=2)
+
 
 # ── ESC/POS COMMANDS ────────────────────────────────────
 ESC = b'\x1b'
@@ -434,6 +472,39 @@ def web_order():
         return response
 
 
+# ── SETTINGS ROUTES (special hours + banner) ──────────────
+@app.route("/api/settings", methods=["GET", "OPTIONS"])
+def api_get_settings():
+    if request.method == "OPTIONS":
+        response = Response("", status=200)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+
+    settings = load_settings()
+    response = Response(json.dumps(settings), status=200, mimetype="application/json")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
+
+@app.route("/api/settings", methods=["POST"])
+def api_save_settings():
+    data = request.get_json() or {}
+
+    if data.get("password") != DASHBOARD_PASSWORD:
+        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
+
+    settings = load_settings()
+    if "special_dates" in data:
+        settings["special_dates"] = data["special_dates"]
+    if "banner" in data:
+        settings["banner"] = data["banner"]
+
+    save_settings(settings)
+    return Response(json.dumps({"status": "ok"}), status=200, mimetype="application/json")
+
+
 # ── DASHBOARD ROUTES ──────────────────────────────────────
 @app.route("/dashboard")
 def dashboard():
@@ -617,6 +688,10 @@ DASHBOARD_HTML = """
   .order-total{font-weight:700;color:var(--orange);text-align:right;margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border);}
   .order-actions{display:flex;gap:0.5rem;}
   .btn-confirm{flex:1;background:linear-gradient(135deg,var(--green),#16a34a);border:none;border-radius:8px;color:white;font-weight:700;padding:0.7rem;cursor:pointer;font-size:0.9rem;}
+  .dc-field-label{font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem;}
+  .dc-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.95rem;padding:0.6rem 0.75rem;outline:none;margin-bottom:0.5rem;font-family:'Inter',sans-serif;-moz-appearance:textfield;}
+  .dc-input:focus{border-color:var(--orange);background:#262626;}
+  .dc-input::-webkit-outer-spin-button,.dc-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   .btn-reject{background:var(--panel);border:1px solid var(--red);border-radius:8px;color:var(--red);font-weight:700;padding:0.7rem 1rem;cursor:pointer;font-size:0.9rem;}
   .btn-reprint{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.5rem 0.9rem;cursor:pointer;font-size:0.8rem;}
   .status-tag{font-size:0.7rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:10px;}
@@ -640,6 +715,22 @@ DASHBOARD_HTML = """
   .sales-row{display:flex;justify-content:space-between;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;}
   .sales-row:last-child{border-bottom:none;}
   .sales-empty{text-align:center;color:var(--muted);padding:2rem 1rem;font-size:0.85rem;}
+  .settings-section{background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;}
+  .settings-section-title{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.8rem;}
+  .field-label{font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem;}
+  .settings-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.9rem;padding:0.6rem 0.75rem;outline:none;margin-bottom:0.8rem;}
+  .settings-input:focus{border-color:var(--orange);}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;}
+  .toggle-switch{position:relative;width:46px;height:26px;background:var(--panel);border:1px solid var(--border);border-radius:13px;cursor:pointer;flex-shrink:0;}
+  .toggle-switch.on{background:var(--flame);border-color:var(--flame);}
+  .toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:left 0.15s;}
+  .toggle-switch.on::after{left:22px;}
+  .special-date-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:0.8rem;margin-bottom:0.6rem;}
+  .special-date-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
+  .btn-save{width:100%;background:linear-gradient(135deg,var(--green),#16a34a);border:none;border-radius:8px;color:white;font-weight:700;padding:0.8rem;cursor:pointer;font-size:0.9rem;margin-top:0.4rem;}
+  .btn-add-date{width:100%;background:var(--panel);border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.7rem;cursor:pointer;font-size:0.85rem;margin-bottom:0.6rem;}
+  .btn-remove-date{background:none;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;font-weight:700;}
+  .row-2col{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
 </style>
 </head>
 <body>
@@ -662,6 +753,7 @@ DASHBOARD_HTML = """
     <button class="tab-btn active" id="pendingTab" onclick="switchTab('pending')">Pending <span class="badge-count" id="pendingCount">0</span></button>
     <button class="tab-btn" id="historyTab" onclick="switchTab('history')">History</button>
     <button class="tab-btn" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
+    <button class="tab-btn" id="settingsTab" onclick="switchTab('settings')">⚙️ Settings</button>
   </div>
   <div class="main" id="mainContent"></div>
 </div>
@@ -695,8 +787,11 @@ function switchTab(tab) {
   document.getElementById('pendingTab').classList.toggle('active', tab === 'pending');
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
   document.getElementById('salesTab').classList.toggle('active', tab === 'sales');
+  document.getElementById('settingsTab').classList.toggle('active', tab === 'settings');
   if (tab === 'sales') {
     loadSales('today');
+  } else if (tab === 'settings') {
+    loadSettings();
   } else {
     loadOrders();
   }
@@ -741,7 +836,7 @@ function renderOrderCard(order, isPending) {
   let actionsHtml = '';
   if (isPending) {
     const dcField = order.order_type === 'Delivery'
-      ? '<div style="margin-bottom:0.5rem;"><label style="font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem;">Delivery Charge (₹)</label><input id="dc-' + order.id + '" type="number" min="0" value="0" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.9rem;padding:0.5rem 0.75rem;outline:none;margin-bottom:0.5rem;" placeholder="Enter delivery charge..."></div>'
+      ? '<div style="margin-bottom:0.5rem;"><label class="dc-field-label">Delivery Charge (₹)</label><input id="dc-' + order.id + '" class="dc-input" type="number" inputmode="numeric" min="0" value="0" placeholder="Enter delivery charge..."></div>'
       : '';
     actionsHtml = '<div class="order-actions">' +
       dcField +
@@ -769,29 +864,47 @@ function renderOrderCard(order, isPending) {
 }
 
 function loadOrders() {
-  if (currentTab === 'sales') return;
+  if (currentTab === 'sales' || currentTab === 'settings') return;
 
   if (currentTab === 'pending') {
-    // Snapshot any delivery-charge values the user is mid-typing so the
-    // 5-second poll below doesn't wipe them out from under them (this
-    // was the root cause of delivery charges vanishing before Confirm
-    // & Print was clicked — the input got rebuilt at value="0" by the
-    // next poll, and the click read the reset value).
-    const pendingDcValues = {};
-    document.querySelectorAll('[id^="dc-"]').forEach(el => {
-      const id = el.id.slice(3);
-      if (el.value !== '' && el.value !== '0') pendingDcValues[id] = el.value;
-    });
-
     fetch('/api/pending-orders').then(r => r.json()).then(orders => {
       const currentIds = new Set(orders.map(o => o.id));
+
       if (!isFirstLoad) {
         const newOnes = [...currentIds].filter(id => !knownPendingIds.has(id));
         if (newOnes.length > 0) playNotifySound();
       }
+
+      const idsUnchanged = !isFirstLoad &&
+        currentIds.size === knownPendingIds.size &&
+        [...currentIds].every(id => knownPendingIds.has(id));
+
       knownPendingIds = currentIds;
       isFirstLoad = false;
       document.getElementById('pendingCount').textContent = orders.length;
+
+      // Nothing added or removed since the last poll — skip rebuilding the
+      // DOM entirely. This is what used to cause the delivery-charge field
+      // to blink/lose focus/reset mid-type: rebuilding the list every 5s
+      // recreated the input element even when nothing about the order list
+      // had actually changed.
+      if (idsUnchanged) return;
+
+      // Preserve whatever the user is actively doing (typing a delivery
+      // charge) across the rebuild, since the order list itself DID change.
+      const active = document.activeElement;
+      let focusedId = null, focusedValue = null, focusedSelStart = null, focusedSelEnd = null;
+      if (active && active.id && active.id.startsWith('dc-')) {
+        focusedId = active.id;
+        focusedValue = active.value;
+        focusedSelStart = active.selectionStart;
+        focusedSelEnd = active.selectionEnd;
+      }
+      const pendingDcValues = {};
+      document.querySelectorAll('[id^="dc-"]').forEach(el => {
+        const id = el.id.slice(3);
+        if (el.value !== '' && el.value !== '0') pendingDcValues[id] = el.value;
+      });
 
       const main = document.getElementById('mainContent');
       if (orders.length === 0) {
@@ -805,6 +918,16 @@ function loadOrders() {
         const el = document.getElementById('dc-' + id);
         if (el) el.value = pendingDcValues[id];
       });
+
+      // Restore focus + cursor position so an in-progress keystroke isn't lost.
+      if (focusedId) {
+        const el = document.getElementById(focusedId);
+        if (el) {
+          el.value = focusedValue;
+          el.focus();
+          try { el.setSelectionRange(focusedSelStart, focusedSelEnd); } catch (e) {}
+        }
+      }
     }).catch(e => console.log('Load error', e));
     return;
   }
@@ -942,6 +1065,132 @@ function renderSales(summary, activeQuick) {
     '<div class="sales-section"><div class="sales-section-title">By Order Type</div>' + byTypeHtml + '</div>' +
     (summary.by_day.length > 1 ? '<div class="sales-section"><div class="sales-section-title">By Day</div>' + byDayHtml + '</div>' : '') +
     '<div class="sales-section"><div class="sales-section-title">Top Items</div>' + topItemsHtml + '</div>';
+}
+
+let currentSettings = { special_dates: {}, banner: { active: false, text: '', emoji: '🎉' } };
+let dashPassword = '';
+
+function loadSettings() {
+  const main = document.getElementById('mainContent');
+  fetch('/api/settings').then(r => r.json()).then(settings => {
+    currentSettings = settings;
+    renderSettings();
+  }).catch(e => {
+    console.log('Settings load error', e);
+    main.innerHTML = '<div class="sales-empty">Failed to load settings.</div>';
+  });
+}
+
+function renderSettings() {
+  const main = document.getElementById('mainContent');
+  const banner = currentSettings.banner || { active: false, text: '', emoji: '🎉' };
+  const dates = currentSettings.special_dates || {};
+
+  const bannerHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📣 Announcement Banner</div>' +
+      '<div class="toggle-row"><span>Show banner on website</span><div class="toggle-switch ' + (banner.active ? 'on' : '') + '" id="bannerToggle" onclick="toggleBanner()"></div></div>' +
+      '<label class="field-label">Emoji</label>' +
+      '<input class="settings-input" id="bannerEmoji" maxlength="4" value="' + (banner.emoji || '🎉') + '" style="width:80px;">' +
+      '<label class="field-label">Banner Text</label>' +
+      '<input class="settings-input" id="bannerText" placeholder="e.g. Diwali Special: 20% off all pizzas!" value="' + (banner.text || '').replace(/"/g,'&quot;') + '">' +
+    '</div>';
+
+  const dateCards = Object.keys(dates).sort().map(dateKey => {
+    const d = dates[dateKey];
+    const isClosed = d.open === null;
+    return '<div class="special-date-card" data-date="' + dateKey + '">' +
+      '<div class="special-date-header">' +
+        '<input type="date" class="settings-input" style="margin-bottom:0;width:auto;" value="' + dateKey + '" onchange="this.parentElement.parentElement.dataset.date=this.value">' +
+        '<button class="btn-remove-date" onclick="removeSpecialDate(\\'' + dateKey + '\\')">✕ Remove</button>' +
+      '</div>' +
+      '<label class="field-label">Label (shown to customers)</label>' +
+      '<input class="settings-input" placeholder="e.g. New Year\\'s Eve — Open till Midnight!" value="' + (d.label || '').replace(/"/g,'&quot;') + '" data-field="label">' +
+      '<div class="toggle-row"><span>Force closed all day</span><div class="toggle-switch ' + (isClosed ? 'on' : '') + '" data-field="closed" onclick="this.classList.toggle(\\'on\\');this.parentElement.nextElementSibling.style.display=this.classList.contains(\\'on\\')?\\'none\\':\\'grid\\'"></div></div>' +
+      '<div class="row-2col" style="display:' + (isClosed ? 'none' : 'grid') + ';">' +
+        '<div><label class="field-label">Open (24h, e.g. 11 or 9.5)</label><input class="settings-input" type="number" step="0.5" value="' + (isClosed ? 11 : d.open) + '" data-field="open"></div>' +
+        '<div><label class="field-label">Close (24h, e.g. 23.5, 24=midnight)</label><input class="settings-input" type="number" step="0.5" value="' + (isClosed ? 21.5 : d.close) + '" data-field="close"></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  const datesHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📅 Special Date Overrides (extended hours, closures)</div>' +
+      dateCards +
+      '<button class="btn-add-date" onclick="addSpecialDate()">+ Add Special Date</button>' +
+    '</div>';
+
+  main.innerHTML = bannerHtml + datesHtml +
+    '<button class="btn-save" onclick="saveAllSettings()">💾 Save Settings</button>';
+}
+
+function toggleBanner() {
+  document.getElementById('bannerToggle').classList.toggle('on');
+}
+
+function addSpecialDate() {
+  const todayStr = toDateStr(new Date());
+  if (!currentSettings.special_dates) currentSettings.special_dates = {};
+  if (currentSettings.special_dates[todayStr]) { alert('That date already has an entry — scroll to edit it.'); return; }
+  currentSettings.special_dates[todayStr] = { open: 11, close: 21.5, label: '' };
+  renderSettings();
+}
+
+function removeSpecialDate(dateKey) {
+  if (!confirm('Remove this special date override?')) return;
+  delete currentSettings.special_dates[dateKey];
+  renderSettings();
+}
+
+function collectSettingsFromForm() {
+  const banner = {
+    active: document.getElementById('bannerToggle').classList.contains('on'),
+    text: document.getElementById('bannerText').value.trim(),
+    emoji: document.getElementById('bannerEmoji').value.trim() || '🎉'
+  };
+
+  const special_dates = {};
+  document.querySelectorAll('.special-date-card').forEach(card => {
+    const dateKey = card.dataset.date;
+    if (!dateKey) return;
+    const label = card.querySelector('[data-field="label"]').value.trim();
+    const closedToggle = card.querySelector('[data-field="closed"]');
+    const isClosed = closedToggle.classList.contains('on');
+    if (isClosed) {
+      special_dates[dateKey] = { open: null, close: null, label: label };
+    } else {
+      const open = parseFloat(card.querySelector('[data-field="open"]').value);
+      const close = parseFloat(card.querySelector('[data-field="close"]').value);
+      special_dates[dateKey] = { open: open, close: close, label: label };
+    }
+  });
+
+  return { banner, special_dates };
+}
+
+function saveAllSettings() {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password to save settings:') || '';
+    if (!dashPassword) return;
+  }
+  const payload = collectSettingsFromForm();
+  payload.password = dashPassword;
+
+  fetch('/api/settings', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(r => r.json().then(body => ({status: r.status, body}))).then(({status, body}) => {
+    if (status === 200 && body.status === 'ok') {
+      alert('Settings saved!');
+      dashPassword = payload.password;
+      loadSettings();
+    } else {
+      dashPassword = '';
+      alert('Failed to save: ' + (body.message || 'Unknown error'));
+    }
+  }).catch(e => { alert('Failed to save settings.'); console.log(e); });
 }
 
 function startPolling() {
