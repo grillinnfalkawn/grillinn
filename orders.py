@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # ── CONFIG ──────────────────────────────────────────────
 PRINTER_NAME = "POS80 (1)"
-DASHBOARD_PASSWORD = "grillinn2026"  # change this to whatever you like
+DASHBOARD_PASSWORD = "0000"  # change this to whatever you like
 DB_PATH = "orders.db"
 # ────────────────────────────────────────────────────────
 
@@ -891,11 +891,11 @@ function renderSales(summary, activeQuick) {
 
   const filtersHtml =
     '<div class="sales-filters">' +
-      '<button class="sales-quick-btn ' + (activeQuick === 'today' ? 'active' : '') + '" onclick="loadSales(\'today\')">Today</button>' +
-      '<button class="sales-quick-btn ' + (activeQuick === 'month' ? 'active' : '') + '" onclick="loadSales(\'month\')">This Month</button>' +
-      '<input type="date" id="salesStart" value="' + summary.start_date + '" onchange="loadSales(\'range\')">' +
+      '<button class="sales-quick-btn ' + (activeQuick === 'today' ? 'active' : '') + '" onclick="loadSales(\\'today\\')">Today</button>' +
+      '<button class="sales-quick-btn ' + (activeQuick === 'month' ? 'active' : '') + '" onclick="loadSales(\\'month\\')">This Month</button>' +
+      '<input type="date" id="salesStart" value="' + summary.start_date + '" onchange="loadSales(\\'range\\')">' +
       '<span style="color:var(--muted);font-size:0.8rem;">to</span>' +
-      '<input type="date" id="salesEnd" value="' + summary.end_date + '" onchange="loadSales(\'range\')">' +
+      '<input type="date" id="salesEnd" value="' + summary.end_date + '" onchange="loadSales(\\'range\\')">' +
       '<a class="sales-quick-btn" style="text-decoration:none;" href="/api/export-orders-csv?start=' + summary.start_date + '&end=' + summary.end_date + '">⬇️ CSV</a>' +
     '</div>';
 
