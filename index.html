@@ -522,7 +522,7 @@ function renderDrawer() {
   ? '<div class="summary-row total"><span>Total</span><span>₹'+subtotal+(packingCharge > 0 ? '+₹'+packingCharge : '')+' + Delivery Charges</span></div>'
   : '<div class="summary-row total"><span>Total</span><span>₹'+total+'</span></div>';
 
-html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges (Regular Pizza)</span><span>₹'+packingCharge+'</span></div>' : '')+totalRow+'</div>';
+html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges (Regular Pizza)</span><span>₹'+packingCharge+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
 
   html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns"><button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button><button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div><div id="checkoutForm"></div></div>';
 
@@ -538,7 +538,6 @@ function renderCheckoutForm(status) {
   const { subtotal, packingCharge } = calcTotals();
 
   const deliveryFields = orderType === 'Delivery' ? (
-    '<div class="note-box">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>'+
     '<div class="form-group"><label>Full Address *</label><textarea id="fAddress" rows="2" placeholder="House no., street, landmark..."></textarea></div>'
   ) : '';
 
