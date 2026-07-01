@@ -204,7 +204,6 @@ const PACKING_CHARGE = 15;
 // Delivery charges confirmed manually at dashboard
 
 const HOURS = { open: [11,11,11,11,11,11,null], close: [21.5,21.5,21.5,21.5,21.5,16,null] };
-const POPULAR_IDS = ['BUR001','WRP003','FCH001','PIZ038'];
 
 const MENU = {"Veg Burgers": [{"id": "BUR001", "title": "Aloo Tikki Burger", "description": "Veg Burger", "price": 52}, {"id": "BUR002", "title": "Veg Surprise Burger", "description": "Veg Burger", "price": 94}, {"id": "BUR003", "title": "Chilli Lava Burger", "description": "Veg Burger", "price": 105}, {"id": "BUR004", "title": "Crunchy Corn Burger", "description": "Veg Burger", "price": 105}, {"id": "BUR005", "title": "Crispy Paneer Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR006", "title": "Paneer Tikka Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR007", "title": "Peri Peri Paneer Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR008", "title": "Maha Veggie Burger", "description": "Veg Burger", "price": 135}, {"id": "ADD003", "title": "Extra Cheese (Burger)", "description": "Add-on", "price": 27}], "Non Veg Burgers": [{"id": "BUR009", "title": "Fried Chicken Burger", "description": "Chicken Burger", "price": 105}, {"id": "BUR010", "title": "Chicken Surprise Burger", "description": "Chicken Burger", "price": 115}, {"id": "BUR011", "title": "Chicken Chilli Lava Burger", "description": "Chicken Burger", "price": 136}, {"id": "BUR012", "title": "Tandoori Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR013", "title": "Peri Peri Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR014", "title": "Premium Fried Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR015", "title": "Maha Chicken Burger", "description": "Chicken Burger", "price": 157}, {"id": "ADD004", "title": "Extra Cheese (Burger)", "description": "Add-on", "price": 27}], "Wraps": [{"id": "WRP001", "title": "Crispy Paneer Wrap", "description": "Veg Wrap", "price": 136}, {"id": "WRP002", "title": "Tandoori Paneer Tikka Wrap", "description": "Veg Wrap", "price": 136}, {"id": "WRP003", "title": "Crispy Chicken Wrap", "description": "Chicken Wrap", "price": 146}, {"id": "WRP004", "title": "Tandoori Chicken Tikka Wrap", "description": "Chicken Wrap", "price": 146}], "Fried Chicken": [{"id": "FCH001", "title": "Fried Chicken (2 Pieces)", "description": "Fried Chicken", "price": 188}, {"id": "FCH002", "title": "Fried Chicken (4 Pieces)", "description": "Fried Chicken", "price": 356}, {"id": "FCH003", "title": "Fried Chicken (6 Pieces)", "description": "Fried Chicken", "price": 535}, {"id": "FCH004", "title": "Fried Chicken (9 Pieces)", "description": "Fried Chicken", "price": 745}], "Grilled Chicken": [{"id": "GRC001", "title": "Tandoori Grilled Chicken - Half (4 Pieces)", "description": "Grilled Chicken", "price": 349}, {"id": "GRC002", "title": "Tandoori Grilled Chicken - Full (8 Pieces)", "description": "Grilled Chicken", "price": 649}], "Veg Footlongs": [{"id": "FTL001", "title": "Veggie Delight Footlong", "description": "Veg Footlong", "price": 125}, {"id": "FTL002", "title": "Paneer Tikka Footlong", "description": "Veg Footlong", "price": 146}, {"id": "FTL003", "title": "Spicy Paneer Footlong", "description": "Veg Footlong", "price": 146}, {"id": "FTL004", "title": "Deluxe Veggie Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL005", "title": "Peri Peri Paneer Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL006", "title": "Veg Extravaganza Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL007", "title": "Veg Cheese Burst Footlong", "description": "Veg Footlong", "price": 167}], "Non Veg Footlongs": [{"id": "FTL008", "title": "Simply Chicken Footlong", "description": "Chicken Footlong", "price": 146}, {"id": "FTL009", "title": "Chicken Tikka Footlong", "description": "Chicken Footlong", "price": 157}, {"id": "FTL010", "title": "Spicy Chicken Footlong", "description": "Chicken Footlong", "price": 157}, {"id": "FTL011", "title": "Deluxe Chicken Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL012", "title": "Peri Peri Chicken Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL013", "title": "Chicken Extravaganza Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL014", "title": "Chicken Cheese Burst Footlong", "description": "Chicken Footlong", "price": 177}], "Veg Sandwiches": [{"id": "SAN001", "title": "Veg Grilled Sandwich", "description": "Veg Sandwich", "price": 105}, {"id": "SAN002", "title": "Tandoori Paneer Tikka Sandwich", "description": "Veg Sandwich", "price": 125}, {"id": "SAN003", "title": "Italian Veg Sandwich", "description": "Veg Sandwich", "price": 136}], "Non Veg Sandwiches": [{"id": "SAN004", "title": "Chicken Grilled Sandwich", "description": "Chicken Sandwich", "price": 136}, {"id": "SAN005", "title": "Tandoori Chicken Tikka Sandwich", "description": "Chicken Sandwich", "price": 136}, {"id": "SAN006", "title": "Italian Chicken Sandwich", "description": "Chicken Sandwich", "price": 146}], "Veg Pizza": [{"id": "PIZ001", "title": "Margherita Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 95}, {"id": "PIZ002", "title": "Margherita Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ003", "title": "Veggie Delight Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 115}, {"id": "PIZ004", "title": "Veggie Delight Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 199}, {"id": "PIZ005", "title": "Tandoori Paneer Tikka Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ006", "title": "Tandoori Paneer Tikka Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ007", "title": "Teekha Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ008", "title": "Teekha Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ009", "title": "Indi Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ010", "title": "Indi Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ011", "title": "Peri Peri Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ012", "title": "Peri Peri Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ013", "title": "Deluxe Veggie Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 157}, {"id": "PIZ014", "title": "Deluxe Veggie Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 262}, {"id": "PIZ015", "title": "Mushroom Delight Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 157}, {"id": "PIZ016", "title": "Mushroom Delight Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 262}, {"id": "PIZ017", "title": "Veg Extravaganza Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 178}, {"id": "PIZ018", "title": "Veg Extravaganza Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 292}, {"id": "PIZ019", "title": "Veg Overloaded Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 199}, {"id": "PIZ020", "title": "Veg Overloaded Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 314}, {"id": "ADDPIZ001", "title": "Cheese Burst Add-on - Pan (6 Inch)", "description": "Add-on for Pan Pizza only", "price": 89, "is_addon": true, "addon_size": "pan"}, {"id": "ADDPIZ002", "title": "Cheese Burst Add-on - Regular (9 Inch)", "description": "Add-on for Regular Pizza only", "price": 109, "is_addon": true, "addon_size": "regular"}], "Non Veg Pizza": [{"id": "PIZ021", "title": "Chicken Delight Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 136}, {"id": "PIZ022", "title": "Chicken Delight Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 229}, {"id": "PIZ023", "title": "Tandoori Chicken Tikka Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ024", "title": "Tandoori Chicken Tikka Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ025", "title": "Teekha Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ026", "title": "Teekha Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ027", "title": "Indi Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ028", "title": "Indi Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ029", "title": "Peri Peri Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ030", "title": "Peri Peri Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ031", "title": "Deluxe Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 167}, {"id": "PIZ032", "title": "Deluxe Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 282}, {"id": "PIZ033", "title": "Chicken Seekh Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 167}, {"id": "PIZ034", "title": "Chicken Seekh Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 282}, {"id": "PIZ035", "title": "Chicken Extravaganza Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 199}, {"id": "PIZ036", "title": "Chicken Extravaganza Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 335}, {"id": "PIZ037", "title": "Chicken Overloaded Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 219}, {"id": "PIZ038", "title": "Chicken Overloaded Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 345}, {"id": "ADDPIZ003", "title": "Cheese Burst Add-on - Pan (6 Inch)", "description": "Add-on for Pan Pizza only", "price": 89, "is_addon": true, "addon_size": "pan"}, {"id": "ADDPIZ004", "title": "Cheese Burst Add-on - Regular (9 Inch)", "description": "Add-on for Regular Pizza only", "price": 109, "is_addon": true, "addon_size": "regular"}], "Pastas": [{"id": "PAS001", "title": "Veg Arrabbiata Penne", "description": "Veg Pasta", "price": 136}, {"id": "PAS002", "title": "Veg Creamy White Penne Pasta", "description": "Veg Pasta", "price": 146}, {"id": "PAS003", "title": "Mix Sauce Veg Penne Pasta", "description": "Veg Pasta", "price": 146}, {"id": "PAS004", "title": "Chicken Arrabbiata Penne", "description": "Chicken Pasta", "price": 157}, {"id": "PAS005", "title": "Chicken Creamy White Penne Pasta", "description": "Chicken Pasta", "price": 167}, {"id": "PAS006", "title": "Mix Sauce Chicken Penne Pasta", "description": "Chicken Pasta", "price": 167}], "Garlic Breads": [{"id": "GRB001", "title": "Garlic Bread with Cheese", "description": "Veg Garlic Bread", "price": 115}, {"id": "GRB002", "title": "Garlic Bread Supreme", "description": "Veg Garlic Bread", "price": 125}, {"id": "GRB003", "title": "Chicken Garlic Bread with Cheese", "description": "Chicken Garlic Bread", "price": 125}, {"id": "GRB004", "title": "Chicken Garlic Bread Supreme", "description": "Chicken Garlic Bread", "price": 135}], "Veg Snacks": [{"id": "SNK001", "title": "Paneer Pops (6 Pieces)", "description": "Veg Snack", "price": 115}, {"id": "SNK002", "title": "Paneer Pops (16 Pieces)", "description": "Veg Snack", "price": 209}, {"id": "SNK003", "title": "Paneer Strips (4 Pieces)", "description": "Veg Snack", "price": 125}, {"id": "SNK004", "title": "Paneer Strips (8 Pieces)", "description": "Veg Snack", "price": 219}, {"id": "FRI001", "title": "French Fries - Regular", "description": "Fries", "price": 62}, {"id": "FRI002", "title": "French Fries - Large", "description": "Fries", "price": 83}, {"id": "FRI003", "title": "Peri Peri Fries - Regular", "description": "Fries", "price": 83}, {"id": "FRI004", "title": "Peri Peri Fries - Large", "description": "Fries", "price": 104}, {"id": "FRI005", "title": "Hot & Spicy Fries - Regular", "description": "Fries", "price": 83}, {"id": "FRI006", "title": "Hot & Spicy Fries - Large", "description": "Fries", "price": 104}, {"id": "FRI007", "title": "Peri Peri Overloaded Fries", "description": "Loaded Fries", "price": 125}, {"id": "FRI008", "title": "Hot & Spicy Overloaded Fries", "description": "Loaded Fries", "price": 125}, {"id": "FRI009", "title": "Crispy Paneer Overloaded Fries", "description": "Loaded Fries", "price": 146}], "Non Veg Snacks": [{"id": "SNK005", "title": "Chicken Nuggets (6 Pieces)", "description": "Chicken Snack", "price": 136}, {"id": "SNK006", "title": "Chicken Nuggets (12 Pieces)", "description": "Chicken Snack", "price": 250}, {"id": "SNK007", "title": "Chicken Popcorn (8 Pieces)", "description": "Chicken Snack", "price": 136}, {"id": "SNK008", "title": "Chicken Popcorn (16 Pieces)", "description": "Chicken Snack", "price": 252}, {"id": "SNK009", "title": "Chicken Strips (3 Pieces)", "description": "Chicken Snack", "price": 125}, {"id": "FRI010", "title": "Crispy Chicken Overloaded Fries", "description": "Loaded Fries", "price": 157}], "Beverages": [{"id": "BEV001", "title": "Coca-Cola", "description": "Soft Drink", "price": 41}, {"id": "BEV002", "title": "Sprite", "description": "Soft Drink", "price": 41}, {"id": "BEV003", "title": "Fanta", "description": "Soft Drink", "price": 41}, {"id": "BEV004", "title": "Iced Tea Lemon", "description": "Cold Beverage", "price": 75}, {"id": "BEV005", "title": "Fresh Lime Soda", "description": "Cold Beverage", "price": 95}, {"id": "BEV006", "title": "Mojito", "description": "Cold Beverage", "price": 95}, {"id": "BEV007", "title": "Mango Delight", "description": "Beverage", "price": 95}, {"id": "BEV008", "title": "Strawberry Blast", "description": "Beverage", "price": 95}, {"id": "BEV009", "title": "Cafe Frappe", "description": "Beverage", "price": 105}, {"id": "BEV010", "title": "Mango Shake", "description": "Milkshake", "price": 105}, {"id": "BEV011", "title": "Strawberry Shake", "description": "Milkshake", "price": 105}, {"id": "BEV012", "title": "Chocolate Shake", "description": "Milkshake", "price": 105}, {"id": "BEV013", "title": "Butterscotch Shake", "description": "Milkshake", "price": 105}, {"id": "BEV014", "title": "Oreo Shake", "description": "Milkshake", "price": 125}, {"id": "BEV015", "title": "Kit Kat Shake", "description": "Milkshake", "price": 125}, {"id": "BEV016", "title": "Packaged Drinking Water", "description": "Drinking Water", "price": 10}], "Desserts": [{"id": "DES004", "title": "Mango Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES005", "title": "Vanilla Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES006", "title": "Strawberry Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES007", "title": "Chocolate Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES002", "title": "Hot Chocolate Fudge", "description": "Dessert", "price": 105}, {"id": "DES003", "title": "Fruit Sundae", "description": "Dessert", "price": 105}], "Add Ons": [{"id": "ADD002", "title": "Cheese Dip", "description": "Add-on", "price": 30}], "Combos": [{"id": "FMB001", "title": "Veg Fun Meal Box", "description": "Combo Meal", "price": 279}, {"id": "FMB002", "title": "Chicken Fun Meal Box", "description": "Combo Meal", "price": 289}, {"id": "COM001", "title": "Add 2 Pieces Garlic Bread + Coke", "description": "Meal Combo Add-on", "price": 105}, {"id": "COM002", "title": "Add Fries + Coke Combo", "description": "Meal Combo Add-on", "price": 119}, {"id": "COM003", "title": "Add 1 Piece Fried Chicken + Coke", "description": "Meal Combo Add-on", "price": 135}, {"id": "COM004", "title": "Add Chicken Popcorn + Coke", "description": "Meal Combo Add-on", "price": 159}]};
 
@@ -383,23 +382,35 @@ function getStatus() {
   return { open: true, msg: '🟢 Open now! Closing at ' + closeStr + ' today.' };
 }
 
-function hasMatchingPizzaSize(size) {
-  // size: 'pan' or 'regular'
-  return Object.values(cart).some(item => {
-    if (item.is_addon) return false;
+// Count pizzas of a given size currently in cart
+function countPizzasBySize(size) {
+  return Object.values(cart).reduce((total, item) => {
+    if (item.is_addon) return total;
     const t = item.title.toLowerCase();
-    if (size === 'pan') return t.includes('pan (6 inch)');
-    if (size === 'regular') return t.includes('regular (9 inch)');
-    return false;
-  });
+    const matches = size === 'pan' ? t.includes('pan (6 inch)') : t.includes('regular (9 inch)');
+    return total + (matches ? item.qty : 0);
+  }, 0);
+}
+
+// Count cheese burst add-ons of a given size currently in cart
+function countCheeseBurst(size) {
+  const ids = size === 'pan' ? ['ADDPIZ001','ADDPIZ003'] : ['ADDPIZ002','ADDPIZ004'];
+  return ids.reduce((total, id) => total + (cart[id] ? cart[id].qty : 0), 0);
 }
 
 function addToCart(id) {
   const item = ALL_ITEMS[id];
-  if (item.is_addon) {
-    if (!hasMatchingPizzaSize(item.addon_size)) {
+  if (item.is_addon && item.addon_size) {
+    const pizzaCount = countPizzasBySize(item.addon_size);
+    const burstCount = countCheeseBurst(item.addon_size);
+    if (pizzaCount === 0) {
       const sizeLabel = item.addon_size === 'pan' ? 'Pan (6 Inch)' : 'Regular (9 Inch)';
-      alert('Please add a ' + sizeLabel + ' pizza to your cart first before adding this Cheese Burst add-on.');
+      alert('Please add a ' + sizeLabel + ' pizza to your cart first before adding Cheese Burst.');
+      return;
+    }
+    if (burstCount >= pizzaCount) {
+      const sizeLabel = item.addon_size === 'pan' ? 'Pan (6 Inch)' : 'Regular (9 Inch)';
+      alert('You can only add Cheese Burst for each pizza. Add more ' + sizeLabel + ' pizzas first.');
       return;
     }
   }
@@ -417,16 +428,22 @@ function updateQty(id, delta) {
   refreshCard(id);
   refreshTextRow(id);
 
-  // If a pizza was removed, check if any cheese burst addons are now orphaned
-  ['ADDPIZ001','ADDPIZ002','ADDPIZ003','ADDPIZ004'].forEach(addonId => {
-    if (cart[addonId]) {
-      const item = ALL_ITEMS[addonId];
-      if (!hasMatchingPizzaSize(item.addon_size)) {
-        delete cart[addonId];
-        refreshCard(addonId);
-        refreshTextRow(addonId);
+  // After any cart change, enforce cheese burst quantity caps
+  ['pan','regular'].forEach(size => {
+    const pizzaCount = countPizzasBySize(size);
+    const addonIds = size === 'pan' ? ['ADDPIZ001','ADDPIZ003'] : ['ADDPIZ002','ADDPIZ004'];
+    let burstUsed = 0;
+    addonIds.forEach(addonId => {
+      if (!cart[addonId]) return;
+      const allowed = Math.max(0, pizzaCount - burstUsed);
+      if (cart[addonId].qty > allowed) {
+        cart[addonId].qty = allowed;
+        if (cart[addonId].qty <= 0) delete cart[addonId];
       }
-    }
+      burstUsed += cart[addonId] ? cart[addonId].qty : 0;
+      refreshCard(addonId);
+      refreshTextRow(addonId);
+    });
   });
 
   updateCartUI();
@@ -645,20 +662,6 @@ function buildMenu() {
   const main = document.getElementById('menuMain');
   nav.innerHTML = ''; main.innerHTML = '';
 
-  const popularItems = POPULAR_IDS.map(id => ALL_ITEMS[id]).filter(Boolean);
-  if (popularItems.length) {
-    const pill = document.createElement('button');
-    pill.className = 'cat-pill active';
-    pill.textContent = '⭐ Most Popular';
-    pill.onclick = () => { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); document.getElementById('sec-popular').scrollIntoView({behavior:'smooth',block:'start'}); };
-    nav.appendChild(pill);
-    const sec = document.createElement('div');
-    sec.className = 'cat-section'; sec.id = 'sec-popular';
-    sec.innerHTML = '<div class="cat-title">⭐ Most Popular</div>';
-    const grid = document.createElement('div'); grid.className = 'items-grid';
-    popularItems.forEach(item => grid.appendChild(makeCard(item)));
-    sec.appendChild(grid); main.appendChild(sec);
-  }
 
   Object.entries(MENU).forEach(([cat, items], i) => {
     const pill = document.createElement('button');
@@ -706,18 +709,6 @@ function buildTextMenu() {
   const textCatNav = document.getElementById('textCatNav');
   textMenu.innerHTML = ''; textCatNav.innerHTML = '';
 
-  const popularItems = POPULAR_IDS.map(id => ALL_ITEMS[id]).filter(Boolean);
-  if (popularItems.length) {
-    const pill = document.createElement('button');
-    pill.className = 'cat-pill'; pill.textContent = '⭐ Popular';
-    pill.onclick = () => { document.querySelectorAll('#textCatNav .cat-pill').forEach(p=>p.classList.remove('active')); pill.classList.add('active'); document.getElementById('tsec-popular').scrollIntoView({behavior:'smooth',block:'start'}); };
-    textCatNav.appendChild(pill);
-    const sec = document.createElement('div');
-    sec.className = 'text-cat-section'; sec.id = 'tsec-popular';
-    sec.innerHTML = '<div class="text-cat-title">⭐ Most Popular</div>';
-    popularItems.forEach(item => sec.appendChild(makeTextRow(item)));
-    textMenu.appendChild(sec);
-  }
 
   Object.entries(MENU).forEach(([cat, items], i) => {
     const pill = document.createElement('button');
