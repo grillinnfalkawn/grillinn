@@ -194,6 +194,35 @@ def confirm_order_db(order_id, delivery_charge, grand_total, status):
     conn.close()
 
 
+def search_orders(query, limit=100, date_str=None):
+    """Search orders by order number or phone number, newest first.
+    If date_str is given, results are restricted to that single date
+    (used for e.g. 'find today's order from this phone number');
+    otherwise it searches across all dates."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    like_query = "%" + query.strip() + "%"
+    if date_str:
+        c.execute("""
+            SELECT * FROM orders
+            WHERE (order_number LIKE ? OR customer_phone LIKE ?)
+              AND date(created_at) = date(?)
+            ORDER BY id DESC
+            LIMIT ?
+        """, (like_query, like_query, date_str, limit))
+    else:
+        c.execute("""
+            SELECT * FROM orders
+            WHERE order_number LIKE ? OR customer_phone LIKE ?
+            ORDER BY id DESC
+            LIMIT ?
+        """, (like_query, like_query, limit))
+    rows = [dict(r) for r in c.fetchall()]
+    conn.close()
+    return rows
+
+
 def get_recent_orders(limit=50):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -535,6 +564,16 @@ def api_recent_orders():
     return Response(json.dumps(orders), status=200, mimetype="application/json")
 
 
+@app.route("/api/search-orders")
+def api_search_orders():
+    query = request.args.get("q", "").strip()
+    date_param = request.args.get("date", "").strip() or None
+    if not query:
+        return Response(json.dumps([]), status=200, mimetype="application/json")
+    orders = search_orders(query, date_str=date_param)
+    return Response(json.dumps(orders), status=200, mimetype="application/json")
+
+
 @app.route("/api/confirm-order/<int:order_id>", methods=["POST"])
 def api_confirm_order(order_id):
     order = get_order_by_id(order_id)
@@ -692,6 +731,12 @@ DASHBOARD_HTML = """
   .dc-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.95rem;padding:0.6rem 0.75rem;outline:none;margin-bottom:0.5rem;font-family:'Inter',sans-serif;-moz-appearance:textfield;}
   .dc-input:focus{border-color:var(--orange);background:#262626;}
   .dc-input::-webkit-outer-spin-button,.dc-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .history-search-row{display:flex;gap:0.5rem;margin:0 0 0.8rem;}
+  .history-search-input{flex:1;background:var(--charcoal);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.9rem;padding:0.65rem 0.8rem;outline:none;font-family:'Inter',sans-serif;}
+  .history-search-input:focus{border-color:var(--orange);}
+  .history-search-clear{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.5rem 0.9rem;cursor:pointer;font-size:0.85rem;white-space:nowrap;}
+  .history-search-scope{display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;color:var(--muted);margin:-0.4rem 0 0.8rem;cursor:pointer;}
+  .history-search-scope input{cursor:pointer;}
   .btn-reject{background:var(--panel);border:1px solid var(--red);border-radius:8px;color:var(--red);font-weight:700;padding:0.7rem 1rem;cursor:pointer;font-size:0.9rem;}
   .btn-reprint{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.5rem 0.9rem;cursor:pointer;font-size:0.8rem;}
   .status-tag{font-size:0.7rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:10px;}
@@ -763,6 +808,8 @@ let currentTab = 'pending';
 let knownPendingIds = new Set();
 let isFirstLoad = true;
 let historyDate = null;
+let historySearchQuery = '';
+let historySearchAllDates = false;
 
 function login() {
   const pw = document.getElementById('pwInput').value;
@@ -806,15 +853,22 @@ function playNotifySound() {
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.3, ctx.currentTime + start);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+      osc.type = 'square'; // harsher/more alarming than sine
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime + start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
       osc.start(ctx.currentTime + start);
-      osc.stop(ctx.currentTime + start + dur);
+      osc.stop(ctx.currentTime + start + dur + 0.02);
     };
-    playBeep(880, 0, 0.15);
-    playBeep(1100, 0.18, 0.15);
-    playBeep(880, 0.36, 0.25);
+    // Siren-style pattern, two-tone, repeated 3x — much louder and longer
+    // than a single soft chime so it's noticeable from across the kitchen.
+    const pattern = [
+      [880, 0.00, 0.22], [1320, 0.24, 0.22],
+      [880, 0.50, 0.22], [1320, 0.74, 0.22],
+      [880, 1.00, 0.22], [1320, 1.24, 0.30],
+    ];
+    pattern.forEach(([freq, start, dur]) => playBeep(freq, start, dur));
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
   } catch(e) { console.log('Sound failed', e); }
 }
 
@@ -863,77 +917,99 @@ function renderOrderCard(order, isPending) {
     '</div>';
 }
 
+// Detects new pending orders and sounds the alarm — runs on its own
+// interval regardless of which dashboard tab is currently open (this is
+// what used to be missing: previously the check only ran while viewing
+// the Pending tab, so switching to History silenced new-order alerts).
+// If the Pending tab happens to be open, it also renders the list.
+function checkForNewOrders(forceRender) {
+  fetch('/api/pending-orders').then(r => r.json()).then(orders => {
+    const currentIds = new Set(orders.map(o => o.id));
+
+    if (!isFirstLoad) {
+      const newOnes = [...currentIds].filter(id => !knownPendingIds.has(id));
+      if (newOnes.length > 0) playNotifySound();
+    }
+
+    const idsUnchanged = !isFirstLoad &&
+      currentIds.size === knownPendingIds.size &&
+      [...currentIds].every(id => knownPendingIds.has(id));
+
+    knownPendingIds = currentIds;
+    isFirstLoad = false;
+    document.getElementById('pendingCount').textContent = orders.length;
+
+    if (currentTab !== 'pending') return; // don't touch DOM unless it's visible
+
+    // Nothing added or removed since the last poll — skip rebuilding the
+    // DOM entirely. This is what used to cause the delivery-charge field
+    // to blink/lose focus/reset mid-type: rebuilding the list every 5s
+    // recreated the input element even when nothing about the order list
+    // had actually changed.
+    if (idsUnchanged && !forceRender) return;
+
+    // Preserve whatever the user is actively doing (typing a delivery
+    // charge) across the rebuild, since the order list itself DID change.
+    const active = document.activeElement;
+    let focusedId = null, focusedValue = null, focusedSelStart = null, focusedSelEnd = null;
+    if (active && active.id && active.id.startsWith('dc-')) {
+      focusedId = active.id;
+      focusedValue = active.value;
+      focusedSelStart = active.selectionStart;
+      focusedSelEnd = active.selectionEnd;
+    }
+    const pendingDcValues = {};
+    document.querySelectorAll('[id^="dc-"]').forEach(el => {
+      const id = el.id.slice(3);
+      if (el.value !== '' && el.value !== '0') pendingDcValues[id] = el.value;
+    });
+
+    const main = document.getElementById('mainContent');
+    if (orders.length === 0) {
+      main.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>No pending orders</div></div>';
+      return;
+    }
+    main.innerHTML = orders.map(o => renderOrderCard(o, true)).join('');
+
+    // Restore any in-progress delivery charge entries after the rebuild.
+    Object.keys(pendingDcValues).forEach(id => {
+      const el = document.getElementById('dc-' + id);
+      if (el) el.value = pendingDcValues[id];
+    });
+
+    // Restore focus + cursor position so an in-progress keystroke isn't lost.
+    if (focusedId) {
+      const el = document.getElementById(focusedId);
+      if (el) {
+        el.value = focusedValue;
+        el.focus();
+        try { el.setSelectionRange(focusedSelStart, focusedSelEnd); } catch (e) {}
+      }
+    }
+  }).catch(e => console.log('Load error', e));
+}
+
 function loadOrders() {
   if (currentTab === 'sales' || currentTab === 'settings') return;
 
   if (currentTab === 'pending') {
-    fetch('/api/pending-orders').then(r => r.json()).then(orders => {
-      const currentIds = new Set(orders.map(o => o.id));
-
-      if (!isFirstLoad) {
-        const newOnes = [...currentIds].filter(id => !knownPendingIds.has(id));
-        if (newOnes.length > 0) playNotifySound();
-      }
-
-      const idsUnchanged = !isFirstLoad &&
-        currentIds.size === knownPendingIds.size &&
-        [...currentIds].every(id => knownPendingIds.has(id));
-
-      knownPendingIds = currentIds;
-      isFirstLoad = false;
-      document.getElementById('pendingCount').textContent = orders.length;
-
-      // Nothing added or removed since the last poll — skip rebuilding the
-      // DOM entirely. This is what used to cause the delivery-charge field
-      // to blink/lose focus/reset mid-type: rebuilding the list every 5s
-      // recreated the input element even when nothing about the order list
-      // had actually changed.
-      if (idsUnchanged) return;
-
-      // Preserve whatever the user is actively doing (typing a delivery
-      // charge) across the rebuild, since the order list itself DID change.
-      const active = document.activeElement;
-      let focusedId = null, focusedValue = null, focusedSelStart = null, focusedSelEnd = null;
-      if (active && active.id && active.id.startsWith('dc-')) {
-        focusedId = active.id;
-        focusedValue = active.value;
-        focusedSelStart = active.selectionStart;
-        focusedSelEnd = active.selectionEnd;
-      }
-      const pendingDcValues = {};
-      document.querySelectorAll('[id^="dc-"]').forEach(el => {
-        const id = el.id.slice(3);
-        if (el.value !== '' && el.value !== '0') pendingDcValues[id] = el.value;
-      });
-
-      const main = document.getElementById('mainContent');
-      if (orders.length === 0) {
-        main.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>No pending orders</div></div>';
-        return;
-      }
-      main.innerHTML = orders.map(o => renderOrderCard(o, true)).join('');
-
-      // Restore any in-progress delivery charge entries after the rebuild.
-      Object.keys(pendingDcValues).forEach(id => {
-        const el = document.getElementById('dc-' + id);
-        if (el) el.value = pendingDcValues[id];
-      });
-
-      // Restore focus + cursor position so an in-progress keystroke isn't lost.
-      if (focusedId) {
-        const el = document.getElementById(focusedId);
-        if (el) {
-          el.value = focusedValue;
-          el.focus();
-          try { el.setSelectionRange(focusedSelStart, focusedSelEnd); } catch (e) {}
-        }
-      }
-    }).catch(e => console.log('Load error', e));
+    checkForNewOrders(true); // true = force a render even if list is unchanged (e.g. on tab switch)
     return;
   }
 
-  // history tab — browse a specific day's full order list
+  // history tab — browse a specific day's full order list, optionally
+  // filtered by a search on order number / phone number. The date filter
+  // (Today / date picker) and the search box now work together — e.g.
+  // search a phone number within Today's orders to check for a missed
+  // order — unless "All dates" is toggled on.
   const dateParam = historyDate || toDateStr(new Date());
+  if (historySearchQuery) {
+    const dateFilter = historySearchAllDates ? '' : '&date=' + dateParam;
+    fetch('/api/search-orders?q=' + encodeURIComponent(historySearchQuery) + dateFilter).then(r => r.json()).then(orders => {
+      renderHistoryList(orders, dateParam);
+    }).catch(e => console.log('Search error', e));
+    return;
+  }
   fetch('/api/recent-orders?date=' + dateParam).then(r => r.json()).then(orders => {
     renderHistoryList(orders, dateParam);
   }).catch(e => console.log('Load error', e));
@@ -942,18 +1018,59 @@ function loadOrders() {
 function renderHistoryList(orders, dateParam) {
   const main = document.getElementById('mainContent');
   const isToday = dateParam === toDateStr(new Date());
+  const isSearching = !!historySearchQuery;
 
   const filtersHtml =
     '<div class="sales-filters">' +
       '<button class="sales-quick-btn ' + (isToday ? 'active' : '') + '" onclick="setHistoryDate(null)">Today</button>' +
       '<input type="date" id="historyDateInput" value="' + dateParam + '" onchange="setHistoryDate(this.value)">' +
-    '</div>';
+    '</div>' +
+    '<div class="history-search-row">' +
+      '<input type="text" id="historySearchInput" class="history-search-input" placeholder="🔍 Search by order # or phone number..." value="' + historySearchQuery.replace(/"/g,'&quot;') + '" oninput="onHistorySearchInput(this.value)">' +
+      (isSearching ? '<button class="history-search-clear" onclick="clearHistorySearch()">✕</button>' : '') +
+    '</div>' +
+    (isSearching ?
+      '<label class="history-search-scope"><input type="checkbox" ' + (historySearchAllDates ? 'checked' : '') + ' onchange="toggleSearchScope(this.checked)"> Search all dates (currently: ' + (historySearchAllDates ? 'all dates' : (isToday ? 'today only' : dateParam + ' only')) + ')</label>'
+      : '');
 
   if (orders.length === 0) {
-    main.innerHTML = filtersHtml + '<div class="empty-state"><div class="empty-icon">📋</div><div>No orders on this date</div></div>';
-    return;
+    const scopeMsg = isSearching ? (historySearchAllDates ? '' : ' on ' + (isToday ? "today's orders" : dateParam)) : '';
+    const emptyMsg = isSearching ? 'No orders found matching "' + historySearchQuery + '"' + scopeMsg : 'No orders on this date';
+    main.innerHTML = filtersHtml + '<div class="empty-state"><div class="empty-icon">📋</div><div>' + emptyMsg + '</div></div>';
+  } else {
+    main.innerHTML = filtersHtml + orders.map(o => renderOrderCard(o, false)).join('');
   }
-  main.innerHTML = filtersHtml + orders.map(o => renderOrderCard(o, false)).join('');
+
+  // Re-focus the search box after rebuild so typing isn't interrupted,
+  // same fix as applied to the pending-orders delivery-charge field.
+  if (isSearching) {
+    const input = document.getElementById('historySearchInput');
+    if (input) {
+      input.focus();
+      const len = input.value.length;
+      input.setSelectionRange(len, len);
+    }
+  }
+}
+
+let historySearchDebounce = null;
+function onHistorySearchInput(value) {
+  clearTimeout(historySearchDebounce);
+  historySearchDebounce = setTimeout(() => {
+    historySearchQuery = value.trim();
+    loadOrders();
+  }, 400);
+}
+
+function toggleSearchScope(checked) {
+  historySearchAllDates = checked;
+  loadOrders();
+}
+
+function clearHistorySearch() {
+  historySearchQuery = '';
+  historySearchAllDates = false;
+  loadOrders();
 }
 
 function setHistoryDate(dateStr) {
@@ -1195,7 +1312,9 @@ function saveAllSettings() {
 
 function startPolling() {
   loadOrders();
-  setInterval(loadOrders, 5000);
+  checkForNewOrders(); // catch up immediately, don't wait for the first interval tick
+  setInterval(checkForNewOrders, 5000); // always runs, regardless of active tab — this is the alarm
+  setInterval(() => { if (currentTab !== 'pending') loadOrders(); }, 5000); // keeps history/search results fresh while viewing them
 }
 
 if (sessionStorage.getItem('gi_dash_auth') === '1') {

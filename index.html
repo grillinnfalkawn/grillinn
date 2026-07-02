@@ -200,8 +200,67 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 <script>
 const SERVER_URL = 'https://orders.grillinnfalkawn.in';
 
-const REGULAR_PIZZA_IDS = new Set(['PIZ002','PIZ004','PIZ006','PIZ008','PIZ010','PIZ012','PIZ014','PIZ016','PIZ018','PIZ020','PIZ022','PIZ024','PIZ026','PIZ028','PIZ030','PIZ032','PIZ034','PIZ036','PIZ038','PIZ040','PIZ042']);
-const PACKING_CHARGE = 15;
+// ── PACKAGING CHARGE LOGIC (Takeaway + Delivery only) ──────────────────
+// Step 2: per-item packaging cost by category.
+const LARGE_PIZZA_IDS = new Set(['PIZ002','PIZ004','PIZ006','PIZ008','PIZ010','PIZ012','PIZ014','PIZ016','PIZ018','PIZ020','PIZ022','PIZ024','PIZ026','PIZ028','PIZ030','PIZ032','PIZ034','PIZ036','PIZ038','PIZ040','PIZ042']); // 9" Regular Pizza — ₹10 each
+const SMALL_BOX_IDS = new Set([
+  // 6" Pan Pizza — ₹7 each
+  'PIZ001','PIZ003','PIZ005','PIZ007','PIZ009','PIZ011','PIZ013','PIZ015','PIZ017','PIZ019','PIZ021','PIZ023','PIZ025','PIZ027','PIZ029','PIZ031','PIZ033','PIZ035','PIZ037',
+  // Sandwiches — ₹7 each
+  'SAN001','SAN002','SAN003','SAN004','SAN005','SAN006',
+  // Garlic Breads — ₹7 each
+  'GRB001','GRB002','GRB003','GRB004',
+  // Footlongs — ₹7 each
+  'FTL001','FTL002','FTL003','FTL004','FTL005','FTL006','FTL007','FTL008','FTL009','FTL010','FTL011','FTL012','FTL013','FTL014'
+]);
+const WRAP_IDS = new Set(['WRP001','WRP002','WRP003','WRP004']); // ₹6 each
+const PASTA_IDS = new Set(['PAS001','PAS002','PAS003','PAS004','PAS005','PAS006','FRI007','FRI008','FRI009','FRI010']); // Pastas + Overloaded Fries (also use pasta boxes) — ₹10 each
+// Everything else (burgers, fried/grilled chicken, snacks, fries, drinks, desserts, add-ons, combos) = ₹0
+
+function itemPackagingCost(id) {
+  if (LARGE_PIZZA_IDS.has(id)) return 10;
+  if (SMALL_BOX_IDS.has(id)) return 7;
+  if (WRAP_IDS.has(id)) return 6;
+  if (PASTA_IDS.has(id)) return 10;
+  return 0;
+}
+
+// Step 6: convert actual packaging+bag cost into a clean customer-facing slab.
+function packagingSlab(actualCost) {
+  if (actualCost <= 15) return 0;
+  if (actualCost <= 30) return 10;
+  if (actualCost <= 45) return 15;
+  if (actualCost <= 60) return 20;
+  if (actualCost <= 80) return 25;
+  if (actualCost <= 100) return 30;
+  return 35; // maximum
+}
+
+function calcPackagingCharge(items, orderType) {
+  // Step 1: Dine In never gets a packaging charge.
+  if (orderType === 'Dine In') return 0;
+
+  // Step 3: base packaging cost across all items.
+  let base = 0;
+  let largePizzaCount = 0;
+  items.forEach(i => {
+    base += itemPackagingCost(i.id) * i.qty;
+    if (LARGE_PIZZA_IDS.has(i.id)) largePizzaCount += i.qty;
+  });
+
+  // Step 4: carry bag requirement.
+  let bags;
+  if (largePizzaCount > 0) {
+    bags = Math.ceil(largePizzaCount / 3); // Rule A
+  } else {
+    bags = base > 20 ? 1 : 0; // Rule B
+  }
+
+  // Step 5: actual cost, Step 6: slab conversion.
+  const actualCost = base + (bags * 9);
+  return packagingSlab(actualCost);
+}
+// ─────────────────────────────────────────────────────────────────────
 
 // Delivery charges confirmed manually at dashboard
 
@@ -515,9 +574,8 @@ function refreshCard(id) {
 function calcTotals() {
   const items = Object.values(cart);
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const hasRegularPizza = items.some(i => REGULAR_PIZZA_IDS.has(i.id));
   // Packing charge only for Takeaway and Delivery, not Dine In
-  const packingCharge = (hasRegularPizza && orderType !== 'Dine In') ? PACKING_CHARGE : 0;
+  const packingCharge = calcPackagingCharge(items, orderType);
   const count = items.reduce((s, i) => s + i.qty, 0);
   return { subtotal, packingCharge, count };
 }
@@ -561,7 +619,7 @@ function renderDrawer() {
   ? '<div class="summary-row total"><span>Total</span><span>₹'+total+' + Delivery Charges</span></div>'
   : '<div class="summary-row total"><span>Total</span><span>₹'+total+'</span></div>';
 
-html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges (Regular Pizza)</span><span>₹'+packingCharge+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
+html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges</span><span>₹'+packingCharge+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
 
   html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns"><button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button><button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div><div id="checkoutForm"></div></div>';
 
