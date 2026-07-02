@@ -20,14 +20,8 @@ SETTINGS_PATH = "settings.json"
 
 # Email receipts — sent only after you confirm an order on the dashboard,
 # since that's when the delivery charge and final total are known.
-# Uses Gmail SMTP, which is free. To set this up:
-#   1. Use a Gmail account (create a dedicated one for the restaurant if you like).
-#   2. Turn on 2-Step Verification on that Google account.
-#   3. Create an "App Password" at https://myaccount.google.com/apppasswords
-#      (NOT your normal Gmail password — a 16-character app-specific one).
-#   4. Paste that below. Leave SMTP_EMAIL blank to disable email receipts entirely.
-SMTP_EMAIL = ""            # e.g. "grillinnfalkawn@gmail.com"
-SMTP_APP_PASSWORD = ""     # 16-character Gmail App Password
+SMTP_EMAIL = "grillinnfalkawn@gmail.com"            
+SMTP_APP_PASSWORD = "kdwuqovftuugztkk"     # 16-character Gmail App Password
 RESTAURANT_NAME = "Grill Inn, Falkawn"
 RESTAURANT_PHONE = "9612992023"
 # ────────────────────────────────────────────────────────
@@ -1528,4 +1522,4 @@ if __name__ == "__main__":
     print("  Grill Inn — Order Server")
     print("  Dashboard: http://localhost:5000/dashboard")
     print("=" * 50)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
