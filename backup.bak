@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grill Inn Falkawn | Order Online - Burgers, Pizza, Wraps & More</title>
+<meta name="description" content="Order online from Grill Inn, Falkawn. Fresh burgers, pizzas, wraps, footlongs & more. Delivery, Takeaway & Dine In available. Call 9612992023.">
+<meta name="keywords" content="Grill Inn Falkawn, food delivery Falkawn, Mizoram restaurant, online food order Falkawn, burgers pizza Falkawn">
+<meta property="og:title" content="Grill Inn Falkawn - Order Online">
+<meta property="og:description" content="Fresh burgers, pizzas, wraps & more. Order online for Delivery, Takeaway or Dine In.">
+<meta property="og:type" content="website">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://grillinnfalkawn.github.io/grillinn/">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+:root{--black:#0f0f0f;--charcoal:#1a1a1a;--panel:#222;--border:#2e2e2e;--orange:#f97316;--red:#dc2626;--flame:#ea580c;--white:#f5f5f5;--muted:#888;--card-bg:#1e1e1e;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--black);color:var(--white);font-family:'Inter',sans-serif;min-height:100vh;}
+header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0 1rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.view-toggle{display:flex;gap:0.4rem;align-items:center;}
+.vtoggle-btn{background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.3rem 0.6rem;transition:all 0.2s;white-space:nowrap;}
+.vtoggle-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
+.cart-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:8px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:700;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.4rem;}
+.cart-count{background:white;color:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;}
+.hero{background:linear-gradient(135deg,#1a0a00,#2d0f00 50%,#1a0000);padding:2rem 1rem;text-align:center;border-bottom:1px solid var(--border);}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,8vw,4rem);letter-spacing:3px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.hero p{color:var(--muted);font-size:0.85rem;margin-top:0.4rem;}
+.hero p span{color:var(--orange);font-weight:600;}
+.status-banner{padding:0.5rem 1rem;text-align:center;font-size:0.8rem;font-weight:600;}
+.announcement-banner{padding:0.65rem 1rem;text-align:center;font-size:0.85rem;font-weight:700;background:linear-gradient(135deg,#f97316,#dc2626);color:white;letter-spacing:0.2px;}
+.status-open{background:rgba(34,197,94,0.15);color:#4ade80;border-bottom:1px solid rgba(34,197,94,0.2);}
+.status-closed{background:rgba(220,38,38,0.15);color:#f87171;border-bottom:1px solid rgba(220,38,38,0.2);}
+.disclaimer-banner{background:rgba(249,115,22,0.08);border-bottom:1px solid rgba(249,115,22,0.15);padding:0.4rem 1rem;text-align:center;font-size:0.68rem;color:var(--muted);line-height:1.4;}
+.search-wrap{padding:0.75rem 1rem;background:var(--charcoal);border-bottom:1px solid var(--border);position:sticky;top:60px;z-index:95;position:relative;}
+.search-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.9rem;padding:0.6rem 0.8rem 0.6rem 2.4rem;outline:none;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--orange);}
+.search-icon{position:absolute;left:1.8rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none;}
+.cat-nav{overflow-x:auto;background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.6rem 1rem;display:flex;gap:0.5rem;scrollbar-width:none;position:sticky;top:112px;z-index:90;}
+.cat-nav::-webkit-scrollbar{display:none;}
+.cat-pill{background:var(--panel);border:1px solid var(--border);border-radius:20px;color:var(--muted);cursor:pointer;font-size:0.75rem;font-weight:600;padding:0.3rem 0.8rem;white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
+.cat-pill:hover,.cat-pill.active{background:var(--flame);border-color:var(--flame);color:white;}
+.main{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 6rem;}
+.main.hidden{display:none;}
+.cat-section{margin-bottom:2rem;}
+.cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;}
+.veg-badge{font-size:0.65rem;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
+.nonveg-badge{font-size:0.65rem;background:rgba(220,38,38,0.15);color:#f87171;border:1px solid rgba(220,38,38,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.6rem;}
+.item-card{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color 0.2s,transform 0.15s;display:flex;flex-direction:column;}
+.item-card:hover{border-color:var(--flame);transform:translateY(-2px);}
+.item-img{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#2a1500,#1a0a0a);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;}
+.item-img img{width:100%;height:100%;object-fit:cover;}
+.item-body{padding:0.55rem 0.65rem;flex:1;display:flex;flex-direction:column;gap:0.25rem;}
+.item-name-row{display:flex;align-items:flex-start;gap:0.3rem;}
+.veg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:2px;}
+.veg-dot.veg{background:#4ade80;box-shadow:0 0 4px rgba(74,222,128,0.5);}
+.veg-dot.nonveg{background:#f87171;box-shadow:0 0 4px rgba(248,113,113,0.5);}
+.item-name{font-size:0.78rem;font-weight:600;color:var(--white);line-height:1.3;}
+.item-desc{font-size:0.68rem;color:var(--muted);}
+.item-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:0.35rem;}
+.item-price{font-size:0.82rem;font-weight:700;color:var(--orange);}
+.add-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:6px;color:white;cursor:pointer;font-size:1rem;font-weight:700;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qty-ctrl{display:flex;align-items:center;gap:0.25rem;}
+.qty-ctrl button{background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--white);cursor:pointer;font-size:0.8rem;font-weight:700;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.qty-ctrl button:hover{border-color:var(--orange);color:var(--orange);}
+.qty-num{font-size:0.82rem;font-weight:700;min-width:14px;text-align:center;color:var(--orange);}
+.note-input{margin-top:0.3rem;width:100%;background:var(--panel);border:1px solid var(--border);border-radius:5px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.7rem;padding:0.3rem 0.5rem;outline:none;resize:none;}
+.note-input:focus{border-color:var(--orange);}
+.text-cat-nav{overflow-x:auto;background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.5rem 1rem;display:flex;gap:0.4rem;scrollbar-width:none;position:sticky;top:112px;z-index:90;}
+.text-cat-nav::-webkit-scrollbar{display:none;}
+.text-cat-nav.hidden{display:none;}
+.text-menu{display:none;max-width:700px;margin:0 auto;padding:1rem 1rem 6rem;}
+.text-menu.visible{display:block;}
+.text-cat-section{margin-bottom:1.5rem;}
+.text-cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;}
+.text-item{display:flex;align-items:center;padding:0.45rem 0.5rem;border-bottom:1px solid rgba(46,46,46,0.6);gap:0.5rem;border-radius:4px;}
+.text-item:hover{background:var(--panel);}
+.text-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.text-dot.veg{background:#4ade80;}
+.text-dot.nonveg{background:#f87171;}
+.text-item-name{flex:1;font-size:0.85rem;font-weight:500;color:var(--white);line-height:1.3;}
+.text-item-price{font-size:0.85rem;font-weight:700;color:var(--orange);min-width:45px;text-align:right;margin-right:0.5rem;}
+.text-add-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:5px;color:white;cursor:pointer;font-size:0.9rem;font-weight:700;width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.text-qty-ctrl{display:flex;align-items:center;gap:0.2rem;}
+.text-qty-ctrl button{background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--white);cursor:pointer;font-size:0.75rem;font-weight:700;width:20px;height:20px;display:flex;align-items:center;justify-content:center;}
+.text-qty-num{font-size:0.8rem;font-weight:700;min-width:14px;text-align:center;color:var(--orange);}
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--orange),var(--red));padding:0.85rem 1.5rem;display:none;align-items:center;justify-content:space-between;cursor:pointer;z-index:200;box-shadow:0 -4px 20px rgba(249,115,22,0.3);}
+.cart-bar.visible{display:flex;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;}
+.overlay.open{display:block;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);border-top:2px solid var(--flame);border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto;z-index:400;transform:translateY(100%);transition:transform 0.3s ease;padding:1.5rem 1rem 2rem;}
+.drawer.open{transform:translateY(0);}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.drawer-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--orange);}
+.close-btn{background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--white);cursor:pointer;font-size:1.1rem;width:30px;height:30px;display:flex;align-items:center;justify-content:center;}
+.cart-item{display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);gap:0.5rem;}
+.cart-item-name{font-size:0.82rem;font-weight:600;flex:1;line-height:1.3;}
+.cart-item-note{font-size:0.68rem;color:var(--muted);margin-top:0.15rem;}
+.cart-item-price{font-size:0.82rem;color:var(--orange);font-weight:700;min-width:55px;text-align:right;}
+.cart-summary{padding:0.75rem 0 0.25rem;}
+.summary-row{display:flex;justify-content:space-between;font-size:0.85rem;padding:0.2rem 0;color:var(--muted);}
+.summary-row.total{color:var(--white);font-weight:700;font-size:1rem;border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.25rem;}
+.summary-row span:last-child{color:var(--orange);}
+.checkout-section{margin-top:0.75rem;}
+.checkout-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px;color:var(--orange);margin-bottom:0.6rem;}
+.order-type-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin-bottom:0.75rem;}
+.otype-btn{background:var(--panel);border:2px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:0.73rem;font-weight:700;padding:0.5rem 0.2rem;text-align:center;transition:all 0.2s;}
+.otype-btn:hover{border-color:var(--flame);color:var(--white);}
+.otype-btn.selected{background:var(--flame);border-color:var(--flame);color:white;}
+.otype-icon{font-size:1.1rem;display:block;margin-bottom:0.15rem;}
+.form-group{margin-bottom:0.7rem;}
+.form-group label{display:block;font-size:0.73rem;font-weight:600;color:var(--muted);margin-bottom:0.25rem;text-transform:uppercase;letter-spacing:0.5px;}
+.form-group input,.form-group select,.form-group textarea{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.88rem;padding:0.6rem 0.75rem;width:100%;outline:none;transition:border-color 0.2s;}
+.form-group select option{background:var(--panel);}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange);}
+.note-box{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:8px;color:var(--orange);font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;}
+.closed-box{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#f87171;font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;text-align:center;}
+.autofill-note{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:#4ade80;font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;}
+.autofill-note a{color:#4ade80;text-decoration:underline;}
+.place-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700;padding:0.85rem;width:100%;margin-top:0.5rem;letter-spacing:0.5px;}
+.place-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.empty-cart{text-align:center;padding:2rem 0;color:var(--muted);}
+.empty-cart-icon{font-size:2.5rem;margin-bottom:0.5rem;}
+.success-screen{display:none;position:fixed;inset:0;background:var(--black);z-index:999;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;}
+.success-screen.show{display:flex;}
+.success-icon{font-size:3.5rem;margin-bottom:0.75rem;}
+.success-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.4rem;}
+.success-sub{color:var(--muted);font-size:0.85rem;margin-bottom:0.25rem;}
+.success-order{color:var(--orange);font-weight:700;font-size:1rem;margin-bottom:1.5rem;}
+.new-order-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700;padding:0.75rem 2rem;margin-top:1rem;}
+.wa-float{position:fixed;bottom:80px;right:1rem;background:#25d366;border-radius:50%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,0.4);z-index:150;transition:transform 0.2s;}
+.wa-float:hover{transform:scale(1.1);}
+.spinner{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.no-results{text-align:center;padding:3rem 1rem;color:var(--muted);}
+.no-results-icon{font-size:2.5rem;margin-bottom:0.5rem;}
+@media(min-width:600px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));}.drawer{max-width:480px;left:50%;transform:translateX(-50%) translateY(100%);right:auto;width:100%;}.drawer.open{transform:translateX(-50%) translateY(0);}.cart-bar{max-width:480px;left:50%;transform:translateX(-50%);right:auto;border-radius:12px 12px 0 0;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Grill Inn Falkawn</div>
+  <div style="display:flex;align-items:center;gap:0.5rem;">
+    <div class="view-toggle">
+      <button class="vtoggle-btn active" id="gridViewBtn" onclick="setView('grid')" title="Grid View">⊞ Grid</button>
+      <button class="vtoggle-btn" id="textViewBtn" onclick="setView('text')" title="Text View">☰ List</button>
+    </div>
+    <button class="cart-btn" onclick="openCart()">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
+  </div>
+</header>
+
+<div id="announcementBanner" class="announcement-banner" style="display:none;"></div>
+<div id="statusBanner" class="status-banner"></div>
+<div class="disclaimer-banner">Inclusive of taxes 5% GST. Pictures are for representation only and may differ from actual product.</div>
+
+<div class="hero">
+  <h1>Order Online</h1>
+  <p>Falkawn &nbsp;|&nbsp; <span>9612992023</span> &nbsp;|&nbsp; Fresh & Hot 🔥</p>
+</div>
+
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" id="searchInput" type="text" placeholder="Search menu items..." oninput="handleSearch(this.value)">
+</div>
+
+<div class="cat-nav" id="catNav"></div>
+<div class="main" id="menuMain"></div>
+
+<div class="text-cat-nav hidden" id="textCatNav"></div>
+<div class="text-menu" id="textMenu"></div>
+
+<div class="cart-bar" id="cartBar" onclick="openCart()">
+  <div style="font-size:0.85rem;font-weight:600;" id="cartBarLeft">0 items</div>
+  <div style="font-size:0.9rem;font-weight:700;" id="cartBarRight">View Cart →</div>
+</div>
+
+<a href="https://wa.me/919612992023" target="_blank" class="wa-float" title="Chat on WhatsApp">💬</a>
+
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Your Cart</div>
+    <button class="close-btn" onclick="closeCart()">✕</button>
+  </div>
+  <div id="cartContent"></div>
+</div>
+
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">✅</div>
+  <div class="success-title">Order Placed!</div>
+  <div class="success-sub">Thank you for ordering from</div>
+  <div class="success-sub" style="color:var(--white);font-weight:700;font-size:1rem;">Grill Inn, Falkawn</div>
+  <div class="success-order" id="successOrder"></div>
+  <div class="success-sub">Your order has been received!</div>
+  <div class="success-sub" style="margin-top:0.5rem;">Payment: <span style="color:var(--orange);font-weight:700;">Payment on Delivery via Cash/UPI</span></div>
+  <div class="success-sub" style="margin-top:0.5rem;">Questions? Call <span style="color:var(--orange);font-weight:700;">9612992023</span></div>
+  <button class="new-order-btn" onclick="resetOrder()">Place Another Order</button>
+</div>
+
+<div class="success-screen" id="orderFailedScreen">
+  <div class="success-icon">⚠️</div>
+  <div class="success-title" style="background:linear-gradient(135deg,#f97316,#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Order Not Sent Yet</div>
+  <div class="success-sub">We couldn't reach the restaurant's ordering system.</div>
+  <div class="success-sub" style="color:var(--white);font-weight:700;">Your order details are saved on this device — nothing is lost.</div>
+  <div class="of-order-num" style="color:var(--orange);font-weight:700;font-size:1rem;margin:1rem 0 0.4rem;"></div>
+  <div class="of-items" style="color:var(--muted);font-size:0.82rem;max-width:320px;margin-bottom:0.4rem;"></div>
+  <div class="success-sub">Total: <span class="of-total" style="color:var(--white);font-weight:700;"></span></div>
+  <a class="of-call-link new-order-btn" href="tel:9612992023" style="text-decoration:none;display:inline-block;margin-top:1.2rem;">📞 Call Us to Place This Order</a>
+  <button class="new-order-btn" id="ofRetryBtn" style="background:var(--panel,#262626);" onclick="retryUnsentOrder()">Try Again</button>
+</div>
+
+<script>
+
+const SERVER_URL = 'https://orders.grillinnfalkawn.in';
+const RESTAURANT_PHONE = '9612992023';
+
+// ── PACKAGING CHARGE LOGIC (Takeaway + Delivery only) ──────────────────
+// Step 2: per-item packaging cost by category.
+const LARGE_PIZZA_IDS = new Set(['PIZ002','PIZ004','PIZ006','PIZ008','PIZ010','PIZ012','PIZ014','PIZ016','PIZ018','PIZ020','PIZ022','PIZ024','PIZ026','PIZ028','PIZ030','PIZ032','PIZ034','PIZ036','PIZ038','PIZ040','PIZ042']); // 9" Regular Pizza — ₹10 each
+const SMALL_BOX_IDS = new Set([
+  // 6" Pan Pizza — ₹7 each
+  'PIZ001','PIZ003','PIZ005','PIZ007','PIZ009','PIZ011','PIZ013','PIZ015','PIZ017','PIZ019','PIZ021','PIZ023','PIZ025','PIZ027','PIZ029','PIZ031','PIZ033','PIZ035','PIZ037',
+  // Sandwiches — ₹7 each
+  'SAN001','SAN002','SAN003','SAN004','SAN005','SAN006',
+  // Garlic Breads — ₹7 each
+  'GRB001','GRB002','GRB003','GRB004',
+  // Footlongs — ₹7 each
+  'FTL001','FTL002','FTL003','FTL004','FTL005','FTL006','FTL007','FTL008','FTL009','FTL010','FTL011','FTL012','FTL013','FTL014'
+]);
+const WRAP_IDS = new Set(['WRP001','WRP002','WRP003','WRP004']); // ₹6 each
+const PASTA_IDS = new Set(['PAS001','PAS002','PAS003','PAS004','PAS005','PAS006','FRI007','FRI008','FRI009','FRI010']); // Pastas + Overloaded Fries (also use pasta boxes) — ₹10 each
+// Everything else (burgers, fried/grilled chicken, snacks, fries, drinks, desserts, add-ons, combos) = ₹0
+
+function itemPackagingCost(id) {
+  if (LARGE_PIZZA_IDS.has(id)) return 10;
+  if (SMALL_BOX_IDS.has(id)) return 7;
+  if (WRAP_IDS.has(id)) return 6;
+  if (PASTA_IDS.has(id)) return 10;
+  return 0;
+}
+
+// Step 6: convert actual packaging+bag cost into a clean customer-facing slab.
+function packagingSlab(actualCost) {
+  if (actualCost <= 15) return 0;
+  if (actualCost <= 30) return 10;
+  if (actualCost <= 45) return 15;
+  if (actualCost <= 60) return 20;
+  if (actualCost <= 80) return 25;
+  if (actualCost <= 100) return 30;
+  return 35; // maximum
+}
+
+function calcPackagingCharge(items, orderType) {
+  // Step 1: Dine In never gets a packaging charge.
+  if (orderType === 'Dine In') return 0;
+
+  // Step 3: base packaging cost across all items.
+  let base = 0;
+  let largePizzaCount = 0;
+  items.forEach(i => {
+    base += itemPackagingCost(i.id) * i.qty;
+    if (LARGE_PIZZA_IDS.has(i.id)) largePizzaCount += i.qty;
+  });
+
+  // Step 4: carry bag requirement.
+  let bags;
+  if (largePizzaCount > 0) {
+    bags = Math.ceil(largePizzaCount / 3); // Rule A
+  } else {
+    bags = base > 20 ? 1 : 0; // Rule B
+  }
+
+  // Step 5: actual cost, Step 6: slab conversion.
+  const actualCost = base + (bags * 9);
+  return packagingSlab(actualCost);
+}
+// ─────────────────────────────────────────────────────────────────────
+
+// Delivery charges confirmed manually at dashboard
+
+const HOURS = { open: [11,11,11,11,11,11,null], close: [21.5,21.5,21.5,21.5,21.5,16,null] };
+
+// Special date overrides — now fetched from the backend (/api/settings) so
+// they can be toggled from the dashboard without editing this file.
+// Falls back to an empty object until the fetch completes, and stays empty
+// if the fetch fails, so normal weekly HOURS logic below still applies.
+let SPECIAL_DATES = {};
+
+function getDateKey(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return y + '-' + m + '-' + day;
+}
+
+const MENU = {"Veg Burgers": [{"id": "BUR001", "title": "Aloo Tikki Burger", "description": "Veg Burger", "price": 52}, {"id": "BUR002", "title": "Veg Surprise Burger", "description": "Veg Burger", "price": 94}, {"id": "BUR003", "title": "Chilli Lava Burger", "description": "Veg Burger", "price": 105}, {"id": "BUR004", "title": "Crunchy Corn Burger", "description": "Veg Burger", "price": 105}, {"id": "BUR005", "title": "Crispy Paneer Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR006", "title": "Paneer Tikka Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR007", "title": "Peri Peri Paneer Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR008", "title": "Maha Veggie Burger", "description": "Veg Burger", "price": 135}, {"id": "ADD003", "title": "Extra Cheese (Burger)", "description": "Add-on", "price": 27}], "Non Veg Burgers": [{"id": "BUR009", "title": "Fried Chicken Burger", "description": "Chicken Burger", "price": 105}, {"id": "BUR010", "title": "Chicken Surprise Burger", "description": "Chicken Burger", "price": 115}, {"id": "BUR011", "title": "Chicken Chilli Lava Burger", "description": "Chicken Burger", "price": 136}, {"id": "BUR012", "title": "Tandoori Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR013", "title": "Peri Peri Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR014", "title": "Premium Fried Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR015", "title": "Maha Chicken Burger", "description": "Chicken Burger", "price": 157}, {"id": "ADD004", "title": "Extra Cheese (Burger)", "description": "Add-on", "price": 27}], "Wraps": [{"id": "WRP001", "title": "Crispy Paneer Wrap", "description": "Veg Wrap", "price": 136}, {"id": "WRP002", "title": "Tandoori Paneer Tikka Wrap", "description": "Veg Wrap", "price": 136}, {"id": "WRP003", "title": "Crispy Chicken Wrap", "description": "Chicken Wrap", "price": 146}, {"id": "WRP004", "title": "Tandoori Chicken Tikka Wrap", "description": "Chicken Wrap", "price": 146}], "Fried Chicken": [{"id": "FCH001", "title": "Fried Chicken (2 Pieces)", "description": "Fried Chicken", "price": 188}, {"id": "FCH002", "title": "Fried Chicken (4 Pieces)", "description": "Fried Chicken", "price": 356}, {"id": "FCH003", "title": "Fried Chicken (6 Pieces)", "description": "Fried Chicken", "price": 535}, {"id": "FCH004", "title": "Fried Chicken (9 Pieces)", "description": "Fried Chicken", "price": 745}], "Grilled Chicken": [{"id": "GRC001", "title": "Tandoori Grilled Chicken - Half (4 Pieces)", "description": "Grilled Chicken", "price": 349}, {"id": "GRC002", "title": "Tandoori Grilled Chicken - Full (8 Pieces)", "description": "Grilled Chicken", "price": 649}], "Veg Footlongs": [{"id": "FTL001", "title": "Veggie Delight Footlong", "description": "Veg Footlong", "price": 125}, {"id": "FTL002", "title": "Paneer Tikka Footlong", "description": "Veg Footlong", "price": 146}, {"id": "FTL003", "title": "Spicy Paneer Footlong", "description": "Veg Footlong", "price": 146}, {"id": "FTL004", "title": "Deluxe Veggie Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL005", "title": "Peri Peri Paneer Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL006", "title": "Veg Extravaganza Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL007", "title": "Veg Cheese Burst Footlong", "description": "Veg Footlong", "price": 167}], "Non Veg Footlongs": [{"id": "FTL008", "title": "Simply Chicken Footlong", "description": "Chicken Footlong", "price": 146}, {"id": "FTL009", "title": "Chicken Tikka Footlong", "description": "Chicken Footlong", "price": 157}, {"id": "FTL010", "title": "Spicy Chicken Footlong", "description": "Chicken Footlong", "price": 157}, {"id": "FTL011", "title": "Deluxe Chicken Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL012", "title": "Peri Peri Chicken Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL013", "title": "Chicken Extravaganza Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL014", "title": "Chicken Cheese Burst Footlong", "description": "Chicken Footlong", "price": 177}], "Veg Sandwiches": [{"id": "SAN001", "title": "Veg Grilled Sandwich", "description": "Veg Sandwich", "price": 105}, {"id": "SAN002", "title": "Tandoori Paneer Tikka Sandwich", "description": "Veg Sandwich", "price": 125}, {"id": "SAN003", "title": "Italian Veg Sandwich", "description": "Veg Sandwich", "price": 136}], "Non Veg Sandwiches": [{"id": "SAN004", "title": "Chicken Grilled Sandwich", "description": "Chicken Sandwich", "price": 136}, {"id": "SAN005", "title": "Tandoori Chicken Tikka Sandwich", "description": "Chicken Sandwich", "price": 136}, {"id": "SAN006", "title": "Italian Chicken Sandwich", "description": "Chicken Sandwich", "price": 146}], "Veg Pizza": [{"id": "PIZ001", "title": "Margherita Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 95}, {"id": "PIZ002", "title": "Margherita Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ003", "title": "Veggie Delight Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 115}, {"id": "PIZ004", "title": "Veggie Delight Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 199}, {"id": "PIZ005", "title": "Tandoori Paneer Tikka Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ006", "title": "Tandoori Paneer Tikka Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ007", "title": "Teekha Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ008", "title": "Teekha Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ009", "title": "Indi Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ010", "title": "Indi Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ011", "title": "Peri Peri Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ012", "title": "Peri Peri Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ013", "title": "Deluxe Veggie Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 157}, {"id": "PIZ014", "title": "Deluxe Veggie Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 262}, {"id": "PIZ015", "title": "Mushroom Delight Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 157}, {"id": "PIZ016", "title": "Mushroom Delight Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 262}, {"id": "PIZ017", "title": "Veg Extravaganza Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 178}, {"id": "PIZ018", "title": "Veg Extravaganza Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 292}, {"id": "PIZ019", "title": "Veg Overloaded Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 199}, {"id": "PIZ020", "title": "Veg Overloaded Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 314}, {"id": "ADDPIZ001", "title": "Cheese Burst Add-on - Pan (6 Inch)", "description": "Add-on for Pan Pizza only", "price": 89, "is_addon": true, "addon_size": "pan"}, {"id": "ADDPIZ002", "title": "Cheese Burst Add-on - Regular (9 Inch)", "description": "Add-on for Regular Pizza only", "price": 109, "is_addon": true, "addon_size": "regular"}], "Non Veg Pizza": [{"id": "PIZ021", "title": "Chicken Delight Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 136}, {"id": "PIZ022", "title": "Chicken Delight Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 229}, {"id": "PIZ023", "title": "Tandoori Chicken Tikka Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ024", "title": "Tandoori Chicken Tikka Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ025", "title": "Teekha Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ026", "title": "Teekha Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ027", "title": "Indi Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ028", "title": "Indi Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ029", "title": "Peri Peri Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ030", "title": "Peri Peri Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ031", "title": "Deluxe Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 167}, {"id": "PIZ032", "title": "Deluxe Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 282}, {"id": "PIZ033", "title": "Chicken Seekh Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 167}, {"id": "PIZ034", "title": "Chicken Seekh Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 282}, {"id": "PIZ035", "title": "Chicken Extravaganza Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 199}, {"id": "PIZ036", "title": "Chicken Extravaganza Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 335}, {"id": "PIZ037", "title": "Chicken Overloaded Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 219}, {"id": "PIZ038", "title": "Chicken Overloaded Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 345}, {"id": "ADDPIZ003", "title": "Cheese Burst Add-on - Pan (6 Inch)", "description": "Add-on for Pan Pizza only", "price": 89, "is_addon": true, "addon_size": "pan"}, {"id": "ADDPIZ004", "title": "Cheese Burst Add-on - Regular (9 Inch)", "description": "Add-on for Regular Pizza only", "price": 109, "is_addon": true, "addon_size": "regular"}], "Pastas": [{"id": "PAS001", "title": "Veg Arrabbiata Penne", "description": "Veg Pasta", "price": 136}, {"id": "PAS002", "title": "Veg Creamy White Penne Pasta", "description": "Veg Pasta", "price": 146}, {"id": "PAS003", "title": "Mix Sauce Veg Penne Pasta", "description": "Veg Pasta", "price": 146}, {"id": "PAS004", "title": "Chicken Arrabbiata Penne", "description": "Chicken Pasta", "price": 157}, {"id": "PAS005", "title": "Chicken Creamy White Penne Pasta", "description": "Chicken Pasta", "price": 167}, {"id": "PAS006", "title": "Mix Sauce Chicken Penne Pasta", "description": "Chicken Pasta", "price": 167}], "Garlic Breads": [{"id": "GRB001", "title": "Garlic Bread with Cheese", "description": "Veg Garlic Bread", "price": 115}, {"id": "GRB002", "title": "Garlic Bread Supreme", "description": "Veg Garlic Bread", "price": 125}, {"id": "GRB003", "title": "Chicken Garlic Bread with Cheese", "description": "Chicken Garlic Bread", "price": 125}, {"id": "GRB004", "title": "Chicken Garlic Bread Supreme", "description": "Chicken Garlic Bread", "price": 135}], "Veg Snacks": [{"id": "SNK001", "title": "Paneer Pops (6 Pieces)", "description": "Veg Snack", "price": 115}, {"id": "SNK002", "title": "Paneer Pops (16 Pieces)", "description": "Veg Snack", "price": 209}, {"id": "SNK003", "title": "Paneer Strips (4 Pieces)", "description": "Veg Snack", "price": 125}, {"id": "SNK004", "title": "Paneer Strips (8 Pieces)", "description": "Veg Snack", "price": 219}, {"id": "FRI001", "title": "French Fries - Regular", "description": "Fries", "price": 62}, {"id": "FRI002", "title": "French Fries - Large", "description": "Fries", "price": 83}, {"id": "FRI003", "title": "Peri Peri Fries - Regular", "description": "Fries", "price": 83}, {"id": "FRI004", "title": "Peri Peri Fries - Large", "description": "Fries", "price": 104}, {"id": "FRI005", "title": "Hot & Spicy Fries - Regular", "description": "Fries", "price": 83}, {"id": "FRI006", "title": "Hot & Spicy Fries - Large", "description": "Fries", "price": 104}, {"id": "FRI007", "title": "Peri Peri Overloaded Fries", "description": "Loaded Fries", "price": 125}, {"id": "FRI008", "title": "Hot & Spicy Overloaded Fries", "description": "Loaded Fries", "price": 125}, {"id": "FRI009", "title": "Crispy Paneer Overloaded Fries", "description": "Loaded Fries", "price": 146}], "Non Veg Snacks": [{"id": "SNK005", "title": "Chicken Nuggets (6 Pieces)", "description": "Chicken Snack", "price": 136}, {"id": "SNK006", "title": "Chicken Nuggets (12 Pieces)", "description": "Chicken Snack", "price": 250}, {"id": "SNK007", "title": "Chicken Popcorn (8 Pieces)", "description": "Chicken Snack", "price": 136}, {"id": "SNK008", "title": "Chicken Popcorn (16 Pieces)", "description": "Chicken Snack", "price": 252}, {"id": "SNK009", "title": "Chicken Strips (3 Pieces)", "description": "Chicken Snack", "price": 125}, {"id": "FRI010", "title": "Crispy Chicken Overloaded Fries", "description": "Loaded Fries", "price": 157}], "Beverages": [{"id": "BEV001", "title": "Coca-Cola", "description": "Soft Drink", "price": 41}, {"id": "BEV002", "title": "Sprite", "description": "Soft Drink", "price": 41}, {"id": "BEV003", "title": "Fanta", "description": "Soft Drink", "price": 41}, {"id": "BEV004", "title": "Iced Tea Lemon", "description": "Cold Beverage", "price": 75}, {"id": "BEV005", "title": "Fresh Lime Soda", "description": "Cold Beverage", "price": 95}, {"id": "BEV006", "title": "Mojito", "description": "Cold Beverage", "price": 95}, {"id": "BEV007", "title": "Mango Delight", "description": "Beverage", "price": 95}, {"id": "BEV008", "title": "Strawberry Blast", "description": "Beverage", "price": 95}, {"id": "BEV009", "title": "Cafe Frappe", "description": "Beverage", "price": 105}, {"id": "BEV010", "title": "Mango Shake", "description": "Milkshake", "price": 105}, {"id": "BEV011", "title": "Strawberry Shake", "description": "Milkshake", "price": 105}, {"id": "BEV012", "title": "Chocolate Shake", "description": "Milkshake", "price": 105}, {"id": "BEV013", "title": "Butterscotch Shake", "description": "Milkshake", "price": 105}, {"id": "BEV014", "title": "Oreo Shake", "description": "Milkshake", "price": 125}, {"id": "BEV015", "title": "Kit Kat Shake", "description": "Milkshake", "price": 125}, {"id": "BEV016", "title": "Packaged Drinking Water", "description": "Drinking Water", "price": 10}], "Desserts": [{"id": "DES004", "title": "Mango Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES005", "title": "Vanilla Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES006", "title": "Strawberry Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES007", "title": "Chocolate Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES002", "title": "Hot Chocolate Fudge", "description": "Dessert", "price": 105}, {"id": "DES003", "title": "Fruit Sundae", "description": "Dessert", "price": 105}], "Add Ons": [{"id": "ADD002", "title": "Cheese Dip", "description": "Add-on", "price": 30},{"id": "ADD005", "title": "Extra Cheese", "description": "Add-on", "price": 27}], "Combos": [{"id": "FMB001", "title": "Veg Fun Meal Box", "description": "Veg Surprise Burger, Reg. Fries, Paneer Pops (4 pcs), Coke, Perk Chocolate", "price": 279}, {"id": "FMB002", "title": "Non Veg Fun Meal Box", "description": "Fried Chicken Burger, Reg. Fries, Chicken Popcorn (4 pcs), Coke, Perk Chocolate", "price": 289}, {"id": "COM001", "title": "Add 2 Pieces Garlic Bread + Coke", "description": "Meal Combo Add-on", "price": 105}, {"id": "COM002", "title": "Add Fries + Coke Combo", "description": "Meal Combo Add-on", "price": 119}, {"id": "COM003", "title": "Add 1 Piece Fried Chicken + Coke", "description": "Meal Combo Add-on", "price": 135}, {"id": "COM004", "title": "Add Chicken Popcorn + Coke", "description": "Meal Combo Add-on", "price": 159}]};
+
+const IMAGE_MAP = {
+  "BUR001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/AlooTIkki.jpeg",
+  "BUR002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/VegSurprise.jpeg",
+  "BUR003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/ChilliLava.jpeg",
+  "BUR004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/CrunchyCorn.jpeg",
+  "BUR005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/PremiumPaneer.jpeg",
+  "BUR006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/PaneerTIkka.jpeg",
+  "BUR007": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/PeriPeri.jpeg",
+  "BUR008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/MahaVeggie.jpeg",
+  "BUR009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg Burgers/Fried.jpeg",
+  "BUR010": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg Burgers/Surprise.jpeg",
+  "BUR011": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg Burgers/lava.jpeg",
+  "BUR012": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg Burgers/Tandoori.jpeg",
+  "BUR013": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg Burgers/Peri.jpeg",
+  "BUR014": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg Burgers/Premium.jpeg",
+  "BUR015": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg Burgers/Maha.jpeg",
+  "WRP001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Wraps/CrispyPaneer.jpeg",
+  "WRP002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Wraps/TandooriPaneer.jpeg",
+  "WRP003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Wraps/CrispyChicken.jpeg",
+  "WRP004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Wraps/TandooriChicken.jpeg",
+  "FCH001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Chicken/2-pcs.jpeg",
+  "FCH002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Chicken/4-pcs.jpeg",
+  "FCH003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Chicken/6-pcs.jpeg",
+  "FCH004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Chicken/9-pcs.jpeg",
+  "GRC001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Chicken/grilled.jpeg",
+  "GRC002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Chicken/grilled.jpeg",
+  "FTL001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Footlongs/veggie.jpeg",
+  "FTL002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Footlongs/tandoori.jpeg",
+  "FTL003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Footlongs/spicy.jpeg",
+  "FTL004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Footlongs/deluxe.jpeg",
+  "FTL005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Footlongs/Periperi.jpeg",
+  "FTL006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Footlongs/extravaganza.jpeg",
+  "FTL007": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Footlongs/cheese.jpeg",
+  "FTL008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Footlongs/simply.jpeg",
+  "FTL009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Footlongs/tandoori.jpeg",
+  "FTL010": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Footlongs/spicy.jpeg",
+  "FTL011": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Footlongs/deluxe.jpeg",
+  "FTL012": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Footlongs/peri.jpeg",
+  "FTL013": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Footlongs/extravaganza.jpeg",
+  "FTL014": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Footlongs/cheese.jpeg",
+  "SAN001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Sandwich/VegGrilled.jpeg",
+  "SAN002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Sandwich/TandooriVeg.jpeg",
+  "SAN003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Sandwich/ItalianVeg.jpeg",
+  "SAN004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Sandwich/ChickenGrilled.jpeg",
+  "SAN005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Sandwich/TandooriChicken.jpeg",
+  "SAN006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Sandwich/ItalianChicken.jpeg",
+  "PIZ001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/margherita.jpeg",
+  "PIZ002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/margherita.jpeg",
+  "PIZ003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/delight.jpeg",
+  "PIZ004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/delight.jpeg",
+  "PIZ005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/tandoori.jpeg",
+  "PIZ006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/tandoori.jpeg",
+  "PIZ007": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/teekha.jpeg",
+  "PIZ008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/teekha.jpeg",
+  "PIZ009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/indi.jpeg",
+  "PIZ010": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/indi.jpeg",
+  "PIZ011": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/peri.jpeg",
+  "PIZ012": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/peri.jpeg",
+  "PIZ013": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/deluxe.jpeg",
+  "PIZ014": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/deluxe.jpeg",
+  "PIZ015": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/noimage.jpg",
+  "PIZ016": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/noimage.jpg",
+  "PIZ017": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/extravaganza.jpeg",
+  "PIZ018": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/extravaganza.jpeg",
+  "PIZ019": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/noimage.jpg",
+  "PIZ020": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/noimage.jpg",
+  "PIZ021": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/Delight.jpg",
+  "PIZ022": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/Delight.jpg",
+  "PIZ023": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/tandoori.jpeg",
+  "PIZ024": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/tandoori.jpeg",
+  "PIZ025": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/teekha.jpeg",
+  "PIZ026": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/teekha.jpeg",
+  "PIZ027": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/indi.jpeg",
+  "PIZ028": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/indi.jpeg",
+  "PIZ029": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/peri.jpeg",
+  "PIZ030": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/peri.jpeg",
+  "PIZ031": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/deluxe.jpeg",
+  "PIZ032": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/deluxe.jpeg",
+  "PIZ033": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/noimage.jpg",
+  "PIZ034": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Pizzas/noimage.jpg",
+  "PIZ035": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/extravaganza.jpeg",
+  "PIZ036": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/extravaganza.jpeg",
+  "PIZ037": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/overloaded.jpeg",
+  "PIZ038": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/overloaded.jpeg",
+  "ADDPIZ001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/cheese.png",
+  "ADDPIZ002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/cheese.png",
+  "ADDPIZ003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/cheese.png",
+  "ADDPIZ004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-Veg-Pizzas/cheese.png",
+  "PAS001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Pastas/VegArrabbiata.jpeg",
+  "PAS002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Pastas/VegCreamy.jpeg",
+  "PAS003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Pastas/VegArrabbiata.jpeg",
+  "PAS004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Pastas/ChkArrabbiata.jpeg",
+  "PAS005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Pastas/ChkCreamy.jpeg",
+  "PAS006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Pastas/MixedSauce.jpeg",
+  "GRB001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/garlic bread.jpeg",
+  "GRB002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/supreme.jpeg",
+  "GRB003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/garlic bread.jpeg",
+  "GRB004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/supreme.jpeg",
+  "SNK001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/pops.jpeg",
+  "SNK002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/pops.jpeg",
+  "SNK003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/strips.jpeg",
+  "SNK004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/strips.jpeg",
+  "FRI001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/french.jpeg",
+  "FRI002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/french.jpeg",
+  "FRI003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/peri.jpeg",
+  "FRI004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/peri.jpeg",
+  "FRI005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/hot.jpeg",
+  "FRI006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/hot.jpeg",
+  "FRI007": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/overloaded.jpeg",
+  "FRI008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/hot_overloaded.jpeg",
+  "FRI009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Snacks/paneeroverloaded.jpeg",
+  "SNK005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/nuggets.jpeg",
+  "SNK006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/nuggets.jpeg",
+  "SNK007": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/popcorn.jpeg",
+  "SNK008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/popcorn.jpeg",
+  "SNK009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/strips.jpeg",
+  "FRI010": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/overloaded.jpeg",
+  "BEV001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/coke.jpeg",
+  "BEV002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/sprite.jpeg",
+  "BEV003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/fanta.jpeg",
+  "BEV004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/lemon.jpeg",
+  "BEV005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/lime.jpeg",
+  "BEV006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/mojito.jpeg",
+  "BEV007": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/mangodelight.jpeg",
+  "BEV008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/strawberryblast.jpeg",
+  "BEV009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/frappe.jpeg",
+  "BEV010": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/shakes.jpeg",
+  "BEV011": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/shakes.jpeg",
+  "BEV012": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/shakes.jpeg",
+  "BEV013": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/shakes.jpeg",
+  "BEV014": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/oreo.jpeg",
+  "BEV015": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/kitkat.jpeg",
+  "BEV016": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/water.jpeg",
+  "DES004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/desserts.jpeg",
+  "DES005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/desserts.jpeg",
+  "DES006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/desserts.jpeg",
+  "DES007": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/desserts.jpeg",
+  "DES002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/chocolatefudge.jpeg",
+  "DES003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Beverages/sundae.jpeg",
+  "ADD002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Non-veg-Snacks/dip.jpeg",
+  "ADD003": "https://grillinnfalkawn.github.io/grillinn/menu-images/cheese_slice.jpeg",
+  "ADD004": "https://grillinnfalkawn.github.io/grillinn/menu-images/cheese_slice.jpeg",
+  "ADD003": "https://grillinnfalkawn.github.io/grillinn/menu-images/cheese_slice.jpeg",
+  "ADD004": "https://grillinnfalkawn.github.io/grillinn/menu-images/cheese_slice.jpeg",
+  "ADD005": "https://grillinnfalkawn.github.io/grillinn/menu-images/cheese_slice.jpeg",
+  "FMB001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/veg.png",
+  "FMB002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/non-veg.png",
+  "COM001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/com001.png",
+  "COM002": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/com002.png",
+  "COM003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/com003.png",
+  "COM004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/com004.png"
+};
+
+const CAT_ICONS = {"Veg Burgers":"🍔","Non Veg Burgers":"🍔","Wraps":"🌯","Fried Chicken":"🍗","Grilled Chicken":"🍖","Veg Footlongs":"🥖","Non Veg Footlongs":"🥖","Veg Sandwiches":"🥪","Non Veg Sandwiches":"🥪","Veg Pizza":"🍕","Non Veg Pizza":"🍕","Pastas":"🍝","Garlic Breads":"🧄","Veg Snacks":"🍟","Non Veg Snacks":"🍗","Beverages":"🥤","Desserts":"🍨","Add Ons":"➕","Combos":"🎁"};
+
+const ALL_ITEMS = {};
+Object.values(MENU).flat().forEach(i => ALL_ITEMS[i.id] = i);
+
+function isVegItem(item) {
+  const d = item.description.toLowerCase();
+  const t = item.title.toLowerCase();
+  return !d.includes('chicken') && !t.includes('chicken');
+}
+
+let cart = {};
+let orderType = null;
+let orderCounter = parseInt(localStorage.getItem('gi_counter') || '0');
+let currentView = localStorage.getItem('gi_view') || 'grid';
+
+function getStatus() {
+  const now = new Date();
+  const dateKey = getDateKey(now);
+  const hour = now.getHours() + now.getMinutes() / 60;
+
+  // Check for a special-date override first
+  const special = SPECIAL_DATES[dateKey];
+  if (special) {
+    if (special.open === null) {
+      return { open: false, msg: '🔴 ' + (special.label || 'Closed today for a special occasion.') };
+    }
+    if (hour < special.open) {
+      return { open: false, msg: '🔴 ' + (special.label ? special.label + ' — ' : '') + 'Opens today at ' + formatHour(special.open) + '.' };
+    }
+    if (hour >= special.close) {
+      return { open: false, msg: '🔴 We are closed for today. We reopen tomorrow at 11:00 AM.' };
+    }
+    return { open: true, msg: '🟢 ' + (special.label ? special.label + ' — ' : '') + 'Open now! Closing at ' + formatHour(special.close) + ' today.' };
+  }
+
+  const day = now.getDay();
+  const open = HOURS.open[day];
+  const close = HOURS.close[day];
+  if (open === null) return { open: false, msg: '🔴 Closed today (Saturday). We reopen Sunday at 11:00 AM.' };
+  if (hour < open) return { open: false, msg: '🔴 We open at 11:00 AM today.' };
+  if (hour >= close) return { open: false, msg: '🔴 We are closed for today. We reopen tomorrow at 11:00 AM.' };
+  const closeStr = close === 21.5 ? '9:30 PM' : '4:00 PM';
+  return { open: true, msg: '🟢 Open now! Closing at ' + closeStr + ' today.' };
+}
+
+function formatHour(h) {
+  if (h >= 24) h -= 24;
+  let hr = Math.floor(h);
+  const min = Math.round((h - hr) * 60);
+  const ampm = hr >= 12 ? 'PM' : 'AM';
+  let hr12 = hr % 12; if (hr12 === 0) hr12 = 12;
+  return hr12 + (min ? ':' + String(min).padStart(2,'0') : ':00') + ' ' + ampm;
+}
+
+// Count pizzas of a given size currently in cart
+function countPizzasBySize(size) {
+  return Object.values(cart).reduce((total, item) => {
+    if (item.is_addon) return total;
+    const t = item.title.toLowerCase();
+    const matches = size === 'pan' ? t.includes('pan (6 inch)') : t.includes('regular (9 inch)');
+    return total + (matches ? item.qty : 0);
+  }, 0);
+}
+
+// Count cheese burst add-ons of a given size currently in cart
+function countCheeseBurst(size) {
+  const ids = size === 'pan' ? ['ADDPIZ001','ADDPIZ003'] : ['ADDPIZ002','ADDPIZ004'];
+  return ids.reduce((total, id) => total + (cart[id] ? cart[id].qty : 0), 0);
+}
+
+function addToCart(id) {
+  const item = ALL_ITEMS[id];
+  if (item.is_addon && item.addon_size) {
+    const pizzaCount = countPizzasBySize(item.addon_size);
+    const burstCount = countCheeseBurst(item.addon_size);
+    if (pizzaCount === 0) {
+      const sizeLabel = item.addon_size === 'pan' ? 'Pan (6 Inch)' : 'Regular (9 Inch)';
+      alert('Please add a ' + sizeLabel + ' pizza to your cart first before adding Cheese Burst.');
+      return;
+    }
+    if (burstCount >= pizzaCount) {
+      const sizeLabel = item.addon_size === 'pan' ? 'Pan (6 Inch)' : 'Regular (9 Inch)';
+      alert('You can only add Cheese Burst for each pizza. Add more ' + sizeLabel + ' pizzas first.');
+      return;
+    }
+  }
+  if (cart[id]) cart[id].qty++;
+  else cart[id] = { ...ALL_ITEMS[id], qty: 1, note: '' };
+  refreshCard(id);
+  refreshTextRow(id);
+  updateCartUI();
+}
+
+function updateQty(id, delta) {
+  if (!cart[id]) return;
+  cart[id].qty += delta;
+  if (cart[id].qty <= 0) delete cart[id];
+  refreshCard(id);
+  refreshTextRow(id);
+
+  // After any cart change, enforce cheese burst quantity caps
+  ['pan','regular'].forEach(size => {
+    const pizzaCount = countPizzasBySize(size);
+    const addonIds = size === 'pan' ? ['ADDPIZ001','ADDPIZ003'] : ['ADDPIZ002','ADDPIZ004'];
+    let burstUsed = 0;
+    addonIds.forEach(addonId => {
+      if (!cart[addonId]) return;
+      const allowed = Math.max(0, pizzaCount - burstUsed);
+      if (cart[addonId].qty > allowed) {
+        cart[addonId].qty = allowed;
+        if (cart[addonId].qty <= 0) delete cart[addonId];
+      }
+      burstUsed += cart[addonId] ? cart[addonId].qty : 0;
+      refreshCard(addonId);
+      refreshTextRow(addonId);
+    });
+  });
+
+  updateCartUI();
+}
+
+function setNote(id, val) { if (cart[id]) cart[id].note = val; }
+
+function refreshCard(id) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  const item = ALL_ITEMS[id];
+  const footer = card.querySelector('.item-footer');
+  if (cart[id]) {
+    footer.innerHTML = '<div class="item-price">₹'+item.price+'</div><div class="qty-ctrl"><button onclick="updateQty(\''+id+'\',-1)">−</button><span class="qty-num">'+cart[id].qty+'</span><button onclick="updateQty(\''+id+'\',1)">+</button></div>';
+    let noteWrap = card.querySelector('.note-wrap');
+    if (!noteWrap) {
+      noteWrap = document.createElement('div');
+      noteWrap.className = 'note-wrap';
+      noteWrap.innerHTML = '<textarea class="note-input" rows="1" placeholder="Special instructions..." onchange="setNote(\''+id+'\',this.value)">'+(cart[id].note||'')+'</textarea>';
+      card.querySelector('.item-body').appendChild(noteWrap);
+    }
+  } else {
+    footer.innerHTML = '<div class="item-price">₹'+item.price+'</div><button class="add-btn" onclick="addToCart(\''+id+'\')">+</button>';
+    const noteWrap = card.querySelector('.note-wrap');
+    if (noteWrap) noteWrap.remove();
+  }
+}
+
+function calcTotals() {
+  const items = Object.values(cart);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  // Packing charge only for Takeaway and Delivery, not Dine In
+  const packingCharge = calcPackagingCharge(items, orderType);
+  const count = items.reduce((s, i) => s + i.qty, 0);
+  return { subtotal, packingCharge, count };
+}
+
+function updateCartUI() {
+  const { subtotal, packingCharge, count } = calcTotals();
+  const total = subtotal + packingCharge;
+  document.getElementById('cartCount').textContent = count;
+  const bar = document.getElementById('cartBar');
+  if (count > 0) {
+    bar.classList.add('visible');
+    document.getElementById('cartBarLeft').textContent = count + ' item' + (count > 1 ? 's' : '');
+    document.getElementById('cartBarRight').textContent = '₹' + total + ' — View Cart →';
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function openCart() { document.getElementById('overlay').classList.add('open'); document.getElementById('drawer').classList.add('open'); renderDrawer(); }
+function closeCart() { document.getElementById('overlay').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); }
+
+function renderDrawer() {
+  const items = Object.entries(cart);
+  const { subtotal, packingCharge, count } = calcTotals();
+  const total = subtotal + packingCharge;
+  const content = document.getElementById('cartContent');
+  const status = getStatus();
+
+  if (items.length === 0) {
+    content.innerHTML = '<div class="empty-cart"><div class="empty-cart-icon">🛒</div><div>Your cart is empty</div><div style="font-size:0.75rem;margin-top:0.3rem;color:var(--muted)">Browse the menu and add items!</div></div>';
+    return;
+  }
+
+  let html = '';
+  items.forEach(([id, item]) => {
+    const dot = isVegItem(item) ? '🟢' : '🔴';
+    html += '<div class="cart-item"><div style="flex:1"><div class="cart-item-name">'+dot+' '+item.title+'</div>'+(item.note ? '<div class="cart-item-note">📝 '+item.note+'</div>' : '')+'</div><div class="qty-ctrl" style="margin:0 0.5rem;"><button onclick="updateQty(\''+id+'\',-1);renderDrawer()">−</button><span class="qty-num">'+item.qty+'</span><button onclick="updateQty(\''+id+'\',1);renderDrawer()">+</button></div><div class="cart-item-price">₹'+(item.price*item.qty)+'</div></div>';
+  });
+
+  const totalRow = orderType === 'Delivery'
+  ? '<div class="summary-row total"><span>Total</span><span>₹'+total+' + Delivery Charges</span></div>'
+  : '<div class="summary-row total"><span>Total</span><span>₹'+total+'</span></div>';
+
+html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges</span><span>₹'+packingCharge+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
+
+  html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns"><button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button><button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div><div id="checkoutForm"></div></div>';
+
+  content.innerHTML = html;
+  if (orderType) renderCheckoutForm(status);
+}
+
+function selectType(type) { orderType = type; renderDrawer(); }
+
+// ── REMEMBER CUSTOMER DETAILS (name, phone, address) ─────────────────
+// Saved locally on this device after a successful order, and used to
+// pre-fill the checkout form next time — editable, never locked.
+const SAVED_DETAILS_KEY = 'gi_customer_details';
+
+function saveCustomerDetails(name, phone, address, email) {
+  try {
+    localStorage.setItem(SAVED_DETAILS_KEY, JSON.stringify({ name, phone, address: address || '', email: email || '' }));
+  } catch(e) {}
+}
+function getSavedCustomerDetails() {
+  try {
+    const raw = localStorage.getItem(SAVED_DETAILS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+function clearSavedCustomerDetails() {
+  try { localStorage.removeItem(SAVED_DETAILS_KEY); } catch(e) {}
+  renderCheckoutForm();
+}
+function esc(str) { return (str || '').replace(/"/g, '&quot;'); }
+// ─────────────────────────────────────────────────────────────────────
+
+function renderCheckoutForm(status) {
+  const form = document.getElementById('checkoutForm');
+  const status2 = status || getStatus();
+  const { subtotal, packingCharge } = calcTotals();
+  const saved = getSavedCustomerDetails();
+
+  const deliveryFields = orderType === 'Delivery' ? (
+    '<div class="form-group"><label>Full Address *</label><textarea id="fAddress" rows="2" placeholder="House no., street, landmark...">'+esc(saved?.address)+'</textarea></div>'
+  ) : '';
+
+  form.innerHTML =
+    (!status2.open ? '<div class="closed-box">⚠️ '+status2.msg+'<br>You can still browse, but orders are only accepted during opening hours.</div>' : '') +
+    (saved ? '<div class="autofill-note">✓ Auto-filled from your last order — edit if needed, or <a href="#" onclick="clearSavedCustomerDetails();return false;">clear saved details</a>.</div>' : '') +
+    '<div class="form-group"><label>Your Name *</label><input type="text" id="fName" placeholder="e.g. Lalremruata" value="'+esc(saved?.name)+'"></div>' +
+    '<div class="form-group"><label>Phone Number *</label><input type="tel" id="fPhone" placeholder="e.g. 9876543210" value="'+esc(saved?.phone)+'"></div>' +
+    '<div class="form-group"><label>Email (optional)</label><input type="email" id="fEmail" placeholder="Enter your email to get confirmation/receipt" value="'+esc(saved?.email)+'"></div>' +
+    deliveryFields +
+    '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" placeholder="Any special requests for the whole order..."></textarea></div>' +
+    '<div class="note-box">💵 Payment: <strong>Payment on Delivery via Cash/UPI</strong></div>' +
+    '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!status2.open ? 'disabled' : '')+'>'+(!status2.open ? 'Shop Closed' : 'Place Order')+'</button>';
+}
+
+
+
+// ── ORDER RELIABILITY: retries + local persistence ──────────────────────
+// If the connection to the restaurant drops (power cut, wifi issue, etc.)
+// partway through checkout, we must never silently lose the customer's
+// order. Strategy:
+//   1. Try submitting up to 3 times with short gaps (handles brief blips).
+//   2. If it still fails, save the full order to localStorage so it
+//      survives a closed tab/browser crash, and show a clear on-screen
+//      (not a dismissible alert) message with the order details and a
+//      tap-to-call link, plus a Retry button.
+//   3. On every page load, check for a leftover unsent order and try to
+//      silently resend it before the customer does anything else.
+//   4. The backend also guards against the same order being saved twice
+//      if a retry happens to succeed after an earlier attempt actually
+//      went through server-side but the response got lost.
+const UNSENT_ORDER_KEY = 'gi_unsent_order';
+
+function saveUnsentOrder(payload) {
+  try { localStorage.setItem(UNSENT_ORDER_KEY, JSON.stringify(payload)); } catch(e) {}
+}
+function clearUnsentOrder() {
+  try { localStorage.removeItem(UNSENT_ORDER_KEY); } catch(e) {}
+}
+function getUnsentOrder() {
+  try {
+    const raw = localStorage.getItem(UNSENT_ORDER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+async function trySubmitOrder(payload, attempts) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(SERVER_URL + '/web-order', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (res.ok) return true;
+    } catch(e) { /* network error — fall through to retry/backoff */ }
+    if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+  return false;
+}
+
+function showOrderFailedScreen(payload) {
+  const itemsList = payload.items.map(i => i.quantity + 'x ' + i.product_retailer_id).join(', ');
+  const el = document.getElementById('orderFailedScreen');
+  el.querySelector('.of-order-num').textContent = 'Order #' + payload.order_number;
+  el.querySelector('.of-items').textContent = itemsList;
+  el.querySelector('.of-total').textContent = '₹' + payload.grand_total;
+  el.querySelector('.of-call-link').href = 'tel:' + RESTAURANT_PHONE;
+  el.classList.add('show');
+}
+
+function retryUnsentOrder() {
+  const payload = getUnsentOrder();
+  if (!payload) return;
+  const btn = document.getElementById('ofRetryBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Retrying...';
+  trySubmitOrder(payload, 2).then(ok => {
+    if (ok) {
+      clearUnsentOrder();
+      saveCustomerDetails(payload.customer_name, payload.customer_phone, payload.address, payload.customer_email);
+      document.getElementById('orderFailedScreen').classList.remove('show');
+      document.getElementById('successOrder').textContent = 'Order #' + payload.order_number;
+      document.getElementById('successScreen').classList.add('show');
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = 'Try Again';
+    }
+  });
+}
+
+// On page load: if there's a leftover order from a previous failed
+// attempt (tab closed, browser crashed, etc.) try to quietly resend it
+// once before the customer does anything else.
+async function recoverUnsentOrderOnLoad() {
+  const payload = getUnsentOrder();
+  if (!payload) return;
+  const ok = await trySubmitOrder(payload, 1);
+  if (ok) {
+    clearUnsentOrder();
+  } else {
+    showOrderFailedScreen(payload); // remind them it's still unsent
+  }
+}
+// ─────────────────────────────────────────────────────────────────────
+
+async function placeOrder() {
+  const name = document.getElementById('fName')?.value.trim();
+  const phone = document.getElementById('fPhone')?.value.trim();
+  const notes = document.getElementById('fNotes')?.value.trim() || '';
+  let address = '', deliveryCharge = 0, zoneName = '';
+
+  if (!name) { alert('Please enter your name.'); return; }
+  if (!phone || phone.length < 10) { alert('Please enter a valid phone number.'); return; }
+
+  const email = document.getElementById('fEmail')?.value.trim() || '';
+
+  if (orderType === 'Delivery') {
+    const addrEl = document.getElementById('fAddress');
+    if (!addrEl?.value.trim()) { alert('Please enter your delivery address.'); return; }
+    address = addrEl.value.trim();
+  }
+
+  const btn = document.getElementById('placeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Placing order...';
+
+  orderCounter++;
+  localStorage.setItem('gi_counter', orderCounter);
+  const orderNumber = String(orderCounter).padStart(3, '0');
+
+  const { subtotal, packingCharge } = calcTotals();
+  const grandTotal = subtotal + packingCharge + deliveryCharge;
+
+  const items = Object.entries(cart).map(([id, item]) => ({
+    product_retailer_id: item.title + (item.note ? ' ['+item.note+']' : ''),
+    quantity: item.qty,
+    item_price: item.price
+  }));
+
+  const payload = {
+    source: 'website', order_number: orderNumber, customer_name: name, customer_phone: phone,
+    customer_email: email,
+    order_type: orderType, address: orderType === 'Delivery' ? address : '',
+    delivery_charge: 0, packing_charge: packingCharge, subtotal: subtotal,
+    grand_total: subtotal + packingCharge, notes: notes, items: items,
+    order_time: new Date().toLocaleString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})
+  };
+
+  // Persist BEFORE attempting the network call — if the tab crashes or
+  // closes mid-request, the order details still survive on this device.
+  saveUnsentOrder(payload);
+
+  const ok = await trySubmitOrder(payload, 3); // 3 attempts with short backoff — absorbs brief network blips
+
+  if (ok) {
+    clearUnsentOrder();
+    saveCustomerDetails(name, phone, address, email);
+    closeCart();
+    document.getElementById('successOrder').textContent = 'Order #'+orderNumber;
+    document.getElementById('successScreen').classList.add('show');
+    cart = {}; orderType = null; updateCartUI();
+    document.querySelectorAll('.item-card').forEach(card => {
+      const id = card.id.replace('card-', '');
+      const item = ALL_ITEMS[id];
+      if (item) {
+        const footer = card.querySelector('.item-footer');
+        if (footer) footer.innerHTML = '<div class="item-price">₹'+item.price+'</div><button class="add-btn" onclick="addToCart(\''+id+'\')">+</button>';
+        const noteWrap = card.querySelector('.note-wrap');
+        if (noteWrap) noteWrap.remove();
+      }
+      refreshTextRow(id);
+    });
+  } else {
+    // Order stays saved in localStorage (not cleared) so it's never lost —
+    // customer sees full order details + a direct call link, and can also
+    // retry once their connection or the restaurant's connection recovers.
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+    showOrderFailedScreen(payload);
+  }
+}
+
+function resetOrder() { document.getElementById('successScreen').classList.remove('show'); }
+
+function handleSearch(query) {
+  const q = query.toLowerCase().trim();
+  const main = document.getElementById('menuMain');
+  if (!q) { buildMenu(); return; }
+  const results = Object.values(MENU).flat().filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
+  main.innerHTML = '';
+  if (results.length === 0) {
+    main.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+query+'"</div></div>';
+    return;
+  }
+  const sec = document.createElement('div');
+  sec.className = 'cat-section';
+  sec.innerHTML = '<div class="cat-title">🔍 Search Results ('+results.length+')</div>';
+  const grid = document.createElement('div');
+  grid.className = 'items-grid';
+  results.forEach(item => grid.appendChild(makeCard(item)));
+  sec.appendChild(grid);
+  main.appendChild(sec);
+}
+
+function makeCard(item) {
+  const veg = isVegItem(item);
+  const card = document.createElement('div');
+  card.className = 'item-card';
+  card.id = 'card-' + item.id;
+  const inCart = cart[item.id];
+  const footerHTML = inCart
+    ? '<div class="item-price">₹'+item.price+'</div><div class="qty-ctrl"><button onclick="updateQty(\''+item.id+'\',-1)">−</button><span class="qty-num">'+inCart.qty+'</span><button onclick="updateQty(\''+item.id+'\',1)">+</button></div>'
+    : '<div class="item-price">₹'+item.price+'</div><button class="add-btn" onclick="addToCart(\''+item.id+'\')">+</button>';
+  const catKey = Object.keys(MENU).find(k => MENU[k].some(i => i.id === item.id));
+  const imgUrl = IMAGE_MAP[item.id];
+  const imgInner = imgUrl ? ('<img src="'+imgUrl+'" alt="'+item.title+'" loading="lazy" onerror="this.parentElement.textContent=\''+(CAT_ICONS[catKey]||'🍽️')+'\';">') : (CAT_ICONS[catKey] || '🍽️');
+  card.innerHTML =
+    '<div class="item-img">'+imgInner+'</div>'+
+    '<div class="item-body"><div class="item-name-row"><div class="veg-dot '+(veg?'veg':'nonveg')+'"></div><div class="item-name">'+item.title+'</div></div><div class="item-desc">'+item.description+(item.is_addon ? ' <span style="color:var(--orange);font-weight:700;">⚡ Add-on</span>' : '')+'</div><div class="item-footer">'+footerHTML+'</div>'+(inCart && inCart.note ? '<div class="note-wrap"><textarea class="note-input" rows="1" placeholder="Special instructions..." onchange="setNote(\''+item.id+'\',this.value)">'+inCart.note+'</textarea></div>' : '')+'</div>';
+  return card;
+}
+
+function buildMenu() {
+  const nav = document.getElementById('catNav');
+  const main = document.getElementById('menuMain');
+  nav.innerHTML = ''; main.innerHTML = '';
+
+
+  Object.entries(MENU).forEach(([cat, items], i) => {
+    const pill = document.createElement('button');
+    pill.className = 'cat-pill';
+    const vegBadge = cat.startsWith('Veg ') ? ' 🟢' : (cat.startsWith('Non Veg ') || cat === 'Non Veg Snacks') ? ' 🔴' : '';
+    pill.textContent = (CAT_ICONS[cat] || '🍽️') + ' ' + cat + vegBadge;
+    pill.onclick = () => { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); document.getElementById('sec-'+i).scrollIntoView({behavior:'smooth',block:'start'}); };
+    nav.appendChild(pill);
+
+    const sec = document.createElement('div');
+    sec.className = 'cat-section'; sec.id = 'sec-'+i;
+    const isVeg = cat.startsWith('Veg ');
+    const isNonVeg = cat.startsWith('Non Veg ') || ['Fried Chicken','Grilled Chicken','Non Veg Snacks'].includes(cat);
+    const badge = isVeg ? '<span class="veg-badge">🟢 VEG</span>' : isNonVeg ? '<span class="nonveg-badge">🔴 NON-VEG</span>' : '';
+    sec.innerHTML = '<div class="cat-title">'+(CAT_ICONS[cat]||'🍽️')+' '+cat+' '+badge+'</div>';
+    const grid = document.createElement('div'); grid.className = 'items-grid';
+    items.forEach(item => grid.appendChild(makeCard(item)));
+    sec.appendChild(grid); main.appendChild(sec);
+  });
+}
+
+function setView(view) {
+  currentView = view;
+  localStorage.setItem('gi_view', view);
+  const main = document.getElementById('menuMain');
+  const textMenu = document.getElementById('textMenu');
+  const catNav = document.getElementById('catNav');
+  const textCatNav = document.getElementById('textCatNav');
+  const gridBtn = document.getElementById('gridViewBtn');
+  const textBtn = document.getElementById('textViewBtn');
+  if (view === 'grid') {
+    main.classList.remove('hidden'); textMenu.classList.remove('visible');
+    catNav.style.display = ''; textCatNav.classList.add('hidden');
+    gridBtn.classList.add('active'); textBtn.classList.remove('active');
+  } else {
+    main.classList.add('hidden'); textMenu.classList.add('visible');
+    catNav.style.display = 'none'; textCatNav.classList.remove('hidden');
+    textBtn.classList.add('active'); gridBtn.classList.remove('active');
+    if (!textMenu.dataset.built) buildTextMenu();
+  }
+}
+
+function buildTextMenu() {
+  const textMenu = document.getElementById('textMenu');
+  const textCatNav = document.getElementById('textCatNav');
+  textMenu.innerHTML = ''; textCatNav.innerHTML = '';
+
+
+  Object.entries(MENU).forEach(([cat, items], i) => {
+    const pill = document.createElement('button');
+    pill.className = 'cat-pill';
+    pill.textContent = (CAT_ICONS[cat]||'🍽️') + ' ' + cat.replace('Chicken ','🔴 ').replace('Veg ','🟢 ');
+    pill.onclick = () => { document.querySelectorAll('#textCatNav .cat-pill').forEach(p=>p.classList.remove('active')); pill.classList.add('active'); document.getElementById('tsec-'+i).scrollIntoView({behavior:'smooth',block:'start'}); };
+    textCatNav.appendChild(pill);
+    const sec = document.createElement('div');
+    sec.className = 'text-cat-section'; sec.id = 'tsec-'+i;
+    const isVeg = cat.startsWith('Veg ');
+    const isNonVeg = cat.startsWith('Non Veg ') || ['Fried Chicken','Grilled Chicken','Non Veg Snacks'].includes(cat);
+    const badge = isVeg ? '<span class="veg-badge">🟢 VEG</span>' : isNonVeg ? '<span class="nonveg-badge">🔴 NON-VEG</span>' : '';
+    sec.innerHTML = '<div class="text-cat-title">'+(CAT_ICONS[cat]||'🍽️')+' '+cat+' '+badge+'</div>';
+    items.forEach(item => sec.appendChild(makeTextRow(item)));
+    textMenu.appendChild(sec);
+  });
+  textMenu.dataset.built = '1';
+}
+
+function makeTextRow(item) {
+  const veg = isVegItem(item);
+  const row = document.createElement('div');
+  row.className = 'text-item'; row.id = 'trow-' + item.id;
+  row.innerHTML = getTextRowHTML(item, veg);
+  return row;
+}
+
+function getTextRowHTML(item, veg) {
+  const inCart = cart[item.id];
+  const ctrl = inCart
+    ? '<div class="text-qty-ctrl"><button onclick="updateQty(\''+item.id+'\',-1)">−</button><span class="text-qty-num">'+inCart.qty+'</span><button onclick="updateQty(\''+item.id+'\',1)">+</button></div>'
+    : '<button class="text-add-btn" onclick="addToCart(\''+item.id+'\')">+</button>';
+  return '<div class="text-dot '+(veg?'veg':'nonveg')+'"></div><div class="text-item-name">'+item.title+'</div><div class="text-item-price">₹'+item.price+'</div>'+ctrl;
+}
+
+function refreshTextRow(id) {
+  const row = document.getElementById('trow-' + id);
+  if (!row) return;
+  const item = ALL_ITEMS[id];
+  row.innerHTML = getTextRowHTML(item, isVegItem(item));
+}
+
+function applyBanner(banner) {
+  const el = document.getElementById('announcementBanner');
+  if (banner && banner.active && banner.text) {
+    el.textContent = (banner.emoji || '🎉') + ' ' + banner.text;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function refreshStatusBanner() {
+  const status = getStatus();
+  const banner = document.getElementById('statusBanner');
+  banner.className = 'status-banner ' + (status.open ? 'status-open' : 'status-closed');
+  banner.textContent = status.msg;
+}
+
+async function loadRemoteSettings() {
+  try {
+    const res = await fetch(SERVER_URL + '/api/settings');
+    if (!res.ok) return;
+    const settings = await res.json();
+    SPECIAL_DATES = settings.special_dates || {};
+    applyBanner(settings.banner);
+    refreshStatusBanner(); // re-check status now that special dates are loaded
+  } catch (e) {
+    console.log('Could not load settings from server, using default hours.', e);
+  }
+}
+
+function init() {
+  refreshStatusBanner();
+  buildMenu();
+  loadRemoteSettings();
+  recoverUnsentOrderOnLoad();
+}
+
+init();
+if (currentView === 'text') setView('text'); else setView('grid');
+</script>
+</body>
+</html>
