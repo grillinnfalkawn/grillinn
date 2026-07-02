@@ -6,6 +6,8 @@ import os
 import shutil
 import threading
 import time
+import smtplib
+from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -15,6 +17,19 @@ PRINTER_NAME = "POS80 (1)"
 DASHBOARD_PASSWORD = "0000"  # change this to whatever you like
 DB_PATH = "orders.db"
 SETTINGS_PATH = "settings.json"
+
+# Email receipts — sent only after you confirm an order on the dashboard,
+# since that's when the delivery charge and final total are known.
+# Uses Gmail SMTP, which is free. To set this up:
+#   1. Use a Gmail account (create a dedicated one for the restaurant if you like).
+#   2. Turn on 2-Step Verification on that Google account.
+#   3. Create an "App Password" at https://myaccount.google.com/apppasswords
+#      (NOT your normal Gmail password — a 16-character app-specific one).
+#   4. Paste that below. Leave SMTP_EMAIL blank to disable email receipts entirely.
+SMTP_EMAIL = ""            # e.g. "grillinnfalkawn@gmail.com"
+SMTP_APP_PASSWORD = ""     # 16-character Gmail App Password
+RESTAURANT_NAME = "Grill Inn, Falkawn"
+RESTAURANT_PHONE = "9612992023"
 # ────────────────────────────────────────────────────────
 
 # ── SETTINGS (special hours + announcement banner) ───────
@@ -78,6 +93,7 @@ def init_db():
             order_number TEXT,
             customer_name TEXT,
             customer_phone TEXT,
+            customer_email TEXT,
             order_type TEXT,
             address TEXT,
             notes TEXT,
@@ -91,6 +107,12 @@ def init_db():
             created_at TEXT
         )
     """)
+    # Migration for existing databases created before customer_email existed.
+    c.execute("PRAGMA table_info(orders)")
+    existing_cols = [row[1] for row in c.fetchall()]
+    if "customer_email" not in existing_cols:
+        c.execute("ALTER TABLE orders ADD COLUMN customer_email TEXT")
+        print("[DB MIGRATION] Added customer_email column")
     conn.commit()
     conn.close()
 
@@ -163,14 +185,15 @@ def save_order(data):
         return existing[0]
 
     c.execute("""
-        INSERT INTO orders (order_number, customer_name, customer_phone, order_type,
+        INSERT INTO orders (order_number, customer_name, customer_phone, customer_email, order_type,
             address, notes, items_json, subtotal, packing_charge, delivery_charge,
             grand_total, order_time, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
     """, (
         order_number,
         data.get("customer_name", ""),
         customer_phone,
+        data.get("customer_email", ""),
         data.get("order_type", ""),
         data.get("address", ""),
         data.get("notes", ""),
@@ -656,6 +679,76 @@ def api_search_orders():
     return Response(json.dumps(orders), status=200, mimetype="application/json")
 
 
+def send_receipt_email(order):
+    """Sends a plain-text receipt email once an order is confirmed. Silently
+    does nothing if SMTP isn't configured or the customer didn't provide an
+    email — this must never block order confirmation/printing."""
+    to_email = (order.get("customer_email") or "").strip()
+    if not to_email or not SMTP_EMAIL or not SMTP_APP_PASSWORD:
+        return
+
+    try:
+        items = json.loads(order.get("items_json") or "[]")
+    except Exception:
+        items = []
+
+    lines = []
+    for i in items:
+        qty = i.get("quantity", 0)
+        name = i.get("product_retailer_id", "")
+        price = i.get("item_price", 0)
+        lines.append(f"  {qty} x {name} - Rs.{qty * price}")
+    items_text = "\n".join(lines) if lines else "  (no items listed)"
+
+    subtotal = order.get("subtotal", 0) or 0
+    packing = order.get("packing_charge", 0) or 0
+    delivery = order.get("delivery_charge", 0) or 0
+    grand_total = order.get("grand_total", 0) or 0
+
+    charge_lines = f"Subtotal: Rs.{subtotal}\n"
+    if packing > 0:
+        charge_lines += f"Packing Charges: Rs.{packing}\n"
+    if order.get("order_type") == "Delivery":
+        charge_lines += f"Delivery Charges: Rs.{delivery}\n"
+    charge_lines += f"Grand Total: Rs.{grand_total}"
+
+    body = f"""Hi {order.get('customer_name', '')},
+
+Thank you for your order from {RESTAURANT_NAME}! Your order has been confirmed.
+
+Order #{order.get('order_number', '')}
+Order Type: {order.get('order_type', '')}
+{"Delivery Address: " + order.get("address", "") if order.get("order_type") == "Delivery" else ""}
+
+Items:
+{items_text}
+
+{charge_lines}
+
+Payment: Cash/UPI on {"Delivery" if order.get("order_type") == "Delivery" else "Pickup/Arrival"}
+
+Questions? Call us at {RESTAURANT_PHONE}.
+
+Thanks for ordering with us!
+{RESTAURANT_NAME}
+""".strip()
+
+    try:
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = f"Order Confirmed - #{order.get('order_number', '')} - {RESTAURANT_NAME}"
+        msg["From"] = SMTP_EMAIL
+        msg["To"] = to_email
+
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
+            server.send_message(msg)
+        print(f"[EMAIL] Receipt sent to {to_email} for order #{order.get('order_number')}")
+    except Exception as e:
+        # Never let an email failure affect order confirmation/printing.
+        print(f"[EMAIL ERROR] Could not send receipt to {to_email}: {e}")
+
+
 @app.route("/api/confirm-order/<int:order_id>", methods=["POST"])
 def api_confirm_order(order_id):
     order = get_order_by_id(order_id)
@@ -677,6 +770,11 @@ def api_confirm_order(order_id):
     # not just the status — otherwise sales reports would undercount
     # every Delivery order by its delivery charge.
     confirm_order_db(order_id, delivery_charge, grand_total, "printed" if success else "print_failed")
+
+    # Send the receipt email in the background so a slow/unavailable SMTP
+    # connection never delays confirming or printing the order.
+    order["grand_total"] = grand_total
+    threading.Thread(target=send_receipt_email, args=(order,), daemon=True).start()
 
     return Response(
         json.dumps({"status": "ok" if success else "print_failed"}),
