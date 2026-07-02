@@ -3,7 +3,10 @@ import win32print
 import sqlite3
 import json
 import os
-from datetime import datetime
+import shutil
+import threading
+import time
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -95,18 +98,79 @@ def init_db():
 init_db()
 
 
+# ── AUTOMATED BACKUPS ────────────────────────────────────
+# Copies orders.db into a dated file inside BACKUP_DIR once a day, and
+# prunes anything older than BACKUP_RETENTION_DAYS. This protects against
+# disk failure / accidental deletion on the machine running this script.
+#
+# IMPORTANT: for real protection against this PC failing entirely, point
+# BACKUP_DIR at a folder that syncs off this machine — e.g. install the
+# Google Drive desktop app and set BACKUP_DIR to a path inside your
+# Google Drive folder. Otherwise these backups live on the same disk as
+# the original database and won't survive a hardware failure.
+BACKUP_DIR = "backups"
+BACKUP_RETENTION_DAYS = 30
+
+
+def run_backup():
+    try:
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        dest = os.path.join(BACKUP_DIR, f"orders_backup_{today_str}.db")
+        if not os.path.exists(dest):
+            shutil.copy2(DB_PATH, dest)
+            print(f"[BACKUP] Created {dest}")
+        # Prune backups older than the retention window
+        cutoff = datetime.now() - timedelta(days=BACKUP_RETENTION_DAYS)
+        for fname in os.listdir(BACKUP_DIR):
+            fpath = os.path.join(BACKUP_DIR, fname)
+            if os.path.isfile(fpath) and datetime.fromtimestamp(os.path.getmtime(fpath)) < cutoff:
+                os.remove(fpath)
+                print(f"[BACKUP] Pruned old backup {fname}")
+    except Exception as e:
+        print(f"[BACKUP ERROR] {e}")
+
+
+def backup_loop():
+    while True:
+        run_backup()
+        time.sleep(6 * 60 * 60)  # check every 6 hours; run_backup() is a no-op if today's backup already exists
+
+
+threading.Thread(target=backup_loop, daemon=True).start()
+# ────────────────────────────────────────────────────────
+
+
 def save_order(data):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+
+    # Idempotency guard: if the browser retries a submission (e.g. after a
+    # dropped connection where the request actually succeeded but the
+    # response never made it back), don't create a duplicate kitchen order.
+    # Same order_number + phone within the last 30 minutes = same order.
+    order_number = data.get("order_number", "")
+    customer_phone = data.get("customer_phone", "")
+    c.execute("""
+        SELECT id FROM orders
+        WHERE order_number = ? AND customer_phone = ?
+          AND created_at >= datetime('now', '-30 minutes')
+        LIMIT 1
+    """, (order_number, customer_phone))
+    existing = c.fetchone()
+    if existing:
+        conn.close()
+        return existing[0]
+
     c.execute("""
         INSERT INTO orders (order_number, customer_name, customer_phone, order_type,
             address, notes, items_json, subtotal, packing_charge, delivery_charge,
             grand_total, order_time, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
     """, (
-        data.get("order_number", ""),
+        order_number,
         data.get("customer_name", ""),
-        data.get("customer_phone", ""),
+        customer_phone,
         data.get("order_type", ""),
         data.get("address", ""),
         data.get("notes", ""),
@@ -535,6 +599,24 @@ def api_save_settings():
 
 
 # ── DASHBOARD ROUTES ──────────────────────────────────────
+@app.route("/api/download-backup")
+def api_download_backup():
+    password = request.args.get("password", "")
+    if password != DASHBOARD_PASSWORD:
+        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
+
+    run_backup()  # make sure today's backup exists before serving it
+    try:
+        with open(DB_PATH, "rb") as f:
+            data = f.read()
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        response = Response(data, status=200, mimetype="application/octet-stream")
+        response.headers["Content-Disposition"] = f'attachment; filename="grillinn_orders_backup_{today_str}.db"'
+        return response
+    except Exception as e:
+        return Response(json.dumps({"status": "error", "message": str(e)}), status=500, mimetype="application/json")
+
+
 @app.route("/dashboard")
 def dashboard():
     return DASHBOARD_HTML
@@ -1238,8 +1320,23 @@ function renderSettings() {
       '<button class="btn-add-date" onclick="addSpecialDate()">+ Add Special Date</button>' +
     '</div>';
 
-  main.innerHTML = bannerHtml + datesHtml +
+  const backupHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">💾 Backups</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Your order database backs itself up automatically once a day on this PC. For real protection against this PC failing, download a copy now and then again periodically, and save it to Google Drive, a USB drive, or email it to yourself.</div>' +
+      '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="downloadBackupNow()">⬇️ Download Backup Now</button>' +
+    '</div>';
+
+  main.innerHTML = bannerHtml + datesHtml + backupHtml +
     '<button class="btn-save" onclick="saveAllSettings()">💾 Save Settings</button>';
+}
+
+function downloadBackupNow() {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password to download a backup:') || '';
+    if (!dashPassword) return;
+  }
+  window.location.href = '/api/download-backup?password=' + encodeURIComponent(dashPassword);
 }
 
 function toggleBanner() {

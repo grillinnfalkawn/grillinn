@@ -116,6 +116,8 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange);}
 .note-box{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:8px;color:var(--orange);font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;}
 .closed-box{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#f87171;font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;text-align:center;}
+.autofill-note{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:#4ade80;font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;}
+.autofill-note a{color:#4ade80;text-decoration:underline;}
 .place-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700;padding:0.85rem;width:100%;margin-top:0.5rem;letter-spacing:0.5px;}
 .place-btn:disabled{opacity:0.5;cursor:not-allowed;}
 .empty-cart{text-align:center;padding:2rem 0;color:var(--muted);}
@@ -197,8 +199,22 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
   <button class="new-order-btn" onclick="resetOrder()">Place Another Order</button>
 </div>
 
+<div class="success-screen" id="orderFailedScreen">
+  <div class="success-icon">⚠️</div>
+  <div class="success-title" style="background:linear-gradient(135deg,#f97316,#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Order Not Sent Yet</div>
+  <div class="success-sub">We couldn't reach the restaurant's ordering system.</div>
+  <div class="success-sub" style="color:var(--white);font-weight:700;">Your order details are saved on this device — nothing is lost.</div>
+  <div class="of-order-num" style="color:var(--orange);font-weight:700;font-size:1rem;margin:1rem 0 0.4rem;"></div>
+  <div class="of-items" style="color:var(--muted);font-size:0.82rem;max-width:320px;margin-bottom:0.4rem;"></div>
+  <div class="success-sub">Total: <span class="of-total" style="color:var(--white);font-weight:700;"></span></div>
+  <a class="of-call-link new-order-btn" href="tel:9612992023" style="text-decoration:none;display:inline-block;margin-top:1.2rem;">📞 Call Us to Place This Order</a>
+  <button class="new-order-btn" id="ofRetryBtn" style="background:var(--panel,#262626);" onclick="retryUnsentOrder()">Try Again</button>
+</div>
+
 <script>
+
 const SERVER_URL = 'https://orders.grillinnfalkawn.in';
+const RESTAURANT_PHONE = '9612992023';
 
 // ── PACKAGING CHARGE LOGIC (Takeaway + Delivery only) ──────────────────
 // Step 2: per-item packaging cost by category.
@@ -629,19 +645,44 @@ html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</spa
 
 function selectType(type) { orderType = type; renderDrawer(); }
 
+// ── REMEMBER CUSTOMER DETAILS (name, phone, address) ─────────────────
+// Saved locally on this device after a successful order, and used to
+// pre-fill the checkout form next time — editable, never locked.
+const SAVED_DETAILS_KEY = 'gi_customer_details';
+
+function saveCustomerDetails(name, phone, address) {
+  try {
+    localStorage.setItem(SAVED_DETAILS_KEY, JSON.stringify({ name, phone, address: address || '' }));
+  } catch(e) {}
+}
+function getSavedCustomerDetails() {
+  try {
+    const raw = localStorage.getItem(SAVED_DETAILS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+function clearSavedCustomerDetails() {
+  try { localStorage.removeItem(SAVED_DETAILS_KEY); } catch(e) {}
+  renderCheckoutForm();
+}
+function esc(str) { return (str || '').replace(/"/g, '&quot;'); }
+// ─────────────────────────────────────────────────────────────────────
+
 function renderCheckoutForm(status) {
   const form = document.getElementById('checkoutForm');
   const status2 = status || getStatus();
   const { subtotal, packingCharge } = calcTotals();
+  const saved = getSavedCustomerDetails();
 
   const deliveryFields = orderType === 'Delivery' ? (
-    '<div class="form-group"><label>Full Address *</label><textarea id="fAddress" rows="2" placeholder="House no., street, landmark..."></textarea></div>'
+    '<div class="form-group"><label>Full Address *</label><textarea id="fAddress" rows="2" placeholder="House no., street, landmark...">'+esc(saved?.address)+'</textarea></div>'
   ) : '';
 
   form.innerHTML =
     (!status2.open ? '<div class="closed-box">⚠️ '+status2.msg+'<br>You can still browse, but orders are only accepted during opening hours.</div>' : '') +
-    '<div class="form-group"><label>Your Name *</label><input type="text" id="fName" placeholder="e.g. Lalremruata"></div>' +
-    '<div class="form-group"><label>Phone Number *</label><input type="tel" id="fPhone" placeholder="e.g. 9876543210"></div>' +
+    (saved ? '<div class="autofill-note">✓ Auto-filled from your last order — edit if needed, or <a href="#" onclick="clearSavedCustomerDetails();return false;">clear saved details</a>.</div>' : '') +
+    '<div class="form-group"><label>Your Name *</label><input type="text" id="fName" placeholder="e.g. Lalremruata" value="'+esc(saved?.name)+'"></div>' +
+    '<div class="form-group"><label>Phone Number *</label><input type="tel" id="fPhone" placeholder="e.g. 9876543210" value="'+esc(saved?.phone)+'"></div>' +
     deliveryFields +
     '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" placeholder="Any special requests for the whole order..."></textarea></div>' +
     '<div class="note-box">💵 Payment: <strong>Payment on Delivery via Cash/UPI</strong></div>' +
@@ -649,6 +690,93 @@ function renderCheckoutForm(status) {
 }
 
 
+
+// ── ORDER RELIABILITY: retries + local persistence ──────────────────────
+// If the connection to the restaurant drops (power cut, wifi issue, etc.)
+// partway through checkout, we must never silently lose the customer's
+// order. Strategy:
+//   1. Try submitting up to 3 times with short gaps (handles brief blips).
+//   2. If it still fails, save the full order to localStorage so it
+//      survives a closed tab/browser crash, and show a clear on-screen
+//      (not a dismissible alert) message with the order details and a
+//      tap-to-call link, plus a Retry button.
+//   3. On every page load, check for a leftover unsent order and try to
+//      silently resend it before the customer does anything else.
+//   4. The backend also guards against the same order being saved twice
+//      if a retry happens to succeed after an earlier attempt actually
+//      went through server-side but the response got lost.
+const UNSENT_ORDER_KEY = 'gi_unsent_order';
+
+function saveUnsentOrder(payload) {
+  try { localStorage.setItem(UNSENT_ORDER_KEY, JSON.stringify(payload)); } catch(e) {}
+}
+function clearUnsentOrder() {
+  try { localStorage.removeItem(UNSENT_ORDER_KEY); } catch(e) {}
+}
+function getUnsentOrder() {
+  try {
+    const raw = localStorage.getItem(UNSENT_ORDER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+async function trySubmitOrder(payload, attempts) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(SERVER_URL + '/web-order', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (res.ok) return true;
+    } catch(e) { /* network error — fall through to retry/backoff */ }
+    if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+  return false;
+}
+
+function showOrderFailedScreen(payload) {
+  const itemsList = payload.items.map(i => i.quantity + 'x ' + i.product_retailer_id).join(', ');
+  const el = document.getElementById('orderFailedScreen');
+  el.querySelector('.of-order-num').textContent = 'Order #' + payload.order_number;
+  el.querySelector('.of-items').textContent = itemsList;
+  el.querySelector('.of-total').textContent = '₹' + payload.grand_total;
+  el.querySelector('.of-call-link').href = 'tel:' + RESTAURANT_PHONE;
+  el.classList.add('show');
+}
+
+function retryUnsentOrder() {
+  const payload = getUnsentOrder();
+  if (!payload) return;
+  const btn = document.getElementById('ofRetryBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Retrying...';
+  trySubmitOrder(payload, 2).then(ok => {
+    if (ok) {
+      clearUnsentOrder();
+      saveCustomerDetails(payload.customer_name, payload.customer_phone, payload.address);
+      document.getElementById('orderFailedScreen').classList.remove('show');
+      document.getElementById('successOrder').textContent = 'Order #' + payload.order_number;
+      document.getElementById('successScreen').classList.add('show');
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = 'Try Again';
+    }
+  });
+}
+
+// On page load: if there's a leftover order from a previous failed
+// attempt (tab closed, browser crashed, etc.) try to quietly resend it
+// once before the customer does anything else.
+async function recoverUnsentOrderOnLoad() {
+  const payload = getUnsentOrder();
+  if (!payload) return;
+  const ok = await trySubmitOrder(payload, 1);
+  if (ok) {
+    clearUnsentOrder();
+  } else {
+    showOrderFailedScreen(payload); // remind them it's still unsent
+  }
+}
+// ─────────────────────────────────────────────────────────────────────
 
 async function placeOrder() {
   const name = document.getElementById('fName')?.value.trim();
@@ -690,31 +818,37 @@ async function placeOrder() {
     order_time: new Date().toLocaleString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})
   };
 
-  try {
-    const res = await fetch(SERVER_URL + '/web-order', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  // Persist BEFORE attempting the network call — if the tab crashes or
+  // closes mid-request, the order details still survive on this device.
+  saveUnsentOrder(payload);
+
+  const ok = await trySubmitOrder(payload, 3); // 3 attempts with short backoff — absorbs brief network blips
+
+  if (ok) {
+    clearUnsentOrder();
+    saveCustomerDetails(name, phone, address);
+    closeCart();
+    document.getElementById('successOrder').textContent = 'Order #'+orderNumber;
+    document.getElementById('successScreen').classList.add('show');
+    cart = {}; orderType = null; updateCartUI();
+    document.querySelectorAll('.item-card').forEach(card => {
+      const id = card.id.replace('card-', '');
+      const item = ALL_ITEMS[id];
+      if (item) {
+        const footer = card.querySelector('.item-footer');
+        if (footer) footer.innerHTML = '<div class="item-price">₹'+item.price+'</div><button class="add-btn" onclick="addToCart(\''+id+'\')">+</button>';
+        const noteWrap = card.querySelector('.note-wrap');
+        if (noteWrap) noteWrap.remove();
+      }
+      refreshTextRow(id);
     });
-    if (res.ok) {
-      closeCart();
-      document.getElementById('successOrder').textContent = 'Order #'+orderNumber;
-      document.getElementById('successScreen').classList.add('show');
-      cart = {}; orderType = null; updateCartUI();
-      document.querySelectorAll('.item-card').forEach(card => {
-        const id = card.id.replace('card-', '');
-        const item = ALL_ITEMS[id];
-        if (item) {
-          const footer = card.querySelector('.item-footer');
-          if (footer) footer.innerHTML = '<div class="item-price">₹'+item.price+'</div><button class="add-btn" onclick="addToCart(\''+id+'\')">+</button>';
-          const noteWrap = card.querySelector('.note-wrap');
-          if (noteWrap) noteWrap.remove();
-        }
-        refreshTextRow(id);
-      });
-    } else throw new Error('error');
-  } catch(e) {
-    alert('Sorry, we could not process your order right now. Please call us directly at 9612992023 to place your order.');
+  } else {
+    // Order stays saved in localStorage (not cleared) so it's never lost —
+    // customer sees full order details + a direct call link, and can also
+    // retry once their connection or the restaurant's connection recovers.
     btn.disabled = false;
     btn.textContent = 'Place Order';
+    showOrderFailedScreen(payload);
   }
 }
 
@@ -886,6 +1020,7 @@ function init() {
   refreshStatusBanner();
   buildMenu();
   loadRemoteSettings();
+  recoverUnsentOrderOnLoad();
 }
 
 init();
