@@ -43,6 +43,14 @@ RESTAURANT_PHONE = "9612992023"
 UPI_PAYEE_VPA = "Q171786848@ybl"
 UPI_PAYEE_NAME = "PhonePeMerchant"
 UPI_MCC = "0000"
+
+# Daily sales report — emails a summary of the day's sales automatically
+# (uses the same Gmail SMTP settings as receipt emails above). Leave
+# OWNER_REPORT_EMAIL blank to disable this entirely. Time is 24h "HH:MM".
+# NOTE: this only fires if orders.py is actually running at that time —
+# if the PC is off or asleep at 21:30, that day's report won't send.
+OWNER_REPORT_EMAIL = "dianarinsiami@gmail.com"    # e.g. "youremail@gmail.com" — where to send the daily report
+DAILY_REPORT_TIME = "21:30"
 # ────────────────────────────────────────────────────────
 
 # ── SETTINGS (special hours + announcement banner) ───────
@@ -854,6 +862,17 @@ def api_save_settings():
 
 
 # ── DASHBOARD ROUTES ──────────────────────────────────────
+@app.route("/api/send-daily-report", methods=["POST"])
+def api_send_daily_report():
+    data = request.get_json() or {}
+    if data.get("password") != DASHBOARD_PASSWORD:
+        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
+    if not OWNER_REPORT_EMAIL or not SMTP_EMAIL or not SMTP_APP_PASSWORD:
+        return Response('{"status":"error","message":"Email/report not configured in orders.py"}', status=400, mimetype="application/json")
+    ok = send_daily_sales_report()
+    return Response(json.dumps({"status": "ok" if ok else "error"}), status=200, mimetype="application/json")
+
+
 @app.route("/api/download-backup")
 def api_download_backup():
     password = request.args.get("password", "")
@@ -979,6 +998,82 @@ Thanks for ordering with us!
     except Exception as e:
         # Never let an email failure affect order confirmation/printing.
         print(f"[EMAIL ERROR] Could not send receipt to {to_email}: {e}")
+
+
+def send_daily_sales_report(date_str=None):
+    """Emails a summary of the day's sales (defaults to today) to
+    OWNER_REPORT_EMAIL — total revenue, breakdown by order type and by
+    source (Website vs POS), and top-selling items. Lets you check daily
+    sales from anywhere without needing to open the dashboard."""
+    if not OWNER_REPORT_EMAIL or not SMTP_EMAIL or not SMTP_APP_PASSWORD:
+        return False
+
+    date_str = date_str or datetime.now().strftime("%Y-%m-%d")
+    summary = get_sales_summary(date_str, date_str)
+
+    if summary["total_orders"] == 0:
+        body = f"No confirmed orders were recorded on {date_str}."
+    else:
+        lines = [
+            f"Total Orders: {summary['total_orders']}",
+            f"Total Revenue: Rs.{summary['total_revenue']}",
+            "",
+            "By Order Type:",
+        ]
+        for t in summary["by_type"]:
+            lines.append(f"  {t['type']}: {t['count']} orders - Rs.{t['revenue']}")
+        lines.append("")
+        lines.append("By Source:")
+        for s in summary["by_source"]:
+            label = "Website" if s["source"] == "website" else "POS (In-Restaurant)"
+            lines.append(f"  {label}: {s['count']} orders - Rs.{s['revenue']}")
+        lines.append("")
+        lines.append("Top Items:")
+        for it in summary["top_items"][:10]:
+            lines.append(f"  {it['qty']} x {it['name']} - Rs.{it['revenue']}")
+        body = "\n".join(lines)
+
+    body = f"""Daily Sales Report — {RESTAURANT_NAME}
+Date: {date_str}
+
+{body}
+
+(Automated report — sent from your order management system.)
+""".strip()
+
+    try:
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = f"Daily Sales Report - {date_str} - {RESTAURANT_NAME}"
+        msg["From"] = SMTP_EMAIL
+        msg["To"] = OWNER_REPORT_EMAIL
+
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
+            server.send_message(msg)
+        print(f"[DAILY REPORT] Sent for {date_str} to {OWNER_REPORT_EMAIL}")
+        return True
+    except Exception as e:
+        print(f"[DAILY REPORT ERROR] Could not send report: {e}")
+        return False
+
+
+def daily_report_loop():
+    """Checks once a minute whether it's time to send the daily report,
+    and sends it at most once per day even if this loop keeps running
+    past that minute."""
+    last_sent_date = None
+    while True:
+        now = datetime.now()
+        current_time = now.strftime("%H:%M")
+        today_str = now.strftime("%Y-%m-%d")
+        if current_time == DAILY_REPORT_TIME and last_sent_date != today_str:
+            send_daily_sales_report(today_str)
+            last_sent_date = today_str
+        time.sleep(30)
+
+
+threading.Thread(target=daily_report_loop, daemon=True).start()
 
 
 @app.route("/api/confirm-order/<int:order_id>", methods=["POST"])
@@ -1810,8 +1905,34 @@ function renderSettings() {
       '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="downloadBackupNow()">⬇️ Download Backup Now</button>' +
     '</div>';
 
-  main.innerHTML = bannerHtml + datesHtml + backupHtml +
+  const reportHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📧 Daily Sales Report</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">A daily sales summary auto-sends by email at 21:30 (set OWNER_REPORT_EMAIL in orders.py to enable). This only works while this PC is on and orders.py is running at that time.</div>' +
+      '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="sendReportNow()">📧 Send Today\\'s Report Now</button>' +
+    '</div>';
+
+  main.innerHTML = bannerHtml + datesHtml + backupHtml + reportHtml +
     '<button class="btn-save" onclick="saveAllSettings()">💾 Save Settings</button>';
+}
+
+function sendReportNow() {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password to send the report:') || '';
+    if (!dashPassword) return;
+  }
+  fetch('/api/send-daily-report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ password: dashPassword })
+  }).then(r => r.json().then(body => ({status: r.status, body}))).then(({status, body}) => {
+    if (status === 200 && body.status === 'ok') {
+      alert('Report sent!');
+    } else {
+      dashPassword = '';
+      alert('Failed to send: ' + (body.message || 'Check that OWNER_REPORT_EMAIL and SMTP settings are configured in orders.py'));
+    }
+  }).catch(e => alert('Failed to send report.'));
 }
 
 function downloadBackupNow() {
