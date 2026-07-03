@@ -9,6 +9,13 @@ import time
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
+from urllib.parse import quote
+try:
+    import qrcode
+    from PIL import Image
+    QR_AVAILABLE = True
+except ImportError:
+    QR_AVAILABLE = False
 
 app = Flask(__name__)
 
@@ -30,6 +37,12 @@ SMTP_EMAIL = ""            # e.g. "grillinnfalkawn@gmail.com"
 SMTP_APP_PASSWORD = ""     # 16-character Gmail App Password
 RESTAURANT_NAME = "Grill Inn, Falkawn"
 RESTAURANT_PHONE = "9612992023"
+
+# UPI payment QR on receipts — requests the exact bill amount, with the
+# order number as the payment note, so it's clear which order it's for.
+UPI_PAYEE_VPA = "Q171786848@ybl"
+UPI_PAYEE_NAME = "PhonePeMerchant"
+UPI_MCC = "0000"
 # ────────────────────────────────────────────────────────
 
 # ── SETTINGS (special hours + announcement banner) ───────
@@ -556,6 +569,67 @@ def divider(char="-", width=48):
     return char * width
 
 
+def image_to_escpos(img):
+    """Converts a PIL 1-bit image into ESC/POS GS v 0 raster bitmap bytes."""
+    width, height = img.size
+    # Width must be a multiple of 8 (1 bit per pixel, packed into bytes).
+    pad_w = (width + 7) // 8 * 8
+    if pad_w != width:
+        padded = Image.new("1", (pad_w, height), 1)  # white background
+        padded.paste(img, (0, 0))
+        img = padded
+        width = pad_w
+    pixels = img.load()
+    width_bytes = width // 8
+    data = bytearray()
+    for y in range(height):
+        for xb in range(width_bytes):
+            byte = 0
+            for bit in range(8):
+                x = xb * 8 + bit
+                if pixels[x, y] == 0:  # black pixel
+                    byte |= (0x80 >> bit)
+            data.append(byte)
+    header = GS + b'v0' + bytes([0]) + bytes([
+        width_bytes & 0xFF, (width_bytes >> 8) & 0xFF,
+        height & 0xFF, (height >> 8) & 0xFF
+    ])
+    return header + bytes(data)
+
+
+def generate_upi_qr_bytes(amount, order_number, size_mm=50, dots_per_mm=8):
+    """Builds a UPI payment QR requesting the exact bill amount, with the
+    order number as the payment note, and returns it as ready-to-print
+    ESC/POS raster bytes. Returns None if the qrcode/Pillow libraries
+    aren't installed, so a missing dependency never breaks printing."""
+    if not QR_AVAILABLE:
+        print("[QR WARNING] qrcode/Pillow not installed — skipping payment QR. Run: pip install qrcode[pil] pillow --break-system-packages")
+        return None
+    try:
+        note = quote(f"Order {order_number}")
+        upi_url = (
+            f"upi://pay?pa={UPI_PAYEE_VPA}&pn={quote(UPI_PAYEE_NAME)}&mc={UPI_MCC}"
+            f"&mode=02&purpose=00&am={amount}&cu=INR&tn={note}"
+        )
+        qr = qrcode.QRCode(border=1, box_size=10)
+        qr.add_data(upi_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white").convert("1")
+        size_px = size_mm * dots_per_mm
+        img = img.resize((size_px, size_px), Image.NEAREST)  # NEAREST keeps QR edges crisp
+        return image_to_escpos(img)
+    except Exception as e:
+        print(f"[QR ERROR] Could not generate payment QR: {e}")
+        return None
+
+
+def shorten_pizza_name(name):
+    """Drops the ' (9 Inch)' / ' (6 Inch)' suffix on KOT printouts — 'Regular'
+    or 'Pan' already tells the kitchen the size, so this saves horizontal
+    space on the ticket without losing any information they need."""
+    return name.replace(" (9 Inch)", "").replace(" (6 Inch)", "")
+
+
 def print_order(order):
     customer_name = order["customer_name"]
     customer_phone = order["customer_phone"]
@@ -636,6 +710,17 @@ def print_order(order):
         add(LF)
         add(encode(f"Notes: {notes[:40]}"))
 
+    # UPI payment QR — requests the exact bill amount, order number as note.
+    qr_bytes = generate_upi_qr_bytes(grand, order_number, size_mm=50)
+    if qr_bytes:
+        add(LF)
+        add(ALIGN_CENTER)
+        add(qr_bytes)
+        add(LF)
+        add(BOLD_ON)
+        add(encode("Scan here to pay"))
+        add(BOLD_OFF)
+
     add(LF)
     add(ALIGN_CENTER)
     add(BOLD_ON)
@@ -658,7 +743,9 @@ def print_order(order):
     add(encode("Service Ticket: KOT"))
     add(LF)
     add(BOLD_ON)
+    add(DOUBLE_ON)
     add(encode(order_type))
+    add(DOUBLE_OFF)
     add(BOLD_OFF)
     add(LF)
 
@@ -679,17 +766,19 @@ def print_order(order):
     add(encode(divider()))
 
     for item in items:
-        name = item.get("product_retailer_id", "Unknown")[:35]
+        name = shorten_pizza_name(item.get("product_retailer_id", "Unknown"))[:35]
         qty = item.get("quantity", 1)
         add(encode(f"{name:<36}{qty:>12}"))
+        add(LF)  # extra vertical spacing between items, matching the reference KOT layout
 
     add(encode(divider()))
     add(LF)
-    add(ALIGN_CENTER)
-    add(BOLD_ON)
-    add(encode("** ONLINE ORDER **"))
-    add(BOLD_OFF)
-    add(LF)
+    if order.get("source") != "pos":
+        add(ALIGN_CENTER)
+        add(BOLD_ON)
+        add(encode("** ONLINE ORDER **"))
+        add(BOLD_OFF)
+        add(LF)
     add(LF)
     add(LF)
     add(CUT)
