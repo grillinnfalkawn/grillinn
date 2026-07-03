@@ -49,7 +49,7 @@ UPI_MCC = "0000"
 # OWNER_REPORT_EMAIL blank to disable this entirely. Time is 24h "HH:MM".
 # NOTE: this only fires if orders.py is actually running at that time —
 # if the PC is off or asleep at 21:30, that day's report won't send.
-OWNER_REPORT_EMAIL = "dianarinsiami@gmail.com"    # e.g. "youremail@gmail.com" — where to send the daily report
+OWNER_REPORT_EMAIL = ""    # e.g. "youremail@gmail.com" — where to send the daily report
 DAILY_REPORT_TIME = "21:30"
 # ────────────────────────────────────────────────────────
 
@@ -631,6 +631,17 @@ def generate_upi_qr_bytes(amount, order_number, size_mm=50, dots_per_mm=8):
         return None
 
 
+def format_kot_datetime(order_time_str):
+    """Reformats order_time (stored as 'DD/MM/YYYY, HH:MM') into the
+    'Jul 02 2026 06:34 PM' style used on the reference KOT layout. Falls
+    back to the original string if it doesn't parse cleanly."""
+    try:
+        dt = datetime.strptime(order_time_str.strip(), "%d/%m/%Y, %H:%M")
+        return dt.strftime("%b %d %Y %I:%M %p")
+    except Exception:
+        return order_time_str
+
+
 def shorten_pizza_name(name):
     """Drops the ' (9 Inch)' / ' (6 Inch)' suffix on KOT printouts — 'Regular'
     or 'Pan' already tells the kitchen the size, so this saves horizontal
@@ -758,11 +769,10 @@ def print_order(order):
     add(LF)
 
     add(ALIGN_LEFT)
-    add(encode(f"Order #: {order_number}"))
-    add(encode(f"Date   : {order_time}"))
-    add(LF)
-    add(encode(f"Customer: {customer_name}"))
-    add(encode(f"Phone   : {customer_phone}"))
+    if customer_name and customer_name != "Walk-in":
+        add(encode(f"Customer: {customer_name}"))
+    if customer_phone:
+        add(encode(f"Phone   : {customer_phone}"))
     if order_type == "Delivery" and address:
         add(encode(f"Address : {address}"))
     if notes:
@@ -770,6 +780,11 @@ def print_order(order):
     add(LF)
 
     add(encode(divider()))
+    total_qty = sum(item.get("quantity", 1) for item in items)
+    add(encode(f"{'Order # ' + order_number:<24}{str(len(items)) + ' items (' + str(total_qty) + ' Qty)':>24}"))
+    add(encode(f"{format_kot_datetime(order_time):<24}{'Manager Falkawn':>24}"))
+    add(encode(divider()))
+
     add(encode(f"{'Item':<36}{'Qty':>12}"))
     add(encode(divider()))
 
@@ -780,13 +795,17 @@ def print_order(order):
         add(LF)  # extra vertical spacing between items, matching the reference KOT layout
 
     add(encode(divider()))
-    add(LF)
     if order.get("source") != "pos":
         add(ALIGN_CENTER)
         add(BOLD_ON)
         add(encode("** ONLINE ORDER **"))
         add(BOLD_OFF)
         add(LF)
+
+    printed_now = datetime.now()
+    printed_str = printed_now.strftime("%b %d %Y %I:%M:%S.") + f"{printed_now.microsecond // 1000:03d}" + printed_now.strftime(" %p")
+    add(ALIGN_CENTER)
+    add(encode(f"Printed On: {printed_str}"))
     add(LF)
     add(LF)
     add(CUT)
