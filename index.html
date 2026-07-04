@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Grill Inn Falkawn | Order Online - Burgers, Pizza, Wraps & More</title>
 <meta name="description" content="Order online from Grill Inn, Falkawn. Fresh burgers, pizzas, wraps, footlongs & more. Delivery, Takeaway & Dine In available. Call 9612992023.">
 <meta name="keywords" content="Grill Inn Falkawn, food delivery Falkawn, Mizoram restaurant, online food order Falkawn, burgers pizza Falkawn">
@@ -25,8 +25,9 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
 :root{--black:#0f0f0f;--charcoal:#1a1a1a;--panel:#222;--border:#2e2e2e;--orange:#f97316;--red:#dc2626;--flame:#ea580c;--white:#f5f5f5;--muted:#888;--card-bg:#1e1e1e;}
-*{box-sizing:border-box;margin:0;padding:0;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--black);color:var(--white);font-family:'Inter',sans-serif;min-height:100vh;}
+body.no-scroll{overflow:hidden;}
 header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0 1rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:60px;}
 .logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .view-toggle{display:flex;gap:0.4rem;align-items:center;}
@@ -96,11 +97,11 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .text-qty-ctrl{display:flex;align-items:center;gap:0.2rem;}
 .text-qty-ctrl button{background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--white);cursor:pointer;font-size:0.75rem;font-weight:700;width:20px;height:20px;display:flex;align-items:center;justify-content:center;}
 .text-qty-num{font-size:0.8rem;font-weight:700;min-width:14px;text-align:center;color:var(--orange);}
-.cart-bar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--orange),var(--red));padding:0.85rem 1.5rem;display:none;align-items:center;justify-content:space-between;cursor:pointer;z-index:200;box-shadow:0 -4px 20px rgba(249,115,22,0.3);}
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--orange),var(--red));padding:0.85rem 1.5rem calc(0.85rem + env(safe-area-inset-bottom));display:none;align-items:center;justify-content:space-between;cursor:pointer;z-index:200;box-shadow:0 -4px 20px rgba(249,115,22,0.3);}
 .cart-bar.visible{display:flex;}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;}
 .overlay.open{display:block;}
-.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);border-top:2px solid var(--flame);border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto;z-index:400;transform:translateY(100%);transition:transform 0.3s ease;padding:1.5rem 1rem 2rem;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);border-top:2px solid var(--flame);border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto;overscroll-behavior:contain;z-index:400;transform:translateY(100%);transition:transform 0.3s ease;padding:1.5rem 1rem calc(2rem + env(safe-area-inset-bottom));}
 .drawer.open{transform:translateY(0);}
 .drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
 .drawer-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--orange);}
@@ -140,12 +141,64 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .success-sub{color:var(--muted);font-size:0.85rem;margin-bottom:0.25rem;}
 .success-order{color:var(--orange);font-weight:700;font-size:1rem;margin-bottom:1.5rem;}
 .new-order-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700;padding:0.75rem 2rem;margin-top:1rem;}
-.wa-float{position:fixed;bottom:80px;right:1rem;background:#25d366;border-radius:50%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,0.4);z-index:150;transition:transform 0.2s;}
+.wa-float{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));right:1rem;background:#25d366;border-radius:50%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,0.4);z-index:150;transition:transform 0.2s;}
 .wa-float:hover{transform:scale(1.1);}
+.site-footer{padding:2rem 1rem calc(6.5rem + env(safe-area-inset-bottom));text-align:center;border-top:1px solid var(--border);margin-top:1rem;}
+.ig-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--panel);border:1px solid var(--border);border-radius:30px;padding:0.55rem 1.1rem;text-decoration:none;color:var(--white);font-size:0.85rem;font-weight:600;transition:all 0.2s;}
+.ig-link:hover{border-color:#dc2626;transform:translateY(-2px);}
+.ig-link svg{width:20px;height:20px;flex-shrink:0;}
+.footer-note{margin-top:0.75rem;color:var(--muted);font-size:0.72rem;}
 .spinner{display:inline-block;width:16px;height:16px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .no-results{text-align:center;padding:3rem 1rem;color:var(--muted);}
 .no-results-icon{font-size:2.5rem;margin-bottom:0.5rem;}
+
+/* Dismissible announcement banner */
+.announcement-banner{position:relative;padding:0.65rem 2.4rem;}
+.banner-close{position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.25);border:none;border-radius:50%;color:#fff;width:20px;height:20px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
+.banner-close:hover{background:rgba(255,255,255,0.4);}
+
+/* Grid/List toggle first-visit hint */
+.view-toggle{border-radius:8px;}
+.view-toggle.hint{animation:hintPulse 1.5s ease-in-out infinite;}
+@keyframes hintPulse{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,0.55);}50%{box-shadow:0 0 0 5px rgba(249,115,22,0);}}
+
+/* Add-to-cart tactile feedback */
+.item-card.added{animation:cardPop 0.35s ease;}
+.text-item.added{animation:rowPop 0.35s ease;}
+@keyframes cardPop{0%{transform:scale(1);}45%{transform:scale(1.035);box-shadow:0 0 0 2px var(--flame);}100%{transform:scale(1);box-shadow:none;}}
+@keyframes rowPop{0%{background:transparent;}30%{background:rgba(249,115,22,0.18);}100%{background:transparent;}}
+
+/* Note character counter */
+.note-count{text-align:right;font-size:0.62rem;color:var(--muted);margin-top:0.15rem;}
+
+/* Order-type ETA hint */
+.eta-hint{font-size:0.75rem;color:var(--muted);text-align:center;margin-bottom:0.7rem;}
+.eta-hint strong{color:var(--orange);}
+
+/* Checkout inline validation */
+.input-wrap{position:relative;}
+.input-wrap input,.input-wrap textarea{padding-right:2.2rem;}
+.valid-check{position:absolute;right:0.7rem;top:50%;transform:translateY(-50%);color:#4ade80;font-weight:800;font-size:0.95rem;opacity:0;transition:opacity 0.15s;pointer-events:none;}
+.valid-check.show{opacity:1;}
+.input-wrap.textarea-wrap .valid-check{top:0.85rem;transform:none;}
+.input-wrap input.field-valid,.input-wrap textarea.field-valid{border-color:#4ade80;}
+
+/* Branded burger loading spinner */
+.burger-spinner{display:inline-block;font-size:1.05rem;animation:burgerSpin 0.9s linear infinite;vertical-align:middle;}
+@keyframes burgerSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+
+/* Success screen confetti */
+.confetti-container{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.confetti-piece{position:absolute;top:-12px;width:8px;height:14px;opacity:0.9;border-radius:2px;animation:confettiFall linear forwards;}
+@keyframes confettiFall{to{transform:translateY(112vh) rotate(540deg);opacity:0.25;}}
+
+@media(max-width:599px){
+  .search-input,.form-group input,.form-group select,.form-group textarea,.note-input,#fNotes{font-size:16px;}
+  .qty-ctrl button,.text-qty-ctrl button{width:28px;height:28px;}
+  .add-btn{width:30px;height:30px;}
+  .text-add-btn{width:28px;height:28px;}
+}
 @media(min-width:600px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));}.drawer{max-width:480px;left:50%;transform:translateX(-50%) translateY(100%);right:auto;width:100%;}.drawer.open{transform:translateX(-50%) translateY(0);}.cart-bar{max-width:480px;left:50%;transform:translateX(-50%);right:auto;border-radius:12px 12px 0 0;}}
 </style>
 </head>
@@ -182,6 +235,14 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 <div class="text-cat-nav hidden" id="textCatNav"></div>
 <div class="text-menu" id="textMenu"></div>
 
+<div class="site-footer">
+  <a class="ig-link" href="https://instagram.com/grillinn.falkawn" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5.5" stroke="url(#ig-grad)" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="url(#ig-grad)" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.15" fill="url(#ig-grad)"/><defs><linearGradient id="ig-grad" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#f97316"/><stop offset="1" stop-color="#dc2626"/></linearGradient></defs></svg>
+    Follow us on Instagram @grillinn.falkawn
+  </a>
+  <div class="footer-note">Grill Inn Falkawn &nbsp;•&nbsp; Fresh & Hot 🔥</div>
+</div>
+
 <div class="cart-bar" id="cartBar" onclick="openCart()">
   <div style="font-size:0.85rem;font-weight:600;" id="cartBarLeft">0 items</div>
   <div style="font-size:0.9rem;font-weight:700;" id="cartBarRight">View Cart →</div>
@@ -199,11 +260,13 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 </div>
 
 <div class="success-screen" id="successScreen">
+  <div class="confetti-container" id="confettiContainer"></div>
   <div class="success-icon">✅</div>
   <div class="success-title">Order Placed!</div>
   <div class="success-sub">Thank you for ordering from</div>
   <div class="success-sub" style="color:var(--white);font-weight:700;font-size:1rem;">Grill Inn, Falkawn</div>
   <div class="success-order" id="successOrder"></div>
+  <div class="success-sub" id="successPrepTime" style="color:var(--orange);font-weight:700;"></div>
   <div class="success-sub">Your order has been received!</div>
   <div class="success-sub" style="margin-top:0.5rem;">Payment: <span style="color:var(--orange);font-weight:700;">Payment on Delivery via Cash/UPI</span></div>
   <div class="success-sub" style="margin-top:0.5rem;">Questions? Call <span style="color:var(--orange);font-weight:700;">9612992023</span></div>
@@ -464,6 +527,36 @@ const CAT_ICONS = {"Veg Burgers":"🍔","Non Veg Burgers":"🍔","Wraps":"🌯",
 const ALL_ITEMS = {};
 Object.values(MENU).flat().forEach(i => ALL_ITEMS[i.id] = i);
 
+const LONG_PREP_CATEGORIES = ['Grilled Chicken', 'Pastas'];
+
+function getItemCategory(id) {
+  return Object.keys(MENU).find(k => MENU[k].some(i => i.id === id));
+}
+
+function estimatePrepRange(cartItems) {
+  const items = Object.values(cartItems);
+  const isLong = items.some(item => LONG_PREP_CATEGORIES.includes(getItemCategory(item.id)));
+  return isLong ? '25–30 mins' : '20–25 mins';
+}
+
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const colors = ['#f97316','#dc2626','#facc15','#4ade80','#f5f5f5'];
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = (Math.random() * 100) + '%';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.4) + 's';
+    piece.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+    container.appendChild(piece);
+  }
+  setTimeout(() => { container.innerHTML = ''; }, 3200);
+}
+
 function isVegItem(item) {
   const d = item.description.toLowerCase();
   const t = item.title.toLowerCase();
@@ -550,7 +643,15 @@ function addToCart(id) {
   else cart[id] = { ...ALL_ITEMS[id], qty: 1, note: '' };
   refreshCard(id);
   refreshTextRow(id);
+  pulseCard(id);
   updateCartUI();
+}
+
+function pulseCard(id) {
+  const card = document.getElementById('card-' + id);
+  if (card) { card.classList.remove('added'); void card.offsetWidth; card.classList.add('added'); }
+  const trow = document.getElementById('trow-' + id);
+  if (trow) { trow.classList.remove('added'); void trow.offsetWidth; trow.classList.add('added'); }
 }
 
 function updateQty(id, delta) {
@@ -559,6 +660,7 @@ function updateQty(id, delta) {
   if (cart[id].qty <= 0) delete cart[id];
   refreshCard(id);
   refreshTextRow(id);
+  if (delta > 0 && cart[id]) pulseCard(id);
 
   // After any cart change, enforce cheese burst quantity caps
   ['pan','regular'].forEach(size => {
@@ -583,6 +685,17 @@ function updateQty(id, delta) {
 
 function setNote(id, val) { if (cart[id]) cart[id].note = val; }
 
+function buildNoteWrapInner(id, note) {
+  const n = note || '';
+  return '<textarea class="note-input" rows="1" maxlength="60" placeholder="Special instructions..." oninput="handleNoteInput(\''+id+'\',this)">'+n+'</textarea><div class="note-count">'+n.length+'/60</div>';
+}
+
+function handleNoteInput(id, el) {
+  setNote(id, el.value);
+  const counter = el.nextElementSibling;
+  if (counter) counter.textContent = el.value.length + '/60';
+}
+
 function refreshCard(id) {
   const card = document.getElementById('card-' + id);
   if (!card) return;
@@ -594,7 +707,7 @@ function refreshCard(id) {
     if (!noteWrap) {
       noteWrap = document.createElement('div');
       noteWrap.className = 'note-wrap';
-      noteWrap.innerHTML = '<textarea class="note-input" rows="1" placeholder="Special instructions..." onchange="setNote(\''+id+'\',this.value)">'+(cart[id].note||'')+'</textarea>';
+      noteWrap.innerHTML = buildNoteWrapInner(id, cart[id].note || '');
       card.querySelector('.item-body').appendChild(noteWrap);
     }
   } else {
@@ -627,8 +740,8 @@ function updateCartUI() {
   }
 }
 
-function openCart() { document.getElementById('overlay').classList.add('open'); document.getElementById('drawer').classList.add('open'); renderDrawer(); }
-function closeCart() { document.getElementById('overlay').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); }
+function openCart() { document.getElementById('overlay').classList.add('open'); document.getElementById('drawer').classList.add('open'); document.body.classList.add('no-scroll'); renderDrawer(); }
+function closeCart() { document.getElementById('overlay').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); document.body.classList.remove('no-scroll'); }
 
 function renderDrawer() {
   const items = Object.entries(cart);
@@ -654,7 +767,8 @@ function renderDrawer() {
 
 html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges</span><span>₹'+packingCharge+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
 
-  html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns"><button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button><button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div><div id="checkoutForm"></div></div>';
+  const etaText = orderType ? estimatePrepRange(cart) + (orderType === 'Delivery' ? ' (+ delivery time)' : '') : '';
+  html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns"><button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button><button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div>'+(etaText ? '<div class="eta-hint">⏱ Estimated: <strong>'+etaText+'</strong></div>' : '')+'<div id="checkoutForm"></div></div>';
 
   content.innerHTML = html;
   if (orderType) renderCheckoutForm(status);
@@ -692,19 +806,50 @@ function renderCheckoutForm(status) {
   const saved = getSavedCustomerDetails();
 
   const deliveryFields = orderType === 'Delivery' ? (
-    '<div class="form-group"><label>Full Address *</label><textarea id="fAddress" rows="2" placeholder="House no., street, landmark...">'+esc(saved?.address)+'</textarea></div>'
+    '<div class="form-group"><label>Full Address *</label><div class="input-wrap textarea-wrap"><textarea id="fAddress" rows="2" autocomplete="street-address" placeholder="House no., street, landmark..." oninput="validateField(this)">'+esc(saved?.address)+'</textarea><span class="valid-check">✓</span></div></div>'
   ) : '';
 
   form.innerHTML =
     (!status2.open ? '<div class="closed-box">⚠️ '+status2.msg+'<br>You can still browse, but orders are only accepted during opening hours.</div>' : '') +
     (saved ? '<div class="autofill-note">✓ Auto-filled from your last order — edit if needed, or <a href="#" onclick="clearSavedCustomerDetails();return false;">clear saved details</a>.</div>' : '') +
-    '<div class="form-group"><label>Your Name *</label><input type="text" id="fName" placeholder="e.g. Lalremruata" value="'+esc(saved?.name)+'"></div>' +
-    '<div class="form-group"><label>Phone Number *</label><input type="tel" id="fPhone" placeholder="e.g. 9876543210" value="'+esc(saved?.phone)+'"></div>' +
-    '<div class="form-group"><label>Email (optional)</label><input type="email" id="fEmail" placeholder="Enter your email to get confirmation/receipt" value="'+esc(saved?.email)+'"></div>' +
+    '<div class="form-group"><label>Your Name *</label><div class="input-wrap"><input type="text" id="fName" autocomplete="name" placeholder="e.g. Lalremruata" value="'+esc(saved?.name)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
+    '<div class="form-group"><label>Phone Number *</label><div class="input-wrap"><input type="tel" id="fPhone" autocomplete="tel" inputmode="numeric" placeholder="e.g. 9876543210" value="'+esc(saved?.phone)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
+    '<div class="form-group"><label>Email (optional)</label><div class="input-wrap"><input type="email" id="fEmail" autocomplete="email" placeholder="Enter your email to get confirmation/receipt" value="'+esc(saved?.email)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
     deliveryFields +
     '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" placeholder="Any special requests for the whole order..."></textarea></div>' +
     '<div class="note-box">💵 Payment: <strong>Payment on Delivery via Cash/UPI</strong></div>' +
     '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!status2.open ? 'disabled' : '')+'>'+(!status2.open ? 'Shop Closed' : 'Place Order')+'</button>';
+
+  setTimeout(() => {
+    ['fName','fPhone','fEmail','fAddress'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) validateField(el);
+    });
+    autoFocusFirstEmpty();
+  }, 0);
+}
+
+function validateField(el) {
+  const id = el.id;
+  const val = el.value.trim();
+  let valid = false;
+  if (id === 'fName') valid = val.length >= 2;
+  else if (id === 'fPhone') valid = /^\d{10,}$/.test(val.replace(/\D/g, ''));
+  else if (id === 'fEmail') valid = val !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  else if (id === 'fAddress') valid = val.length >= 8;
+  el.classList.toggle('field-valid', valid);
+  const wrap = el.parentElement;
+  const check = wrap ? wrap.querySelector('.valid-check') : null;
+  if (check) check.classList.toggle('show', valid);
+}
+
+function autoFocusFirstEmpty() {
+  const ids = ['fName', 'fPhone'];
+  if (orderType === 'Delivery') ids.push('fAddress');
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el && !el.value.trim()) { el.focus(); return; }
+  }
 }
 
 
@@ -815,7 +960,7 @@ async function placeOrder() {
 
   const btn = document.getElementById('placeBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Placing order...';
+  btn.innerHTML = '<span class="burger-spinner">🍔</span> Placing order...';
 
   orderCounter++;
   localStorage.setItem('gi_counter', orderCounter);
@@ -848,9 +993,13 @@ async function placeOrder() {
   if (ok) {
     clearUnsentOrder();
     saveCustomerDetails(name, phone, address, email);
+    const prepRange = estimatePrepRange(cart);
+    const prepSuffix = orderType === 'Delivery' ? ' (+ delivery time)' : '';
     closeCart();
     document.getElementById('successOrder').textContent = 'Order #'+orderNumber;
+    document.getElementById('successPrepTime').textContent = '⏱ Estimated preparation time: ' + prepRange + prepSuffix;
     document.getElementById('successScreen').classList.add('show');
+    launchConfetti();
     cart = {}; orderType = null; updateCartUI();
     document.querySelectorAll('.item-card').forEach(card => {
       const id = card.id.replace('card-', '');
@@ -909,7 +1058,7 @@ function makeCard(item) {
   const imgInner = imgUrl ? ('<img src="'+imgUrl+'" alt="'+item.title+'" loading="lazy" onerror="this.parentElement.textContent=\''+(CAT_ICONS[catKey]||'🍽️')+'\';">') : (CAT_ICONS[catKey] || '🍽️');
   card.innerHTML =
     '<div class="item-img">'+imgInner+'</div>'+
-    '<div class="item-body"><div class="item-name-row"><div class="veg-dot '+(veg?'veg':'nonveg')+'"></div><div class="item-name">'+item.title+'</div></div><div class="item-desc">'+item.description+(item.is_addon ? ' <span style="color:var(--orange);font-weight:700;">⚡ Add-on</span>' : '')+'</div><div class="item-footer">'+footerHTML+'</div>'+(inCart && inCart.note ? '<div class="note-wrap"><textarea class="note-input" rows="1" placeholder="Special instructions..." onchange="setNote(\''+item.id+'\',this.value)">'+inCart.note+'</textarea></div>' : '')+'</div>';
+    '<div class="item-body"><div class="item-name-row"><div class="veg-dot '+(veg?'veg':'nonveg')+'"></div><div class="item-name">'+item.title+'</div></div><div class="item-desc">'+item.description+(item.is_addon ? ' <span style="color:var(--orange);font-weight:700;">⚡ Add-on</span>' : '')+'</div><div class="item-footer">'+footerHTML+'</div>'+(inCart && inCart.note ? '<div class="note-wrap">'+buildNoteWrapInner(item.id, inCart.note)+'</div>' : '')+'</div>';
   return card;
 }
 
@@ -1010,11 +1159,23 @@ function refreshTextRow(id) {
 function applyBanner(banner) {
   const el = document.getElementById('announcementBanner');
   if (banner && banner.active && banner.text) {
-    el.textContent = (banner.emoji || '🎉') + ' ' + banner.text;
+    const text = (banner.emoji || '🎉') + ' ' + banner.text;
+    if (sessionStorage.getItem('gi_banner_dismissed') === text) {
+      el.style.display = 'none';
+      return;
+    }
+    el.innerHTML = '<span>' + text + '</span><button class="banner-close" onclick="dismissBanner()" aria-label="Dismiss announcement">✕</button>';
     el.style.display = 'block';
   } else {
     el.style.display = 'none';
   }
+}
+
+function dismissBanner() {
+  const el = document.getElementById('announcementBanner');
+  const text = el.querySelector('span') ? el.querySelector('span').textContent : '';
+  sessionStorage.setItem('gi_banner_dismissed', text);
+  el.style.display = 'none';
 }
 
 function refreshStatusBanner() {
@@ -1037,11 +1198,23 @@ async function loadRemoteSettings() {
   }
 }
 
+function initViewToggleHint() {
+  if (localStorage.getItem('gi_view_hint_seen')) return;
+  const vt = document.querySelector('.view-toggle');
+  if (!vt) return;
+  vt.classList.add('hint');
+  const clearHint = () => { vt.classList.remove('hint'); localStorage.setItem('gi_view_hint_seen', '1'); };
+  document.getElementById('gridViewBtn').addEventListener('click', clearHint, { once: true });
+  document.getElementById('textViewBtn').addEventListener('click', clearHint, { once: true });
+  setTimeout(clearHint, 8000);
+}
+
 function init() {
   refreshStatusBanner();
   buildMenu();
   loadRemoteSettings();
   recoverUnsentOrderOnLoad();
+  initViewToggleHint();
 }
 
 init();
