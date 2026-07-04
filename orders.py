@@ -129,7 +129,8 @@ def init_db():
             source TEXT DEFAULT 'website',
             discount_percent INTEGER DEFAULT 0,
             discount_amount INTEGER DEFAULT 0,
-            void_reason TEXT
+            void_reason TEXT,
+            reject_reason TEXT
         )
     """)
     # Migrations for databases created before these columns existed.
@@ -141,6 +142,7 @@ def init_db():
         ("discount_percent", "INTEGER", "0"),
         ("discount_amount", "INTEGER", "0"),
         ("void_reason", "TEXT", None),
+        ("reject_reason", "TEXT", None),
     ]:
         if col not in existing_cols:
             default_clause = f" DEFAULT {default}" if default is not None else ""
@@ -396,6 +398,46 @@ def get_order_by_id(order_id):
     return dict(row) if row else None
 
 
+def get_top_selling_items(days=30, limit=8):
+    """Returns the best-selling menu items (by quantity sold) from
+    confirmed orders in the last `days` days — used to auto-populate the
+    POS Quick Add strip instead of a hand-maintained list."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("""
+        SELECT items_json FROM orders
+        WHERE status = 'printed'
+          AND created_at >= datetime('now', ?)
+    """, (f'-{int(days)} days',))
+    rows = c.fetchall()
+    conn.close()
+
+    qty_by_title = {}
+    for row in rows:
+        try:
+            items = json.loads(row["items_json"] or "[]")
+        except Exception:
+            continue
+        for it in items:
+            title = it.get("product_retailer_id", "")
+            qty = it.get("quantity", 0) or 0
+            qty_by_title[title] = qty_by_title.get(title, 0) + qty
+
+    # Match each sold title back to a canonical menu item (titles may have
+    # a note appended in brackets, e.g. "Pizza - Regular (9 Inch) [extra cheese]").
+    matched = {}
+    for title, qty in qty_by_title.items():
+        for menu_id, item in ITEMS_BY_ID.items():
+            if title.startswith(item["title"]):
+                if menu_id not in matched or qty > matched[menu_id]["qty"]:
+                    matched[menu_id] = {"id": menu_id, "title": item["title"], "price": item["price"], "qty": qty}
+                break
+
+    top = sorted(matched.values(), key=lambda x: x["qty"], reverse=True)[:limit]
+    return top
+
+
 def mark_order_status(order_id, status):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -643,10 +685,14 @@ def format_kot_datetime(order_time_str):
 
 
 def shorten_pizza_name(name):
-    """Drops the ' (9 Inch)' / ' (6 Inch)' suffix on KOT printouts — 'Regular'
-    or 'Pan' already tells the kitchen the size, so this saves horizontal
-    space on the ticket without losing any information they need."""
-    return name.replace(" (9 Inch)", "").replace(" (6 Inch)", "")
+    """Shortens pizza names for print: drops the '(9 Inch)'/'(6 Inch)'
+    size hint (that's only useful to the customer browsing online — the
+    kitchen/receipt just needs 'Regular' or 'Pan') and drops the dash
+    before it, e.g. 'Indi Chicken Pizza - Pan (6 Inch)' becomes
+    'Indi Chicken Pizza Pan'. Used on both the receipt and the KOT."""
+    name = name.replace(" (9 Inch)", "").replace(" (6 Inch)", "")
+    name = name.replace(" - Regular", " Regular").replace(" - Pan", " Pan")
+    return name
 
 
 def print_order(order):
@@ -703,11 +749,18 @@ def print_order(order):
     add(encode(divider()))
 
     for item in items:
-        name = item.get("product_retailer_id", "Unknown")[:23]
+        name = shorten_pizza_name(item.get("product_retailer_id", "Unknown"))
         qty = item.get("quantity", 1)
         price = item.get("item_price", 0)
         amt = qty * price
-        add(encode(f"{name:<24}{qty:>6}{price:>8}{amt:>8}"))
+        if len(name) <= 22:
+            # Fits comfortably on one line with the qty/rate/amount columns.
+            add(encode(f"{name:<24}{qty:>6}{price:>8}{amt:>8}"))
+        else:
+            # Name is genuinely too long — print it on its own line, then
+            # the qty/rate/amount columns right-aligned on the next line.
+            add(encode(name[:48]))
+            add(encode(f"{'':<24}{qty:>6}{price:>8}{amt:>8}"))
 
     add(encode(divider()))
     add(encode(f"{'Sub Total':<32}{subtotal:>16}"))
@@ -730,7 +783,7 @@ def print_order(order):
         add(encode(f"Notes: {notes[:40]}"))
 
     # UPI payment QR — requests the exact bill amount, order number as note.
-    qr_bytes = generate_upi_qr_bytes(grand, order_number, size_mm=50)
+    qr_bytes = generate_upi_qr_bytes(grand, order_number, size_mm=40)
     if qr_bytes:
         add(LF)
         add(ALIGN_CENTER)
@@ -783,9 +836,6 @@ def print_order(order):
     total_qty = sum(item.get("quantity", 1) for item in items)
     add(encode(f"{'Order # ' + order_number:<24}{str(len(items)) + ' items (' + str(total_qty) + ' Qty)':>24}"))
     add(encode(f"{format_kot_datetime(order_time):<24}{'Manager Falkawn':>24}"))
-    add(encode(divider()))
-
-    add(encode(f"{'Item':<36}{'Qty':>12}"))
     add(encode(divider()))
 
     for item in items:
@@ -1129,6 +1179,14 @@ def api_confirm_order(order_id):
     )
 
 
+@app.route("/api/top-sellers")
+def api_top_sellers():
+    days = request.args.get("days", 30, type=int)
+    limit = request.args.get("limit", 8, type=int)
+    top = get_top_selling_items(days=days, limit=limit)
+    return Response(json.dumps(top), status=200, mimetype="application/json")
+
+
 @app.route("/api/sales-summary")
 def api_sales_summary():
     today = datetime.now().strftime("%Y-%m-%d")
@@ -1186,7 +1244,23 @@ def api_export_orders_csv():
 
 @app.route("/api/reject-order/<int:order_id>", methods=["POST"])
 def api_reject_order(order_id):
-    mark_order_status(order_id, "rejected")
+    data = request.get_json() or {}
+    reason = (data.get("reason") or "").strip()
+    if not reason:
+        return Response('{"status":"error","message":"A reason is required to reject an order"}', status=400, mimetype="application/json")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE orders SET status = 'rejected', reject_reason = ? WHERE id = ?", (reason, order_id))
+    conn.commit()
+    conn.close()
+    return Response('{"status":"ok"}', status=200, mimetype="application/json")
+
+
+@app.route("/api/restore-order/<int:order_id>", methods=["POST"])
+def api_restore_order(order_id):
+    """Undoes a reject — puts the order back into the pending queue.
+    Used by the 5-second Undo toast so a fat-fingered Reject isn't final."""
+    mark_order_status(order_id, "pending")
     return Response('{"status":"ok"}', status=200, mimetype="application/json")
 
 
@@ -1359,6 +1433,29 @@ DASHBOARD_HTML = """
   .pos-held-bar{display:flex;gap:0.4rem;overflow-x:auto;padding:0.5rem 1rem;border-bottom:1px solid var(--border);background:rgba(249,115,22,0.08);}
   .pos-held-chip{flex-shrink:0;background:var(--panel);border:1px solid var(--orange);border-radius:20px;color:var(--orange);font-size:0.75rem;font-weight:700;padding:0.35rem 0.7rem;cursor:pointer;white-space:nowrap;}
   .pos-empty-cart{text-align:center;color:var(--muted);font-size:0.8rem;padding:2rem 1rem;}
+  .conn-dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .conn-dot.conn-ok{background:#22c55e;}
+  .conn-dot.conn-down{background:var(--red);}
+  .overdue-tag{font-size:0.68rem;color:white;background:var(--red);font-weight:700;margin-left:0.5rem;padding:0.15rem 0.5rem;border-radius:10px;}
+  .order-card.overdue{border-color:var(--red);box-shadow:0 0 0 1px var(--red);}
+  .undo-toast{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%) translateY(100px);background:#1f1f1f;border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem;display:flex;align-items:center;gap:1rem;color:white;font-size:0.85rem;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:200;transition:transform 0.25s;}
+  .undo-toast.show{transform:translateX(-50%) translateY(0);}
+  .undo-toast button{background:var(--orange);border:none;color:white;font-weight:700;padding:0.4rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.8rem;}
+  .pos-fav-label{font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem;}
+  .pos-fav-strip{display:flex;gap:0.5rem;overflow-x:auto;padding-bottom:0.8rem;margin-bottom:0.4rem;}
+  .pos-fav-btn{flex-shrink:0;background:var(--panel);border:1px solid var(--orange);border-radius:10px;padding:0.55rem 0.8rem;cursor:pointer;text-align:left;min-width:110px;}
+  .pos-fav-name{font-size:0.82rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
+  .pos-fav-price{font-size:0.78rem;color:var(--orange);font-weight:700;margin-top:0.15rem;}
+  .pos-preset-row{display:flex;gap:0.4rem;margin-bottom:0.5rem;}
+  .pos-preset-btn{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.45rem;cursor:pointer;font-size:0.8rem;}
+  .pos-preset-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
+  .pos-qty-picker-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:300;align-items:center;justify-content:center;}
+  .pos-qty-picker-box{background:var(--charcoal);border:1px solid var(--border);border-radius:14px;padding:1.2rem;width:90%;max-width:340px;}
+  .pos-qty-picker-title{font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:0.9rem;text-align:center;}
+  .pos-qty-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;margin-bottom:0.9rem;}
+  .pos-qty-picker-btn{background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:1.2rem;font-weight:700;padding:0.8rem 0;cursor:pointer;}
+  .pos-qty-picker-btn:active{background:var(--flame);}
+  .pos-qty-picker-cancel{width:100%;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.6rem;cursor:pointer;}
   .order-card{background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;}
   .order-card.pending{border-color:var(--orange);box-shadow:0 0 0 1px var(--orange);}
   .order-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;}
@@ -1438,7 +1535,7 @@ DASHBOARD_HTML = """
 
 <div class="app" id="app">
   <header>
-    <div class="logo" style="font-size:1.6rem;">Grill Inn</div>
+    <div class="logo" style="font-size:1.6rem;display:flex;align-items:center;gap:0.5rem;">Grill Inn <span id="connDot" class="conn-dot" title="Checking connection..."></span></div>
     <div class="tabs">
       <button class="tab-btn active" id="pendingTab" onclick="switchTab('pending')">Pending <span class="badge-count" id="pendingCount">0</span></button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">History</button>
@@ -1558,6 +1655,10 @@ function renderOrderCard(order, isPending) {
   const typeClass = order.order_type.replace(' ', '-');
   const sourceTag = order.source === 'pos' ? '<span style="font-size:0.68rem;color:var(--orange);font-weight:700;margin-left:0.4rem;">🧾 POS</span>' : '';
 
+  const minutesWaiting = isPending ? Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000) : 0;
+  const isOverdue = isPending && minutesWaiting >= 3;
+  const overdueTag = isOverdue ? '<span class="overdue-tag">⏰ Waiting ' + minutesWaiting + 'm</span>' : '';
+
   let actionsHtml = '';
   if (isPending) {
     const dcField = order.order_type === 'Delivery'
@@ -1577,11 +1678,12 @@ function renderOrderCard(order, isPending) {
       (order.status === 'printed' ? '<button class="btn-reject" onclick="cancelOrder(' + order.id + ')">🚫 Void</button>' : '') +
       '<button class="btn-reprint" onclick="reprintOrder(' + order.id + ')">🖨️ Reprint</button>' +
       '</div></div>' +
-      (order.status === 'voided' && order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + order.void_reason + '</div>' : '');
+      (order.status === 'voided' && order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + order.void_reason + '</div>' : '') +
+      (order.status === 'rejected' && order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + order.reject_reason + '</div>' : '');
   }
 
-  return '<div class="order-card ' + (isPending ? 'pending' : '') + '">' +
-    '<div class="order-header"><span class="order-num">#' + order.order_number + sourceTag + '</span><span class="order-type-tag ' + typeClass + '">' + order.order_type + '</span></div>' +
+  return '<div class="order-card ' + (isPending ? 'pending' : '') + (isOverdue ? ' overdue' : '') + '">' +
+    '<div class="order-header"><span class="order-num">#' + order.order_number + sourceTag + overdueTag + '</span><span class="order-type-tag ' + typeClass + '">' + order.order_type + '</span></div>' +
     '<div class="order-meta">' + order.customer_name + ' • ' + order.customer_phone + (order.address ? '<br>📍 ' + order.address : '') + '<br>🕒 ' + order.order_time + '</div>' +
     '<div class="order-items">' + itemsHtml +
       (discountAmount > 0 ? '<div class="order-item-row" style="color:var(--orange);"><span>Discount (' + (order.discount_percent||0) + '%)</span><span>−₹' + discountAmount + '</span></div>' : '') +
@@ -1596,13 +1698,25 @@ function renderOrderCard(order, isPending) {
 // what used to be missing: previously the check only ran while viewing
 // the Pending tab, so switching to History silenced new-order alerts).
 // If the Pending tab happens to be open, it also renders the list.
+let lastOverdueAlertTime = 0;
+
 function checkForNewOrders(forceRender) {
   fetch('/api/pending-orders').then(r => r.json()).then(orders => {
+    setConnDot(true);
     const currentIds = new Set(orders.map(o => o.id));
 
     if (!isFirstLoad) {
       const newOnes = [...currentIds].filter(id => !knownPendingIds.has(id));
       if (newOnes.length > 0) playNotifySound();
+    }
+
+    // Nudge again if any order has been waiting 3+ minutes unconfirmed —
+    // easy to miss during a rush when new-order alerts blend together.
+    const now = Date.now();
+    const overdue = orders.some(o => now - new Date(o.created_at).getTime() > 3 * 60 * 1000);
+    if (overdue && now - lastOverdueAlertTime > 60 * 1000) {
+      playNotifySound();
+      lastOverdueAlertTime = now;
     }
 
     const idsUnchanged = !isFirstLoad &&
@@ -1660,7 +1774,14 @@ function checkForNewOrders(forceRender) {
         try { el.setSelectionRange(focusedSelStart, focusedSelEnd); } catch (e) {}
       }
     }
-  }).catch(e => console.log('Load error', e));
+  }).catch(e => { console.log('Load error', e); setConnDot(false); });
+}
+
+function setConnDot(ok) {
+  const dot = document.getElementById('connDot');
+  if (!dot) return;
+  dot.className = 'conn-dot ' + (ok ? 'conn-ok' : 'conn-down');
+  dot.title = ok ? 'Connected' : 'Cannot reach the server — check the connection';
 }
 
 function loadOrders() {
@@ -1782,10 +1903,44 @@ function confirmOrder(id) {
 }
 
 function rejectOrder(id) {
-  if (!confirm('Reject this order?')) return;
-  fetch('/api/reject-order/' + id, {method:'POST'}).then(r => r.json()).then(res => {
+  let reason = prompt('Reason for rejecting this order (required):');
+  if (reason === null) return; // cancelled
+  reason = reason.trim();
+  if (!reason) { alert('A reason is required to reject an order — this keeps rejections deliberate, not accidental.'); return; }
+
+  fetch('/api/reject-order/' + id, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ reason })
+  }).then(r => r.json()).then(res => {
+    if (res.status !== 'ok') { alert(res.message || 'Could not reject order.'); return; }
     loadOrders();
+    showUndoToast('Order rejected.', () => {
+      fetch('/api/restore-order/' + id, {method:'POST'}).then(r => r.json()).then(() => loadOrders());
+    });
   });
+}
+
+let undoToastTimer = null;
+function showUndoToast(message, onUndo) {
+  let toast = document.getElementById('undoToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'undoToast';
+    toast.className = 'undo-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = '<span>' + message + '</span><button onclick="undoToastAction()">Undo</button>';
+  toast.classList.add('show');
+  clearTimeout(undoToastTimer);
+  window._undoToastCallback = onUndo;
+  undoToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 5000);
+}
+function undoToastAction() {
+  if (window._undoToastCallback) window._undoToastCallback();
+  const toast = document.getElementById('undoToast');
+  if (toast) toast.classList.remove('show');
+  clearTimeout(undoToastTimer);
 }
 
 function reprintOrder(id) {
@@ -2044,19 +2199,51 @@ function renderPOS() {
           '<input type="text" class="pos-search" id="posSearchInput" placeholder="🔍 Search menu (any part of the name)..." value="' + esc2(posSearch) + '" oninput="onPosSearch(this.value)">' +
           (posSearch ? '<button class="pos-search-clear" onclick="clearPosSearch()">✕</button>' : '') +
         '</div>' +
+        '<div id="posFavorites"></div>' +
         '<div class="pos-cat-tabs" id="posCatTabs"></div>' +
         '<div id="posItemList"></div>' +
       '</div>' +
       '<div class="pos-cart-col">' +
         '<div class="pos-cart-header"><strong>🧾 Current Order</strong></div>' +
+        '<div id="posOrderTypeBar"></div>' +
         '<div class="pos-cart-items" id="posCartItems"></div>' +
         '<div class="pos-cart-footer" id="posCartFooter"></div>' +
       '</div>' +
-    '</div>';
+    '</div>' +
+    '<div id="posQtyPickerOverlay" class="pos-qty-picker-overlay" style="display:none;"></div>';
 
   renderPosCatTabs();
+  renderPosFavorites();
   renderPosItemList();
+  renderPosOrderTypeBar();
   renderPosCart();
+}
+
+// Top sellers are fetched from actual sales (last 7 days) — see
+// renderPosFavorites() below — rather than a hand-maintained list, so
+// this automatically tracks what's actually moving at the counter.
+let posFavoritesCache = null;
+
+function renderPosFavorites() {
+  const el = document.getElementById('posFavorites');
+  if (!el) return;
+
+  if (posFavoritesCache === null) {
+    el.innerHTML = '<div class="pos-fav-label">⭐ Quick Add (loading...)</div>';
+    fetch('/api/top-sellers?days=30&limit=8').then(r => r.json()).then(items => {
+      posFavoritesCache = items;
+      renderPosFavorites();
+    }).catch(e => { posFavoritesCache = []; renderPosFavorites(); });
+    return;
+  }
+
+  if (posFavoritesCache.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="pos-fav-label">⭐ Quick Add — top sellers, last 30 days</div><div class="pos-fav-strip">' +
+    posFavoritesCache.map(it =>
+      '<button class="pos-fav-btn" data-id="' + it.id + '" onclick="posItemClick(this.dataset.id)" onmousedown="posStartLongPress(this.dataset.id)" ontouchstart="posStartLongPress(this.dataset.id)" onmouseup="posEndLongPress()" ontouchend="posEndLongPress()">' +
+        '<div class="pos-fav-name">' + it.title + '</div><div class="pos-fav-price">₹' + it.price + '</div>' +
+      '</button>'
+    ).join('') + '</div>';
 }
 
 function esc2(str) { return (str || '').replace(/"/g, '&quot;'); }
@@ -2118,7 +2305,7 @@ function renderPosItemList() {
   }
   el.innerHTML = items.map(it => {
     const veg = posIsVeg(it);
-    return '<div class="pos-item-row" onclick="posAddItem(&quot;' + it.id + '&quot;)">' +
+    return '<div class="pos-item-row" data-id="' + it.id + '" onclick="posItemClick(this.dataset.id)" onmousedown="posStartLongPress(this.dataset.id)" ontouchstart="posStartLongPress(this.dataset.id)" onmouseup="posEndLongPress()" ontouchend="posEndLongPress()">' +
       '<div class="pos-item-left"><div class="pos-veg-dot ' + (veg ? 'veg' : 'nonveg') + '"></div>' +
       '<div class="pos-item-name">' + it.title + '</div></div>' +
       '<div class="pos-item-price">₹' + it.price + '</div>' +
@@ -2127,6 +2314,100 @@ function renderPosItemList() {
 }
 
 // ── POS: cart management ────────────────────────────────────────────
+let posLongPressTimer = null;
+let posLongPressFired = false;
+
+function posStartLongPress(id) {
+  posLongPressFired = false;
+  clearTimeout(posLongPressTimer);
+  posLongPressTimer = setTimeout(() => {
+    posLongPressFired = true;
+    showPosQtyPicker(id);
+  }, 450);
+}
+
+function posEndLongPress() {
+  clearTimeout(posLongPressTimer);
+}
+
+function posItemClick(id) {
+  // A long-press already opened the quantity picker for this tap — don't
+  // also add a single qty on release.
+  if (posLongPressFired) { posLongPressFired = false; return; }
+  posAddItem(id);
+}
+
+function findMenuItem(id) {
+  for (const cat of MENU_CATEGORIES) {
+    const found = MENU[cat].find(i => i.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function showPosQtyPicker(id) {
+  const item = findMenuItem(id);
+  if (!item) return;
+  const overlay = document.getElementById('posQtyPickerOverlay');
+  if (!overlay) return;
+  const options = [1, 2, 3, 4, 5, 6, 8, 10];
+  overlay.innerHTML =
+    '<div class="pos-qty-picker-box">' +
+      '<div class="pos-qty-picker-title">' + item.title + '</div>' +
+      '<div class="pos-qty-picker-grid">' +
+        options.map(n => '<button class="pos-qty-picker-btn" onclick="posQtyPickerChoose(&quot;' + id + '&quot;,' + n + ')">' + n + '</button>').join('') +
+      '</div>' +
+      '<button class="pos-qty-picker-cancel" onclick="hidePosQtyPicker()">Cancel</button>' +
+    '</div>';
+  overlay.style.display = 'flex';
+  overlay.onclick = (e) => { if (e.target === overlay) hidePosQtyPicker(); };
+}
+
+function hidePosQtyPicker() {
+  const overlay = document.getElementById('posQtyPickerOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function posQtyPickerChoose(id, qty) {
+  const item = findMenuItem(id);
+  if (!item) return;
+  posCart[id] = { id: item.id, title: item.title, price: item.price, qty: qty, note: (posCart[id] && posCart[id].note) || '' };
+  hidePosQtyPicker();
+  renderPosCart();
+}
+
+function posRepeatLastOrder() {
+  captureCartFields();
+  const phone = (posCustomerPhone || '').trim();
+  if (!phone) { alert('Enter a phone number first to find their last order.'); return; }
+  fetch('/api/search-orders?q=' + encodeURIComponent(phone)).then(r => r.json()).then(orders => {
+    const match = orders.find(o => o.customer_phone === phone);
+    if (!match) { alert('No previous order found for that phone number.'); return; }
+    if (Object.keys(posCart).length > 0 && !confirm('Replace the current cart with their last order (' + match.order_number + ')?')) return;
+    let items;
+    try { items = JSON.parse(match.items_json); } catch(e) { items = []; }
+    const newCart = {};
+    items.forEach(i => {
+      const found = findMenuItemByTitle(i.product_retailer_id);
+      if (found) newCart[found.id] = { id: found.id, title: found.title, price: found.price, qty: i.quantity, note: '' };
+    });
+    if (Object.keys(newCart).length === 0) { alert('Could not match any items from that order to the current menu.'); return; }
+    posCart = newCart;
+    posOrderType = match.order_type || 'Dine In';
+    posCustomerName = match.customer_name || '';
+    posAddress = match.address || '';
+    renderPOS();
+  }).catch(e => alert('Could not fetch last order — check the connection.'));
+}
+
+function findMenuItemByTitle(title) {
+  for (const cat of MENU_CATEGORIES) {
+    const found = MENU[cat].find(i => title.startsWith(i.title));
+    if (found) return found;
+  }
+  return null;
+}
+
 function posAddItem(id) {
   let item = null;
   for (const cat of MENU_CATEGORIES) {
@@ -2218,6 +2499,17 @@ function calcPosPackaging(items, orderType) {
   return posPackagingSlab(base + bags * 9);
 }
 
+function renderPosOrderTypeBar() {
+  const el = document.getElementById('posOrderTypeBar');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="pos-type-tabs">' +
+      ['Dine In', 'Takeaway', 'Delivery'].map(t =>
+        '<button class="pos-type-btn ' + (posOrderType === t ? 'active' : '') + '" onclick="setPosOrderType(&quot;' + t + '&quot;)">' + t + '</button>'
+      ).join('') +
+    '</div>';
+}
+
 function renderPosCart() {
   const itemsEl = document.getElementById('posCartItems');
   const footerEl = document.getElementById('posCartFooter');
@@ -2242,16 +2534,18 @@ function renderPosCart() {
 
   const { subtotal, packingCharge, discountAmount, grandTotal } = posCalcTotals();
 
+  const deliveryPresets = [30, 40, 50];
   footerEl.innerHTML =
-    '<div class="pos-type-tabs">' +
-      ['Dine In', 'Takeaway', 'Delivery'].map(t =>
-        '<button class="pos-type-btn ' + (posOrderType === t ? 'active' : '') + '" onclick="setPosOrderType(&quot;' + t + '&quot;)">' + t + '</button>'
-      ).join('') +
-    '</div>' +
     '<input class="pos-field" id="posName" placeholder="Name' + (posOrderType === 'Delivery' ? ' *' : ' (optional)') + '" value="' + esc2(posCustomerName || '') + '">' +
-    '<input class="pos-field" id="posPhone" placeholder="Phone' + (posOrderType === 'Delivery' ? ' *' : ' (optional)') + '" value="' + esc2(posCustomerPhone || '') + '">' +
+    '<div style="display:flex;gap:0.5rem;">' +
+      '<input class="pos-field" id="posPhone" style="flex:1;" placeholder="Phone' + (posOrderType === 'Delivery' ? ' *' : ' (optional)') + '" value="' + esc2(posCustomerPhone || '') + '">' +
+      '<button class="pos-btn-secondary" style="flex:0 0 auto;padding:0 0.7rem;" onclick="posRepeatLastOrder()" title="Load this phone number\\'s last order">🔁</button>' +
+    '</div>' +
     (posOrderType === 'Delivery' ? '<input class="pos-field" id="posAddress" placeholder="Delivery Address *" value="' + esc2(posAddress || '') + '">' : '') +
     (posOrderType === 'Delivery' ? '<input class="pos-field" id="posDeliveryCharge" type="number" placeholder="Delivery Charge (₹)" value="' + (posDeliveryCharge || '') + '" onchange="posDeliveryCharge=parseInt(this.value)||0;renderPosCart();">' : '') +
+    (posOrderType === 'Delivery' ? '<div class="pos-preset-row">' + deliveryPresets.map(p =>
+        '<button class="pos-preset-btn ' + (posDeliveryCharge === p ? 'active' : '') + '" onclick="posSetDeliveryCharge(' + p + ')">₹' + p + '</button>'
+      ).join('') + '<button class="pos-preset-btn ' + (deliveryPresets.indexOf(posDeliveryCharge) === -1 ? 'active' : '') + '" onclick="posFocusDeliveryCharge()">Custom</button></div>' : '') +
     '<input class="pos-field" id="posNotes" placeholder="Notes (optional)" value="' + esc2(posNotes || '') + '">' +
     '<div class="pos-field" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.65rem;">' +
       '<span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;">Discount %</span>' +
@@ -2270,10 +2564,22 @@ function renderPosCart() {
     '<button class="pos-btn-confirm" id="posConfirmBtn" onclick="posConfirmOrder()" ' + (items.length === 0 ? 'disabled' : '') + '>✅ Confirm & Print</button>';
 }
 
+function posSetDeliveryCharge(amount) {
+  posDeliveryCharge = amount;
+  captureCartFields();
+  renderPosCart();
+}
+
+function posFocusDeliveryCharge() {
+  const el = document.getElementById('posDeliveryCharge');
+  if (el) el.focus();
+}
+
 let posCustomerName = '', posCustomerPhone = '', posAddress = '', posNotes = '';
 
 function setPosOrderType(t) {
   posOrderType = t;
+  renderPosOrderTypeBar();
   renderPosCart();
 }
 
@@ -2293,7 +2599,10 @@ function captureCartFields() {
 function posHoldOrder() {
   if (Object.keys(posCart).length === 0) { alert('Cart is empty — nothing to hold.'); return; }
   captureCartFields();
-  const label = posCustomerName ? posCustomerName : ('Order ' + (posHeldOrders.length + 1));
+  const suggested = posCustomerName || ('Order ' + (posHeldOrders.length + 1));
+  const custom = prompt('Label for this held order (e.g. a table or name):', suggested);
+  if (custom === null) return; // cancelled
+  const label = custom.trim() || suggested;
   posHeldOrders.push({
     label, cart: posCart, orderType: posOrderType,
     name: posCustomerName, phone: posCustomerPhone, address: posAddress, notes: posNotes,
