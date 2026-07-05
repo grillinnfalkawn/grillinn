@@ -131,7 +131,8 @@ def init_db():
             discount_percent INTEGER DEFAULT 0,
             discount_amount INTEGER DEFAULT 0,
             void_reason TEXT,
-            reject_reason TEXT
+            reject_reason TEXT,
+            client_ref TEXT
         )
     """)
     # Migrations for databases created before these columns existed.
@@ -144,6 +145,7 @@ def init_db():
         ("discount_amount", "INTEGER", "0"),
         ("void_reason", "TEXT", None),
         ("reject_reason", "TEXT", None),
+        ("client_ref", "TEXT", None),
     ]:
         if col not in existing_cols:
             default_clause = f" DEFAULT {default}" if default is not None else ""
@@ -263,31 +265,48 @@ def calc_packaging_charge(items, order_type):
 
 
 def save_order(data):
+    """Assigns the order number here on the server — never trusts a number
+    the browser might send — so numbering is a single, authoritative,
+    ever-increasing sequence instead of each customer's browser making up
+    its own (which caused every new browser/device to start back at 001,
+    and could even let two different customers collide on the same
+    number). See next_website_order_number() below.
+
+    Idempotency: if the browser retries a submission (e.g. after a dropped
+    connection where the request actually succeeded but the response
+    never made it back), we must not create a duplicate kitchen order —
+    but we also can't key on order_number+phone anymore, since the number
+    is now assigned here, not sent by the client. Instead the browser
+    sends a `client_ref`: a short code it generates once per checkout
+    attempt and reuses across retries. Same client_ref within 30 minutes
+    = the same checkout attempt, so we return the already-assigned order
+    instead of creating a second one.
+    """
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    # Idempotency guard: if the browser retries a submission (e.g. after a
-    # dropped connection where the request actually succeeded but the
-    # response never made it back), don't create a duplicate kitchen order.
-    # Same order_number + phone within the last 30 minutes = same order.
-    order_number = data.get("order_number", "")
     customer_phone = data.get("customer_phone", "")
-    c.execute("""
-        SELECT id FROM orders
-        WHERE order_number = ? AND customer_phone = ?
-          AND created_at >= datetime('now', '-30 minutes')
-        LIMIT 1
-    """, (order_number, customer_phone))
-    existing = c.fetchone()
-    if existing:
-        conn.close()
-        return existing[0]
+    client_ref = data.get("client_ref", "")
+
+    if client_ref:
+        c.execute("""
+            SELECT id, order_number FROM orders
+            WHERE client_ref = ?
+              AND created_at >= datetime('now', '-30 minutes')
+            LIMIT 1
+        """, (client_ref,))
+        existing = c.fetchone()
+        if existing:
+            conn.close()
+            return {"id": existing[0], "order_number": existing[1]}
+
+    order_number = next_website_order_number()
 
     c.execute("""
         INSERT INTO orders (order_number, customer_name, customer_phone, customer_email, order_type,
             address, notes, items_json, subtotal, packing_charge, delivery_charge,
-            grand_total, order_time, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+            grand_total, order_time, status, created_at, client_ref)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
     """, (
         order_number,
         data.get("customer_name", ""),
@@ -302,12 +321,33 @@ def save_order(data):
         data.get("delivery_charge", 0),
         data.get("grand_total", 0),
         data.get("order_time", ""),
-        datetime.now().isoformat()
+        datetime.now().isoformat(),
+        client_ref
     ))
     conn.commit()
     order_id = c.lastrowid
     conn.close()
-    return order_id
+    return {"id": order_id, "order_number": order_number}
+
+
+def next_website_order_number():
+    """Website orders get their own sequence (001, 002...), separate from
+    POS's 'P'-prefixed sequence, assigned here on the server so it's a
+    single authoritative counter — not something each customer's browser
+    invents independently."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT order_number FROM orders WHERE source != 'pos' OR source IS NULL ORDER BY id DESC LIMIT 1")
+    row = c.fetchone()
+    conn.close()
+    if row and row[0]:
+        try:
+            n = int(row[0]) + 1
+        except ValueError:
+            n = 1
+    else:
+        n = 1
+    return str(n).zfill(3)
 
 
 def next_pos_order_number():
@@ -476,10 +516,10 @@ def confirm_order_db(order_id, delivery_charge, grand_total, status):
 
 
 def search_orders(query, limit=100, date_str=None):
-    """Search orders by order number or phone number, newest first.
-    If date_str is given, results are restricted to that single date
-    (used for e.g. 'find today's order from this phone number');
-    otherwise it searches across all dates."""
+    """Search orders by order number, phone number, or reference code
+    (the code shown to a customer if their order failed to send but may
+    have gone through anyway), newest first. If date_str is given,
+    results are restricted to that single date; otherwise all dates."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -487,18 +527,18 @@ def search_orders(query, limit=100, date_str=None):
     if date_str:
         c.execute("""
             SELECT * FROM orders
-            WHERE (order_number LIKE ? OR customer_phone LIKE ?)
+            WHERE (order_number LIKE ? OR customer_phone LIKE ? OR client_ref LIKE ?)
               AND date(created_at) = date(?)
             ORDER BY id DESC
             LIMIT ?
-        """, (like_query, like_query, date_str, limit))
+        """, (like_query, like_query, like_query, date_str, limit))
     else:
         c.execute("""
             SELECT * FROM orders
-            WHERE order_number LIKE ? OR customer_phone LIKE ?
+            WHERE order_number LIKE ? OR customer_phone LIKE ? OR client_ref LIKE ?
             ORDER BY id DESC
             LIMIT ?
-        """, (like_query, like_query, limit))
+        """, (like_query, like_query, like_query, limit))
     rows = [dict(r) for r in c.fetchall()]
     conn.close()
     return rows
@@ -876,11 +916,11 @@ def web_order():
     print(f"[WEB ORDER] {data}")
 
     try:
-        order_id = save_order(data)
-        print(f"[ORDER SAVED] DB ID #{order_id} — Order #{data.get('order_number')} — PENDING CONFIRMATION")
+        result = save_order(data)
+        print(f"[ORDER SAVED] DB ID #{result['id']} — Order #{result['order_number']} — PENDING CONFIRMATION")
 
         response = Response(
-            json.dumps({"status": "ok", "order_id": order_id}),
+            json.dumps({"status": "ok", "order_id": result["id"], "order_number": result["order_number"]}),
             status=200,
             mimetype="application/json"
         )
