@@ -783,7 +783,7 @@ def print_order(order):
         add(encode(f"Notes: {notes[:40]}"))
 
     # UPI payment QR — requests the exact bill amount, order number as note.
-    qr_bytes = generate_upi_qr_bytes(grand, order_number, size_mm=40)
+    qr_bytes = generate_upi_qr_bytes(grand, order_number, size_mm=30)
     if qr_bytes:
         add(LF)
         add(ALIGN_CENTER)
@@ -2696,4 +2696,4 @@ if __name__ == "__main__":
     print("  Grill Inn — Order Server")
     print("  Dashboard: http://localhost:5000/dashboard")
     print("=" * 50)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
