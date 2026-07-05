@@ -193,6 +193,32 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .confetti-piece{position:absolute;top:-12px;width:8px;height:14px;opacity:0.9;border-radius:2px;animation:confettiFall linear forwards;}
 @keyframes confettiFall{to{transform:translateY(112vh) rotate(540deg);opacity:0.25;}}
 
+/* Reorder last order */
+.reorder-bar{width:100%;background:linear-gradient(135deg,var(--orange),var(--red));border:none;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:700;padding:0.55rem 1rem;text-align:center;}
+.reorder-bar:active{opacity:0.9;}
+.reorder-btn-full{width:100%;margin-top:1rem;background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:700;padding:0.75rem;}
+
+/* Veg/Non-veg quick filter pills */
+.diet-filter-row{display:flex;gap:0.5rem;margin-top:0.55rem;}
+.diet-pill{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;padding:0.4rem 0.5rem;cursor:pointer;transition:all 0.2s;text-align:center;}
+.diet-pill:hover{border-color:var(--flame);color:var(--white);}
+.diet-pill.active.veg-active{background:#16a34a;border-color:#16a34a;color:#fff;}
+.diet-pill.active.nonveg-active{background:#dc2626;border-color:#dc2626;color:#fff;}
+
+/* Undo toast for removed items */
+.undo-toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.7rem 0.6rem 0.9rem;display:flex;align-items:center;gap:0.75rem;font-size:0.78rem;color:var(--white);box-shadow:0 4px 16px rgba(0,0,0,0.45);z-index:350;opacity:0;pointer-events:none;transition:opacity 0.25s,transform 0.25s;max-width:90vw;}
+.undo-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+.undo-toast button{background:var(--flame);border:none;border-radius:6px;color:#fff;font-weight:700;font-size:0.74rem;padding:0.32rem 0.65rem;cursor:pointer;flex-shrink:0;}
+
+/* Peak-hour note */
+.peak-note{padding:0.4rem 1rem;text-align:center;font-size:0.72rem;color:#fbbf24;background:rgba(251,191,36,0.08);border-bottom:1px solid rgba(251,191,36,0.15);display:none;}
+
+/* Add-to-home-screen nudge */
+.install-nudge{display:none;align-items:center;justify-content:center;gap:0.6rem;padding:0.5rem 2.2rem;background:rgba(249,115,22,0.1);border-bottom:1px solid rgba(249,115,22,0.25);font-size:0.72rem;color:var(--white);position:relative;text-align:center;}
+.install-nudge.show{display:flex;}
+.install-nudge #installNudgeAction{background:var(--flame);border:none;color:#fff;font-weight:700;border-radius:6px;padding:0.28rem 0.65rem;font-size:0.7rem;cursor:pointer;flex-shrink:0;}
+.install-nudge-close{position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:18px;height:18px;color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+
 @media(max-width:599px){
   .search-input,.form-group input,.form-group select,.form-group textarea,.note-input,#fNotes{font-size:16px;}
   .qty-ctrl button,.text-qty-ctrl button{width:28px;height:28px;}
@@ -215,8 +241,17 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
   </div>
 </header>
 
+<div class="install-nudge" id="installNudge">
+  <span id="installNudgeText"></span>
+  <button id="installNudgeAction" onclick="installNudgeAction()" style="display:none;">Add</button>
+  <button class="install-nudge-close" onclick="dismissInstallNudge()" aria-label="Dismiss">✕</button>
+</div>
+
+<button class="reorder-bar" id="reorderBtn" onclick="reorderLastOrder()" style="display:none;">🔁 Reorder your last order</button>
+
 <div id="announcementBanner" class="announcement-banner" style="display:none;"></div>
 <div id="statusBanner" class="status-banner"></div>
+<div class="peak-note" id="peakNote">⏳ We're a bit busier than usual right now — orders may take slightly longer than the estimated time.</div>
 <div class="disclaimer-banner">Inclusive of taxes 5% GST. Pictures are for representation only and may differ from actual product.</div>
 
 <div class="hero">
@@ -227,6 +262,10 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 <div class="search-wrap">
   <span class="search-icon">🔍</span>
   <input class="search-input" id="searchInput" type="text" placeholder="Search menu items..." oninput="handleSearch(this.value)">
+  <div class="diet-filter-row">
+    <button class="diet-pill" id="dietPillVeg" onclick="setDietFilter('veg')">🟢 Veg Only</button>
+    <button class="diet-pill" id="dietPillNonveg" onclick="setDietFilter('nonveg')">🔴 Non-Veg Only</button>
+  </div>
 </div>
 
 <div class="cat-nav" id="catNav"></div>
@@ -250,6 +289,11 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 
 <a href="https://wa.me/919612992023" target="_blank" class="wa-float" title="Chat on WhatsApp">💬</a>
 
+<div class="undo-toast" id="undoToast">
+  <span id="undoToastText"></span>
+  <button onclick="undoRemove()">Undo</button>
+</div>
+
 <div class="overlay" id="overlay" onclick="closeCart()"></div>
 <div class="drawer" id="drawer">
   <div class="drawer-header">
@@ -265,6 +309,7 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
   <div class="success-title">Order Placed!</div>
   <div class="success-sub">Thank you for ordering from</div>
   <div class="success-sub" style="color:var(--white);font-weight:700;font-size:1rem;">Grill Inn, Falkawn</div>
+  <div class="success-sub" id="successWelcome" style="color:#4ade80;font-weight:600;"></div>
   <div class="success-order" id="successOrder"></div>
   <div class="success-sub" id="successPrepTime" style="color:var(--orange);font-weight:700;"></div>
   <div class="success-sub">Your order has been received!</div>
@@ -563,6 +608,89 @@ function isVegItem(item) {
   return !d.includes('chicken') && !t.includes('chicken');
 }
 
+const CART_STORAGE_KEY = 'gi_cart';
+const LAST_ORDER_KEY = 'gi_last_order';
+
+function saveCartToStorage() {
+  try { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart)); } catch (e) {}
+}
+
+function loadCartFromStorage() {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return;
+    const stored = JSON.parse(raw) || {};
+    const restored = {};
+    Object.keys(stored).forEach(id => {
+      if (ALL_ITEMS[id]) restored[id] = { ...ALL_ITEMS[id], qty: stored[id].qty, note: stored[id].note || '' };
+    });
+    cart = restored;
+  } catch (e) { /* ignore corrupt data */ }
+}
+
+function clearCartStorage() {
+  try { localStorage.removeItem(CART_STORAGE_KEY); } catch (e) {}
+}
+
+function saveLastOrder(cartSnapshot, type) {
+  try {
+    const items = Object.entries(cartSnapshot).map(([id, item]) => ({ id, qty: item.qty, note: item.note || '' }));
+    localStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ items, orderType: type }));
+  } catch (e) {}
+}
+
+function getLastOrder() {
+  try {
+    const raw = localStorage.getItem(LAST_ORDER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function refreshReorderButtonVisibility() {
+  const btn = document.getElementById('reorderBtn');
+  if (!btn) return;
+  const last = getLastOrder();
+  btn.style.display = (last && last.items && last.items.length) ? 'block' : 'none';
+}
+
+function reorderLastOrder() {
+  const data = getLastOrder();
+  if (!data || !data.items || !data.items.length) return;
+  let addedAny = false;
+  data.items.forEach(it => {
+    if (!ALL_ITEMS[it.id]) return; // item may no longer be on the menu
+    cart[it.id] = { ...ALL_ITEMS[it.id], qty: it.qty, note: it.note || '' };
+    addedAny = true;
+  });
+  if (!addedAny) { alert("Sorry, the items from your last order aren't available anymore."); return; }
+  if (data.orderType) orderType = data.orderType;
+  saveCartToStorage();
+  buildMenu();
+  buildTextMenu();
+  updateCartUI();
+  openCart();
+}
+
+let dietFilter = 'all';
+
+function matchesDiet(item) {
+  if (dietFilter === 'veg') return isVegItem(item);
+  if (dietFilter === 'nonveg') return !isVegItem(item);
+  return true;
+}
+
+function setDietFilter(val) {
+  dietFilter = (dietFilter === val) ? 'all' : val;
+  document.getElementById('dietPillVeg').classList.remove('active', 'veg-active');
+  document.getElementById('dietPillNonveg').classList.remove('active', 'nonveg-active');
+  if (dietFilter === 'veg') document.getElementById('dietPillVeg').classList.add('active', 'veg-active');
+  if (dietFilter === 'nonveg') document.getElementById('dietPillNonveg').classList.add('active', 'nonveg-active');
+  const searchVal = document.getElementById('searchInput').value;
+  if (searchVal.trim()) { handleSearch(searchVal); }
+  else if (currentView === 'grid') { buildMenu(); }
+  else { buildTextMenu(); }
+}
+
 let cart = {};
 let orderType = null;
 let orderCounter = parseInt(localStorage.getItem('gi_counter') || '0');
@@ -644,6 +772,7 @@ function addToCart(id) {
   refreshCard(id);
   refreshTextRow(id);
   pulseCard(id);
+  saveCartToStorage();
   updateCartUI();
 }
 
@@ -656,8 +785,12 @@ function pulseCard(id) {
 
 function updateQty(id, delta) {
   if (!cart[id]) return;
+  const removedSnapshot = { ...cart[id] };
   cart[id].qty += delta;
-  if (cart[id].qty <= 0) delete cart[id];
+  if (cart[id].qty <= 0) {
+    delete cart[id];
+    showRemovedToast(id, removedSnapshot);
+  }
   refreshCard(id);
   refreshTextRow(id);
   if (delta > 0 && cart[id]) pulseCard(id);
@@ -680,10 +813,38 @@ function updateQty(id, delta) {
     });
   });
 
+  saveCartToStorage();
   updateCartUI();
 }
 
-function setNote(id, val) { if (cart[id]) cart[id].note = val; }
+function setNote(id, val) { if (cart[id]) { cart[id].note = val; saveCartToStorage(); } }
+
+let lastRemovedItem = null;
+let undoToastTimeout = null;
+
+function showRemovedToast(id, itemSnapshot) {
+  lastRemovedItem = { id, itemSnapshot };
+  const toast = document.getElementById('undoToast');
+  document.getElementById('undoToastText').textContent = 'Removed ' + itemSnapshot.title;
+  toast.classList.add('show');
+  clearTimeout(undoToastTimeout);
+  undoToastTimeout = setTimeout(() => { toast.classList.remove('show'); lastRemovedItem = null; }, 4000);
+}
+
+function undoRemove() {
+  if (!lastRemovedItem) return;
+  const { id, itemSnapshot } = lastRemovedItem;
+  cart[id] = { ...itemSnapshot };
+  lastRemovedItem = null;
+  clearTimeout(undoToastTimeout);
+  document.getElementById('undoToast').classList.remove('show');
+  refreshCard(id);
+  refreshTextRow(id);
+  pulseCard(id);
+  saveCartToStorage();
+  updateCartUI();
+  if (document.getElementById('drawer').classList.contains('open')) renderDrawer();
+}
 
 function buildNoteWrapInner(id, note) {
   const n = note || '';
@@ -751,7 +912,11 @@ function renderDrawer() {
   const status = getStatus();
 
   if (items.length === 0) {
-    content.innerHTML = '<div class="empty-cart"><div class="empty-cart-icon">🛒</div><div>Your cart is empty</div><div style="font-size:0.75rem;margin-top:0.3rem;color:var(--muted)">Browse the menu and add items!</div></div>';
+    const lastOrder = getLastOrder();
+    const reorderBtnHTML = (lastOrder && lastOrder.items && lastOrder.items.length)
+      ? '<button class="reorder-btn-full" onclick="reorderLastOrder()">🔁 Reorder Last Order ('+lastOrder.items.length+' item'+(lastOrder.items.length>1?'s':'')+')</button>'
+      : '';
+    content.innerHTML = '<div class="empty-cart"><div class="empty-cart-icon">🛒</div><div>Your cart is empty</div><div style="font-size:0.75rem;margin-top:0.3rem;color:var(--muted)">Browse the menu and add items!</div></div>' + reorderBtnHTML;
     return;
   }
 
@@ -916,9 +1081,21 @@ function retryUnsentOrder() {
     if (ok) {
       clearUnsentOrder();
       saveCustomerDetails(payload.customer_name, payload.customer_phone, payload.address, payload.customer_email);
+      const prepRange = estimatePrepRange(cart);
+      const prepSuffix = payload.order_type === 'Delivery' ? ' (+ delivery time)' : '';
+      const welcomeLine = orderCounter > 1
+        ? '🎉 Welcome back — this is your order #' + orderCounter + ' with us!'
+        : '🎉 Thanks for placing your first order with us!';
+      saveLastOrder(cart, payload.order_type);
       document.getElementById('orderFailedScreen').classList.remove('show');
       document.getElementById('successOrder').textContent = 'Order #' + payload.order_number;
+      document.getElementById('successPrepTime').textContent = '⏱ Estimated preparation time: ' + prepRange + prepSuffix;
+      document.getElementById('successWelcome').textContent = welcomeLine;
       document.getElementById('successScreen').classList.add('show');
+      launchConfetti();
+      cart = {}; orderType = null; updateCartUI();
+      clearCartStorage();
+      refreshReorderButtonVisibility();
     } else {
       btn.disabled = false;
       btn.innerHTML = 'Try Again';
@@ -935,6 +1112,13 @@ async function recoverUnsentOrderOnLoad() {
   const ok = await trySubmitOrder(payload, 1);
   if (ok) {
     clearUnsentOrder();
+    saveLastOrder(cart, payload.order_type);
+    cart = {}; orderType = null;
+    clearCartStorage();
+    buildMenu();
+    buildTextMenu();
+    updateCartUI();
+    refreshReorderButtonVisibility();
   } else {
     showOrderFailedScreen(payload); // remind them it's still unsent
   }
@@ -995,12 +1179,19 @@ async function placeOrder() {
     saveCustomerDetails(name, phone, address, email);
     const prepRange = estimatePrepRange(cart);
     const prepSuffix = orderType === 'Delivery' ? ' (+ delivery time)' : '';
+    const welcomeLine = orderCounter > 1
+      ? '🎉 Welcome back — this is your order #' + orderCounter + ' with us!'
+      : '🎉 Thanks for placing your first order with us!';
+    saveLastOrder(cart, orderType);
     closeCart();
     document.getElementById('successOrder').textContent = 'Order #'+orderNumber;
     document.getElementById('successPrepTime').textContent = '⏱ Estimated preparation time: ' + prepRange + prepSuffix;
+    document.getElementById('successWelcome').textContent = welcomeLine;
     document.getElementById('successScreen').classList.add('show');
     launchConfetti();
     cart = {}; orderType = null; updateCartUI();
+    clearCartStorage();
+    refreshReorderButtonVisibility();
     document.querySelectorAll('.item-card').forEach(card => {
       const id = card.id.replace('card-', '');
       const item = ALL_ITEMS[id];
@@ -1028,10 +1219,10 @@ function handleSearch(query) {
   const q = query.toLowerCase().trim();
   const main = document.getElementById('menuMain');
   if (!q) { buildMenu(); return; }
-  const results = Object.values(MENU).flat().filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
+  const results = Object.values(MENU).flat().filter(i => (i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q)) && matchesDiet(i));
   main.innerHTML = '';
   if (results.length === 0) {
-    main.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+query+'"</div></div>';
+    main.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+query+'"'+(dietFilter !== 'all' ? ' with the current filter' : '')+'</div></div>';
     return;
   }
   const sec = document.createElement('div');
@@ -1069,6 +1260,9 @@ function buildMenu() {
 
 
   Object.entries(MENU).forEach(([cat, items], i) => {
+    const filteredItems = items.filter(matchesDiet);
+    if (filteredItems.length === 0) return;
+
     const pill = document.createElement('button');
     pill.className = 'cat-pill';
     const vegBadge = cat.startsWith('Veg ') ? ' 🟢' : (cat.startsWith('Non Veg ') || cat === 'Non Veg Snacks') ? ' 🔴' : '';
@@ -1083,7 +1277,7 @@ function buildMenu() {
     const badge = isVeg ? '<span class="veg-badge">🟢 VEG</span>' : isNonVeg ? '<span class="nonveg-badge">🔴 NON-VEG</span>' : '';
     sec.innerHTML = '<div class="cat-title">'+(CAT_ICONS[cat]||'🍽️')+' '+cat+' '+badge+'</div>';
     const grid = document.createElement('div'); grid.className = 'items-grid';
-    items.forEach(item => grid.appendChild(makeCard(item)));
+    filteredItems.forEach(item => grid.appendChild(makeCard(item)));
     sec.appendChild(grid); main.appendChild(sec);
   });
 }
@@ -1116,6 +1310,9 @@ function buildTextMenu() {
 
 
   Object.entries(MENU).forEach(([cat, items], i) => {
+    const filteredItems = items.filter(matchesDiet);
+    if (filteredItems.length === 0) return;
+
     const pill = document.createElement('button');
     pill.className = 'cat-pill';
     pill.textContent = (CAT_ICONS[cat]||'🍽️') + ' ' + cat.replace('Chicken ','🔴 ').replace('Veg ','🟢 ');
@@ -1127,7 +1324,7 @@ function buildTextMenu() {
     const isNonVeg = cat.startsWith('Non Veg ') || ['Fried Chicken','Grilled Chicken','Non Veg Snacks'].includes(cat);
     const badge = isVeg ? '<span class="veg-badge">🟢 VEG</span>' : isNonVeg ? '<span class="nonveg-badge">🔴 NON-VEG</span>' : '';
     sec.innerHTML = '<div class="text-cat-title">'+(CAT_ICONS[cat]||'🍽️')+' '+cat+' '+badge+'</div>';
-    items.forEach(item => sec.appendChild(makeTextRow(item)));
+    filteredItems.forEach(item => sec.appendChild(makeTextRow(item)));
     textMenu.appendChild(sec);
   });
   textMenu.dataset.built = '1';
@@ -1178,11 +1375,18 @@ function dismissBanner() {
   el.style.display = 'none';
 }
 
+function isPeakHour(now) {
+  const h = now.getHours() + now.getMinutes() / 60;
+  return (h >= 12.5 && h < 14.5) || (h >= 19 && h < 21);
+}
+
 function refreshStatusBanner() {
   const status = getStatus();
   const banner = document.getElementById('statusBanner');
   banner.className = 'status-banner ' + (status.open ? 'status-open' : 'status-closed');
   banner.textContent = status.msg;
+  const peakEl = document.getElementById('peakNote');
+  if (peakEl) peakEl.style.display = (status.open && isPeakHour(new Date())) ? 'block' : 'none';
 }
 
 async function loadRemoteSettings() {
@@ -1209,12 +1413,60 @@ function initViewToggleHint() {
   setTimeout(clearHint, 8000);
 }
 
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  maybeShowInstallNudge();
+});
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function isIOSDevice() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function maybeShowInstallNudge() {
+  if (isStandalone()) return;
+  if (localStorage.getItem('gi_install_nudge_dismissed')) return;
+  if (!getSavedCustomerDetails()) return; // only nudge customers who've ordered before
+  const banner = document.getElementById('installNudge');
+  if (!banner) return;
+  if (deferredInstallPrompt) {
+    document.getElementById('installNudgeText').textContent = '📲 Add Grill Inn to your home screen for one-tap ordering next time!';
+    document.getElementById('installNudgeAction').style.display = 'inline-block';
+  } else if (isIOSDevice()) {
+    document.getElementById('installNudgeText').textContent = '📲 Tip: Tap Share, then "Add to Home Screen" for one-tap ordering next time!';
+    document.getElementById('installNudgeAction').style.display = 'none';
+  } else {
+    return; // no viable install path on this browser
+  }
+  banner.classList.add('show');
+}
+
+function installNudgeAction() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.finally(() => { deferredInstallPrompt = null; dismissInstallNudge(); });
+}
+
+function dismissInstallNudge() {
+  document.getElementById('installNudge').classList.remove('show');
+  localStorage.setItem('gi_install_nudge_dismissed', '1');
+}
+
 function init() {
+  loadCartFromStorage();
   refreshStatusBanner();
   buildMenu();
   loadRemoteSettings();
   recoverUnsentOrderOnLoad();
   initViewToggleHint();
+  refreshReorderButtonVisibility();
+  updateCartUI();
+  setTimeout(maybeShowInstallNudge, 3000);
 }
 
 init();
