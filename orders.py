@@ -99,6 +99,7 @@ BOLD_ON      = ESC + b'E\x01'
 BOLD_OFF     = ESC + b'E\x00'
 DOUBLE_ON    = GS  + b'!\x11'
 DOUBLE_OFF   = GS  + b'!\x00'
+DOUBLE_HEIGHT_ONLY = GS + b'!\x01'  # taller but not wider — a step down from full double-size, and keeps character width normal so right-aligned columns still line up
 CUT          = GS  + b'V\x41\x03'
 LF           = b'\n'
 # ────────────────────────────────────────────────────────
@@ -721,28 +722,24 @@ def print_order(order):
     add(INIT)
     add(ALIGN_CENTER)
     add(BOLD_ON)
-    add(DOUBLE_ON)
     add(encode("Grill Inn"))
-    add(DOUBLE_OFF)
     add(BOLD_OFF)
-    add(encode("Falkawn"))
-    add(encode("9612992023"))
+    add(encode(f"Falkawn, {RESTAURANT_PHONE}"))
     add(encode("GSTIN: 15ARKPVB080N1ZX"))
     add(LF)
     add(BOLD_ON)
+    add(DOUBLE_ON)
     add(encode(order_type))
+    add(DOUBLE_OFF)
     add(BOLD_OFF)
     add(LF)
 
     add(ALIGN_LEFT)
-    add(encode(f"Order #: {order_number}"))
-    add(encode(f"Date   : {order_time}"))
-    add(LF)
+    add(encode(f"{'Order #: ' + order_number:<24}{order_time:>24}"))
     add(encode(f"Customer: {customer_name}"))
     add(encode(f"Phone   : {customer_phone}"))
     if order_type == "Delivery" and address:
         add(encode(f"Address : {address}"))
-    add(LF)
 
     add(encode(divider()))
     add(encode(f"{'Item':<24}{'Qty':>6}{'Rate':>8}{'Amt':>8}"))
@@ -774,21 +771,21 @@ def print_order(order):
         add(encode(f"{discount_label:<32}{'-'+str(discount_amount):>16}"))
     add(encode(divider()))
     grand = subtotal + packing_charge + (delivery_charge if order_type == "Delivery" else 0) - discount_amount
+    add(BOLD_ON)
+    add(DOUBLE_HEIGHT_ONLY)
     add(encode(f"{'Bill Total':<32}{grand:>16}"))
-    add(LF)
-    add(encode("Payment: Cash on Delivery"))
+    add(DOUBLE_OFF)
+    add(BOLD_OFF)
+    add(encode("Inclusive of 5% CGST & SGST"))
 
     if notes:
-        add(LF)
         add(encode(f"Notes: {notes[:40]}"))
 
     # UPI payment QR — requests the exact bill amount, order number as note.
     qr_bytes = generate_upi_qr_bytes(grand, order_number, size_mm=30)
     if qr_bytes:
-        add(LF)
         add(ALIGN_CENTER)
         add(qr_bytes)
-        add(LF)
         add(BOLD_ON)
         add(encode("Scan here to pay"))
         add(BOLD_OFF)
@@ -1449,6 +1446,8 @@ DASHBOARD_HTML = """
   .pos-preset-row{display:flex;gap:0.4rem;margin-bottom:0.5rem;}
   .pos-preset-btn{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.45rem;cursor:pointer;font-size:0.8rem;}
   .pos-preset-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
+  .pos-details-toggle{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.6rem;cursor:pointer;font-size:0.8rem;text-align:left;margin:0.6rem 0 0.5rem;}
+  .pos-details-panel{background:rgba(255,255,255,0.02);border:1px dashed var(--border);border-radius:8px;padding:0.6rem;margin-bottom:0.5rem;}
   .pos-qty-picker-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:300;align-items:center;justify-content:center;}
   .pos-qty-picker-box{background:var(--charcoal);border:1px solid var(--border);border-radius:14px;padding:1.2rem;width:90%;max-width:340px;}
   .pos-qty-picker-title{font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:0.9rem;text-align:center;}
@@ -1559,11 +1558,11 @@ let historySearchAllDates = false;
 const MENU = __MENU_JSON_PLACEHOLDER__;
 const MENU_CATEGORIES = Object.keys(MENU);
 let posCart = {};              // { itemId: {id, title, price, qty, note, isVeg} }
-let posCategory = 'All';
 let posSearch = '';
 let posOrderType = 'Dine In';
 let posDiscountPercent = 0;
 let posDeliveryCharge = 0;
+let posDetailsExpanded = false; // customer detail fields collapsed by default so cart items stay visible without scrolling
 let posLastRemovedItem = null; // for Undo
 let posHeldOrders = [];        // [{label, cart, orderType, name, phone, address, notes, discountPercent}]
 
@@ -2200,7 +2199,6 @@ function renderPOS() {
           (posSearch ? '<button class="pos-search-clear" onclick="clearPosSearch()">✕</button>' : '') +
         '</div>' +
         '<div id="posFavorites"></div>' +
-        '<div class="pos-cat-tabs" id="posCatTabs"></div>' +
         '<div id="posItemList"></div>' +
       '</div>' +
       '<div class="pos-cart-col">' +
@@ -2212,7 +2210,6 @@ function renderPOS() {
     '</div>' +
     '<div id="posQtyPickerOverlay" class="pos-qty-picker-overlay" style="display:none;"></div>';
 
-  renderPosCatTabs();
   renderPosFavorites();
   renderPosItemList();
   renderPosOrderTypeBar();
@@ -2248,20 +2245,6 @@ function renderPosFavorites() {
 
 function esc2(str) { return (str || '').replace(/"/g, '&quot;'); }
 
-function renderPosCatTabs() {
-  const el = document.getElementById('posCatTabs');
-  const cats = ['All', ...MENU_CATEGORIES];
-  el.innerHTML = cats.map(c =>
-    '<button class="pos-cat-btn ' + (posCategory === c ? 'active' : '') + '" data-cat="' + esc2(c) + '" onclick="setPosCategory(this.dataset.cat)">' + c + '</button>'
-  ).join('');
-}
-
-function setPosCategory(cat) {
-  posCategory = cat;
-  renderPosCatTabs();
-  renderPosItemList();
-}
-
 function onPosSearch(value) {
   posSearch = value;
   renderPosItemList();
@@ -2295,8 +2278,7 @@ function renderPosItemList() {
   const el = document.getElementById('posItemList');
   const q = posSearch.trim().toLowerCase();
   let items = [];
-  const cats = posCategory === 'All' ? MENU_CATEGORIES : [posCategory];
-  cats.forEach(cat => (MENU[cat] || []).forEach(it => items.push(it)));
+  MENU_CATEGORIES.forEach(cat => (MENU[cat] || []).forEach(it => items.push(it)));
   if (q) items = items.filter(it => it.title.toLowerCase().includes(q));
 
   if (items.length === 0) {
@@ -2373,6 +2355,7 @@ function posQtyPickerChoose(id, qty) {
   if (!item) return;
   posCart[id] = { id: item.id, title: item.title, price: item.price, qty: qty, note: (posCart[id] && posCart[id].note) || '' };
   hidePosQtyPicker();
+  clearPosSearchAfterAdd();
   renderPosCart();
 }
 
@@ -2396,6 +2379,7 @@ function posRepeatLastOrder() {
     posOrderType = match.order_type || 'Dine In';
     posCustomerName = match.customer_name || '';
     posAddress = match.address || '';
+    posDetailsExpanded = true; // keep it open so the cashier can review what got filled in
     renderPOS();
   }).catch(e => alert('Could not fetch last order — check the connection.'));
 }
@@ -2417,7 +2401,19 @@ function posAddItem(id) {
   if (!item) return;
   if (posCart[id]) posCart[id].qty += 1;
   else posCart[id] = { id: item.id, title: item.title, price: item.price, qty: 1, note: '' };
+  clearPosSearchAfterAdd();
   renderPosCart();
+}
+
+// Clears the search box once an item's been added, so the cashier doesn't
+// have to manually clear it before searching for the next item.
+function clearPosSearchAfterAdd() {
+  if (!posSearch) return;
+  posSearch = '';
+  const input = document.getElementById('posSearchInput');
+  if (input) input.value = '';
+  renderPosItemList();
+  refreshPosSearchClearBtn();
 }
 
 function posChangeQty(id, delta) {
@@ -2454,6 +2450,7 @@ function posClearCart() {
   if (!confirm('Clear the current order?')) return;
   posCart = {};
   posDiscountPercent = 0;
+  posDetailsExpanded = false;
   renderPosCart();
 }
 
@@ -2533,9 +2530,10 @@ function renderPosCart() {
   }
 
   const { subtotal, packingCharge, discountAmount, grandTotal } = posCalcTotals();
-
   const deliveryPresets = [30, 40, 50];
-  footerEl.innerHTML =
+
+  const detailsPreview = [posCustomerName, posCustomerPhone].filter(Boolean).join(', ') || 'optional';
+  const detailsFields =
     '<input class="pos-field" id="posName" placeholder="Name' + (posOrderType === 'Delivery' ? ' *' : ' (optional)') + '" value="' + esc2(posCustomerName || '') + '">' +
     '<div style="display:flex;gap:0.5rem;">' +
       '<input class="pos-field" id="posPhone" style="flex:1;" placeholder="Phone' + (posOrderType === 'Delivery' ? ' *' : ' (optional)') + '" value="' + esc2(posCustomerPhone || '') + '">' +
@@ -2550,18 +2548,28 @@ function renderPosCart() {
     '<div class="pos-field" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.65rem;">' +
       '<span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;">Discount %</span>' +
       '<input type="number" min="0" max="100" value="' + posDiscountPercent + '" style="width:100%;background:transparent;border:none;color:var(--white);outline:none;text-align:right;" onchange="posDiscountPercent=Math.max(0,Math.min(100,parseInt(this.value)||0));renderPosCart();">' +
-    '</div>' +
+    '</div>';
+
+  footerEl.innerHTML =
     '<div class="pos-summary-row"><span>Subtotal</span><span>₹' + subtotal + '</span></div>' +
     (packingCharge > 0 ? '<div class="pos-summary-row"><span>Packing Charges</span><span>₹' + packingCharge + '</span></div>' : '') +
     (posOrderType === 'Delivery' ? '<div class="pos-summary-row"><span>Delivery Charges</span><span>₹' + posDeliveryCharge + '</span></div>' : '') +
     (discountAmount > 0 ? '<div class="pos-summary-row"><span>Discount (' + posDiscountPercent + '%)</span><span>−₹' + discountAmount + '</span></div>' : '') +
     '<div class="pos-summary-row total"><span>Total</span><span>₹' + grandTotal + '</span></div>' +
+    '<button class="pos-details-toggle" onclick="togglePosDetails()">' + (posDetailsExpanded ? '▲ Hide' : '▼') + ' Customer Details (' + detailsPreview + ')</button>' +
+    (posDetailsExpanded ? '<div class="pos-details-panel">' + detailsFields + '</div>' : '') +
     '<div class="pos-action-row">' +
       '<button class="pos-btn-secondary" onclick="posUndoLastItem()">↩ Undo</button>' +
       '<button class="pos-btn-secondary" onclick="posHoldOrder()">⏸ Hold</button>' +
       '<button class="pos-btn-secondary" onclick="posClearCart()">✕ Clear</button>' +
     '</div>' +
     '<button class="pos-btn-confirm" id="posConfirmBtn" onclick="posConfirmOrder()" ' + (items.length === 0 ? 'disabled' : '') + '>✅ Confirm & Print</button>';
+}
+
+function togglePosDetails() {
+  captureCartFields();
+  posDetailsExpanded = !posDetailsExpanded;
+  renderPosCart();
 }
 
 function posSetDeliveryCharge(amount) {
@@ -2609,7 +2617,7 @@ function posHoldOrder() {
     discountPercent: posDiscountPercent, deliveryCharge: posDeliveryCharge
   });
   posCart = {}; posCustomerName = ''; posCustomerPhone = ''; posAddress = ''; posNotes = '';
-  posDiscountPercent = 0; posDeliveryCharge = 0; posOrderType = 'Dine In';
+  posDiscountPercent = 0; posDeliveryCharge = 0; posOrderType = 'Dine In'; posDetailsExpanded = false;
   renderPOS();
 }
 
@@ -2622,6 +2630,7 @@ function resumeHeldOrder(index) {
   posOrderType = held.orderType;
   posCustomerName = held.name; posCustomerPhone = held.phone; posAddress = held.address; posNotes = held.notes;
   posDiscountPercent = held.discountPercent || 0; posDeliveryCharge = held.deliveryCharge || 0;
+  posDetailsExpanded = false;
   renderPOS();
 }
 
@@ -2658,7 +2667,7 @@ function posConfirmOrder() {
     if (body.status === 'ok' || body.status === 'print_failed') {
       if (body.status === 'print_failed') alert('Order #' + body.order_number + ' saved, but printing failed — check the printer.');
       posCart = {}; posCustomerName = ''; posCustomerPhone = ''; posAddress = ''; posNotes = '';
-      posDiscountPercent = 0; posDeliveryCharge = 0; posOrderType = 'Dine In';
+      posDiscountPercent = 0; posDeliveryCharge = 0; posOrderType = 'Dine In'; posDetailsExpanded = false;
       renderPOS();
     } else {
       alert('Could not place order: ' + (body.message || 'Unknown error'));
