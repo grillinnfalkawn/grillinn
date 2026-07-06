@@ -410,43 +410,50 @@ def save_order(data):
     return {"id": order_id, "order_number": order_number}
 
 
-def next_website_order_number():
-    """Website orders get their own sequence (001, 002...), separate from
-    POS's 'P'-prefixed sequence, assigned here on the server so it's a
-    single authoritative counter — not something each customer's browser
-    invents independently."""
+def _next_seq_for_today(source_filter, today_iso):
+    """Shared helper: finds the last order placed today (matching the given
+    source filter) and returns the next sequence number for that day.
+    Uses a trailing-digit match rather than a fixed split, so it keeps
+    working seamlessly even on the day the numbering format changes (an
+    old-style plain number like '014' or 'P014' from earlier the same day
+    is still read correctly and the count continues from it)."""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT order_number FROM orders WHERE source != 'pos' OR source IS NULL ORDER BY id DESC LIMIT 1")
+    c.execute(f"""
+        SELECT order_number FROM orders
+        WHERE ({source_filter}) AND created_at LIKE ?
+        ORDER BY id DESC LIMIT 1
+    """, (today_iso + "%",))
     row = c.fetchone()
     conn.close()
     if row and row[0]:
-        try:
-            n = int(row[0]) + 1
-        except ValueError:
-            n = 1
-    else:
-        n = 1
-    return str(n).zfill(3)
+        m = re.search(r"(\d+)$", row[0])
+        if m:
+            return int(m.group(1)) + 1
+    return 1
+
+
+def next_website_order_number():
+    """Website orders get their own date-prefixed sequence that resets
+    each day: DDMMYY-001, DDMMYY-002, ... This keeps numbers short and
+    unambiguous (no ever-growing digit count over the life of the
+    business, and no collision between 'today's #005' and 'last week's
+    #005' since the date is baked into the number itself). Assigned here
+    on the server so it's a single authoritative counter — not something
+    each customer's browser invents independently."""
+    today = datetime.now()
+    n = _next_seq_for_today("source != 'pos' OR source IS NULL", today.strftime("%Y-%m-%d"))
+    return f"{today.strftime('%d%m%y')}-{str(n).zfill(3)}"
 
 
 def next_pos_order_number():
-    """POS orders get their own sequence with a 'P' prefix (P001, P002...)
-    so they're visually distinct from website orders (001, 002...) on
-    receipts and in reports, and can be filtered/analyzed separately."""
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT order_number FROM orders WHERE source = 'pos' ORDER BY id DESC LIMIT 1")
-    row = c.fetchone()
-    conn.close()
-    if row and row[0] and row[0].startswith("P"):
-        try:
-            n = int(row[0][1:]) + 1
-        except ValueError:
-            n = 1
-    else:
-        n = 1
-    return "P" + str(n).zfill(3)
+    """POS orders get their own date-prefixed sequence with a 'P' prefix
+    (PDDMMYY-001, PDDMMYY-002, ...) so they're visually distinct from
+    website orders on receipts and in reports, and can be filtered/
+    analyzed separately. Resets daily, same reasoning as above."""
+    today = datetime.now()
+    n = _next_seq_for_today("source = 'pos'", today.strftime("%Y-%m-%d"))
+    return f"P{today.strftime('%d%m%y')}-{str(n).zfill(3)}"
 
 
 def save_pos_order(order_number, customer_name, customer_phone, order_type, address, notes,
