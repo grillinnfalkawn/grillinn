@@ -1735,8 +1735,11 @@ DASHBOARD_HTML = """
   .sales-total-sub{font-size:0.8rem;color:rgba(255,255,255,0.85);}
   .sales-section{background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;}
   .sales-section-title{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.6rem;}
-  .sales-row{display:flex;justify-content:space-between;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;}
+  .sales-row{display:grid;grid-template-columns:1fr 56px 76px;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;}
   .sales-row:last-child{border-bottom:none;}
+  .sales-row span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sales-row span:nth-child(2){text-align:right;color:var(--muted);}
+  .sales-row span:nth-child(3){text-align:right;font-weight:600;}
   .sales-empty{text-align:center;color:var(--muted);padding:2rem 1rem;font-size:0.85rem;}
   .settings-section{background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;}
   .settings-section-title{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.8rem;}
