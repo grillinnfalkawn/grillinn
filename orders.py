@@ -245,6 +245,9 @@ def _grp_wraps(item_id, item, cat):
 def _grp_pastas(item_id, item, cat):
     return cat == "Pastas"
 
+def _grp_garlic_bread(item_id, item, cat):
+    return cat == "Garlic Breads"
+
 def _grp_fries(item_id, item, cat):
     return item_id.startswith("FRI")
 
@@ -265,6 +268,7 @@ STOCK_GROUPS = {
     "sandwiches": ("Sandwiches", _grp_sandwiches),
     "wraps": ("Wraps", _grp_wraps),
     "pastas": ("Pastas", _grp_pastas),
+    "garlic_bread": ("Garlic Bread", _grp_garlic_bread),
     "fries": ("Fries (incl. Overloaded)", _grp_fries),
     "footlong": ("Footlongs", _grp_footlong),
     "paneer": ("All Paneer Items", _grp_paneer),
