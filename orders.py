@@ -2,6 +2,7 @@ from flask import Flask, request, Response
 import win32print
 import sqlite3
 import json
+import re
 import os
 import shutil
 import threading
@@ -33,8 +34,8 @@ SETTINGS_PATH = "settings.json"
 #   3. Create an "App Password" at https://myaccount.google.com/apppasswords
 #      (NOT your normal Gmail password — a 16-character app-specific one).
 #   4. Paste that below. Leave SMTP_EMAIL blank to disable email receipts entirely.
-SMTP_EMAIL = ""            # e.g. "grillinnfalkawn@gmail.com"
-SMTP_APP_PASSWORD = ""     # 16-character Gmail App Password
+SMTP_EMAIL = "grillinnfalkawn@gmail.com"            # e.g. "grillinnfalkawn@gmail.com"
+SMTP_APP_PASSWORD = "gervpwotqmzohgvb"     # 16-character Gmail App Password
 RESTAURANT_NAME = "Grill Inn, Falkawn"
 RESTAURANT_PHONE = "9612992023"
 
@@ -63,6 +64,10 @@ DEFAULT_SETTINGS = {
         "active": False,
         "text": "",
         "emoji": "🎉"
+    },
+    "stock": {
+        "out_of_stock_groups": [],  # e.g. ["pizza_pan", "burgers"]
+        "out_of_stock_items": []    # individual item ids, e.g. ["BEV001", "DES004"]
     }
 }
 
@@ -78,6 +83,9 @@ def load_settings():
             merged = {**DEFAULT_SETTINGS, **data}
             merged.setdefault("special_dates", {})
             merged.setdefault("banner", DEFAULT_SETTINGS["banner"])
+            merged.setdefault("stock", DEFAULT_SETTINGS["stock"])
+            merged["stock"].setdefault("out_of_stock_groups", [])
+            merged["stock"].setdefault("out_of_stock_items", [])
             return merged
     except Exception as e:
         print(f"[SETTINGS LOAD ERROR] {e}")
@@ -204,12 +212,80 @@ threading.Thread(target=backup_loop, daemon=True).start()
 # ── MENU DATA (shared with the customer-facing site) ─────────────────────
 # Single source of truth for the POS: item names, prices, categories.
 # Keep in sync with the MENU object in index.html if the menu changes.
-MENU_JSON = '''{"Veg Burgers":[{"id":"BUR001","title":"Aloo Tikki Burger","description":"Veg Burger","price":52},{"id":"BUR002","title":"Veg Surprise Burger","description":"Veg Burger","price":94},{"id":"BUR003","title":"Chilli Lava Burger","description":"Veg Burger","price":105},{"id":"BUR004","title":"Crunchy Corn Burger","description":"Veg Burger","price":105},{"id":"BUR005","title":"Crispy Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR006","title":"Paneer Tikka Burger","description":"Veg Burger","price":125},{"id":"BUR007","title":"Peri Peri Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR008","title":"Maha Veggie Burger","description":"Veg Burger","price":135},{"id":"ADD003","title":"Extra Cheese (Burger)","description":"Add-on","price":27}],"Non Veg Burgers":[{"id":"BUR009","title":"Fried Chicken Burger","description":"Chicken Burger","price":105},{"id":"BUR010","title":"Chicken Surprise Burger","description":"Chicken Burger","price":115},{"id":"BUR011","title":"Chicken Chilli Lava Burger","description":"Chicken Burger","price":136},{"id":"BUR012","title":"Tandoori Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR013","title":"Peri Peri Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR014","title":"Premium Fried Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR015","title":"Maha Chicken Burger","description":"Chicken Burger","price":157},{"id":"ADD004","title":"Extra Cheese (Burger)","description":"Add-on","price":27}],"Wraps":[{"id":"WRP001","title":"Crispy Paneer Wrap","description":"Veg Wrap","price":136},{"id":"WRP002","title":"Tandoori Paneer Tikka Wrap","description":"Veg Wrap","price":136},{"id":"WRP003","title":"Crispy Chicken Wrap","description":"Chicken Wrap","price":146},{"id":"WRP004","title":"Tandoori Chicken Tikka Wrap","description":"Chicken Wrap","price":146}],"Fried Chicken":[{"id":"FCH001","title":"Fried Chicken (2 Pieces)","description":"Fried Chicken","price":188},{"id":"FCH002","title":"Fried Chicken (4 Pieces)","description":"Fried Chicken","price":356},{"id":"FCH003","title":"Fried Chicken (6 Pieces)","description":"Fried Chicken","price":535},{"id":"FCH004","title":"Fried Chicken (9 Pieces)","description":"Fried Chicken","price":745}],"Grilled Chicken":[{"id":"GRC001","title":"Tandoori Grilled Chicken - Half (4 Pieces)","description":"Grilled Chicken","price":349},{"id":"GRC002","title":"Tandoori Grilled Chicken - Full (8 Pieces)","description":"Grilled Chicken","price":649}],"Veg Footlongs":[{"id":"FTL001","title":"Veggie Delight Footlong","description":"Veg Footlong","price":125},{"id":"FTL002","title":"Paneer Tikka Footlong","description":"Veg Footlong","price":146},{"id":"FTL003","title":"Spicy Paneer Footlong","description":"Veg Footlong","price":146},{"id":"FTL004","title":"Deluxe Veggie Footlong","description":"Veg Footlong","price":157},{"id":"FTL005","title":"Peri Peri Paneer Footlong","description":"Veg Footlong","price":157},{"id":"FTL006","title":"Veg Extravaganza Footlong","description":"Veg Footlong","price":157},{"id":"FTL007","title":"Veg Cheese Burst Footlong","description":"Veg Footlong","price":167}],"Non Veg Footlongs":[{"id":"FTL008","title":"Simply Chicken Footlong","description":"Chicken Footlong","price":146},{"id":"FTL009","title":"Chicken Tikka Footlong","description":"Chicken Footlong","price":157},{"id":"FTL010","title":"Spicy Chicken Footlong","description":"Chicken Footlong","price":157},{"id":"FTL011","title":"Deluxe Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL012","title":"Peri Peri Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL013","title":"Chicken Extravaganza Footlong","description":"Chicken Footlong","price":167},{"id":"FTL014","title":"Chicken Cheese Burst Footlong","description":"Chicken Footlong","price":177}],"Veg Sandwiches":[{"id":"SAN001","title":"Veg Grilled Sandwich","description":"Veg Sandwich","price":105},{"id":"SAN002","title":"Tandoori Paneer Tikka Sandwich","description":"Veg Sandwich","price":125},{"id":"SAN003","title":"Italian Veg Sandwich","description":"Veg Sandwich","price":136}],"Non Veg Sandwiches":[{"id":"SAN004","title":"Chicken Grilled Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN005","title":"Tandoori Chicken Tikka Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN006","title":"Italian Chicken Sandwich","description":"Chicken Sandwich","price":146}],"Veg Pizza":[{"id":"PIZ001","title":"Margherita Pizza - Pan (6 Inch)","description":"Veg Pizza","price":95},{"id":"PIZ002","title":"Margherita Pizza - Regular (9 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ003","title":"Veggie Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":115},{"id":"PIZ004","title":"Veggie Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ005","title":"Tandoori Paneer Tikka Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ006","title":"Tandoori Paneer Tikka Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ007","title":"Teekha Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ008","title":"Teekha Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ009","title":"Indi Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ010","title":"Indi Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ011","title":"Peri Peri Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ012","title":"Peri Peri Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ013","title":"Deluxe Veggie Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ014","title":"Deluxe Veggie Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ015","title":"Mushroom Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ016","title":"Mushroom Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ017","title":"Veg Extravaganza Pizza - Pan (6 Inch)","description":"Veg Pizza","price":178},{"id":"PIZ018","title":"Veg Extravaganza Pizza - Regular (9 Inch)","description":"Veg Pizza","price":292},{"id":"PIZ019","title":"Veg Overloaded Pizza - Pan (6 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ020","title":"Veg Overloaded Pizza - Regular (9 Inch)","description":"Veg Pizza","price":314},{"id":"ADDPIZ001","title":"Cheese Burst Add-on - Pan (6 Inch)","description":"Add-on for Pan Pizza only","price":89,"is_addon":true,"addon_size":"pan"},{"id":"ADDPIZ002","title":"Cheese Burst Add-on - Regular (9 Inch)","description":"Add-on for Regular Pizza only","price":109,"is_addon":true,"addon_size":"regular"}],"Non Veg Pizza":[{"id":"PIZ021","title":"Chicken Delight Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":136},{"id":"PIZ022","title":"Chicken Delight Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":229},{"id":"PIZ023","title":"Tandoori Chicken Tikka Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ024","title":"Tandoori Chicken Tikka Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ025","title":"Teekha Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ026","title":"Teekha Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ027","title":"Indi Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ028","title":"Indi Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ029","title":"Peri Peri Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ030","title":"Peri Peri Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ031","title":"Deluxe Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ032","title":"Deluxe Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ033","title":"Chicken Seekh Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ034","title":"Chicken Seekh Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ035","title":"Chicken Extravaganza Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":199},{"id":"PIZ036","title":"Chicken Extravaganza Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":335},{"id":"PIZ037","title":"Chicken Overloaded Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":219},{"id":"PIZ038","title":"Chicken Overloaded Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":345},{"id":"ADDPIZ003","title":"Cheese Burst Add-on - Pan (6 Inch)","description":"Add-on for Pan Pizza only","price":89,"is_addon":true,"addon_size":"pan"},{"id":"ADDPIZ004","title":"Cheese Burst Add-on - Regular (9 Inch)","description":"Add-on for Regular Pizza only","price":109,"is_addon":true,"addon_size":"regular"}],"Pastas":[{"id":"PAS001","title":"Veg Arrabbiata Penne","description":"Veg Pasta","price":136},{"id":"PAS002","title":"Veg Creamy White Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS003","title":"Mix Sauce Veg Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS004","title":"Chicken Arrabbiata Penne","description":"Chicken Pasta","price":157},{"id":"PAS005","title":"Chicken Creamy White Penne Pasta","description":"Chicken Pasta","price":167},{"id":"PAS006","title":"Mix Sauce Chicken Penne Pasta","description":"Chicken Pasta","price":167}],"Garlic Breads":[{"id":"GRB001","title":"Garlic Bread with Cheese","description":"Veg Garlic Bread","price":115},{"id":"GRB002","title":"Garlic Bread Supreme","description":"Veg Garlic Bread","price":125},{"id":"GRB003","title":"Chicken Garlic Bread with Cheese","description":"Chicken Garlic Bread","price":125},{"id":"GRB004","title":"Chicken Garlic Bread Supreme","description":"Chicken Garlic Bread","price":135}],"Veg Snacks":[{"id":"SNK001","title":"Paneer Pops (6 Pieces)","description":"Veg Snack","price":115},{"id":"SNK002","title":"Paneer Pops (16 Pieces)","description":"Veg Snack","price":209},{"id":"SNK003","title":"Paneer Strips (4 Pieces)","description":"Veg Snack","price":125},{"id":"SNK004","title":"Paneer Strips (8 Pieces)","description":"Veg Snack","price":219},{"id":"FRI001","title":"French Fries - Regular","description":"Fries","price":62},{"id":"FRI002","title":"French Fries - Large","description":"Fries","price":83},{"id":"FRI003","title":"Peri Peri Fries - Regular","description":"Fries","price":83},{"id":"FRI004","title":"Peri Peri Fries - Large","description":"Fries","price":104},{"id":"FRI005","title":"Hot & Spicy Fries - Regular","description":"Fries","price":83},{"id":"FRI006","title":"Hot & Spicy Fries - Large","description":"Fries","price":104},{"id":"FRI007","title":"Peri Peri Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI008","title":"Hot & Spicy Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI009","title":"Crispy Paneer Overloaded Fries","description":"Loaded Fries","price":146}],"Non Veg Snacks":[{"id":"SNK005","title":"Chicken Nuggets (6 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK006","title":"Chicken Nuggets (12 Pieces)","description":"Chicken Snack","price":250},{"id":"SNK007","title":"Chicken Popcorn (8 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK008","title":"Chicken Popcorn (16 Pieces)","description":"Chicken Snack","price":252},{"id":"SNK009","title":"Chicken Strips (3 Pieces)","description":"Chicken Snack","price":125},{"id":"FRI010","title":"Crispy Chicken Overloaded Fries","description":"Loaded Fries","price":157}],"Beverages":[{"id":"BEV001","title":"Coca-Cola","description":"Soft Drink","price":41},{"id":"BEV002","title":"Sprite","description":"Soft Drink","price":41},{"id":"BEV003","title":"Fanta","description":"Soft Drink","price":41},{"id":"BEV004","title":"Iced Tea Lemon","description":"Cold Beverage","price":75},{"id":"BEV005","title":"Fresh Lime Soda","description":"Cold Beverage","price":95},{"id":"BEV006","title":"Mojito","description":"Cold Beverage","price":95},{"id":"BEV007","title":"Mango Delight","description":"Beverage","price":95},{"id":"BEV008","title":"Strawberry Blast","description":"Beverage","price":95},{"id":"BEV009","title":"Cafe Frappe","description":"Beverage","price":105},{"id":"BEV010","title":"Mango Shake","description":"Milkshake","price":105},{"id":"BEV011","title":"Strawberry Shake","description":"Milkshake","price":105},{"id":"BEV012","title":"Chocolate Shake","description":"Milkshake","price":105},{"id":"BEV013","title":"Butterscotch Shake","description":"Milkshake","price":105},{"id":"BEV014","title":"Oreo Shake","description":"Milkshake","price":125},{"id":"BEV015","title":"Kit Kat Shake","description":"Milkshake","price":125},{"id":"BEV016","title":"Packaged Drinking Water","description":"Drinking Water","price":10}],"Desserts":[{"id":"DES004","title":"Mango Ice Cream","description":"Dessert","price":58},{"id":"DES005","title":"Vanilla Ice Cream","description":"Dessert","price":58},{"id":"DES006","title":"Strawberry Ice Cream","description":"Dessert","price":58},{"id":"DES007","title":"Chocolate Ice Cream","description":"Dessert","price":58},{"id":"DES002","title":"Hot Chocolate Fudge","description":"Dessert","price":105},{"id":"DES003","title":"Fruit Sundae","description":"Dessert","price":105}],"Add Ons":[{"id":"ADD002","title":"Cheese Dip","description":"Add-on","price":30},{"id":"ADD005","title":"Extra Cheese","description":"Add-on","price":27}],"Combos":[{"id":"FMB001","title":"Veg Fun Meal Box","description":"Veg Surprise Burger, Reg. Fries, Paneer Pops (4 pcs), Coke, Perk Chocolate","price":279},{"id":"FMB002","title":"Non Veg Fun Meal Box","description":"Fried Chicken Burger, Reg. Fries, Chicken Popcorn (4 pcs), Coke, Perk Chocolate","price":289},{"id":"COM001","title":"Add 2 Pieces Garlic Bread + Coke","description":"Meal Combo Add-on","price":105},{"id":"COM002","title":"Add Fries + Coke Combo","description":"Meal Combo Add-on","price":119},{"id":"COM003","title":"Add 1 Piece Fried Chicken + Coke","description":"Meal Combo Add-on","price":135},{"id":"COM004","title":"Add Chicken Popcorn + Coke","description":"Meal Combo Add-on","price":159}]}'''
+MENU_JSON = '''{"Veg Burgers":[{"id":"BUR001","title":"Aloo Tikki Burger","description":"Veg Burger","price":52},{"id":"BUR002","title":"Veg Surprise Burger","description":"Veg Burger","price":94},{"id":"BUR003","title":"Chilli Lava Burger","description":"Veg Burger","price":105},{"id":"BUR004","title":"Crunchy Corn Burger","description":"Veg Burger","price":105},{"id":"BUR005","title":"Crispy Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR006","title":"Paneer Tikka Burger","description":"Veg Burger","price":125},{"id":"BUR007","title":"Peri Peri Paneer Burger","description":"Veg Burger","price":125},{"id":"BUR008","title":"Maha Veggie Burger","description":"Veg Burger","price":135},{"id":"ADD003","title":"Extra Cheese (Burger)","description":"Add-on","price":27}],"Non Veg Burgers":[{"id":"BUR009","title":"Fried Chicken Burger","description":"Chicken Burger","price":105},{"id":"BUR010","title":"Chicken Surprise Burger","description":"Chicken Burger","price":115},{"id":"BUR011","title":"Chicken Chilli Lava Burger","description":"Chicken Burger","price":136},{"id":"BUR012","title":"Tandoori Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR013","title":"Peri Peri Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR014","title":"Premium Fried Chicken Burger","description":"Chicken Burger","price":146},{"id":"BUR015","title":"Maha Chicken Burger","description":"Chicken Burger","price":157},{"id":"ADD004","title":"Extra Cheese (Burger)","description":"Add-on","price":27}],"Wraps":[{"id":"WRP001","title":"Crispy Paneer Wrap","description":"Veg Wrap","price":136},{"id":"WRP002","title":"Tandoori Paneer Tikka Wrap","description":"Veg Wrap","price":136},{"id":"WRP003","title":"Crispy Chicken Wrap","description":"Chicken Wrap","price":146},{"id":"WRP004","title":"Tandoori Chicken Tikka Wrap","description":"Chicken Wrap","price":146}],"Fried Chicken":[{"id":"FCH001","title":"Fried Chicken (2 Pieces)","description":"Fried Chicken","price":188},{"id":"FCH002","title":"Fried Chicken (4 Pieces)","description":"Fried Chicken","price":356},{"id":"FCH003","title":"Fried Chicken (6 Pieces)","description":"Fried Chicken","price":535},{"id":"FCH004","title":"Fried Chicken (9 Pieces)","description":"Fried Chicken","price":745}],"Grilled Chicken":[{"id":"GRC001","title":"Tandoori Grilled Chicken - Half (4 Pieces)","description":"Grilled Chicken","price":349},{"id":"GRC002","title":"Tandoori Grilled Chicken - Full (8 Pieces)","description":"Grilled Chicken","price":649}],"Veg Footlongs":[{"id":"FTL001","title":"Veggie Delight Footlong","description":"Veg Footlong","price":125},{"id":"FTL002","title":"Paneer Tikka Footlong","description":"Veg Footlong","price":146},{"id":"FTL003","title":"Spicy Paneer Footlong","description":"Veg Footlong","price":146},{"id":"FTL004","title":"Deluxe Veggie Footlong","description":"Veg Footlong","price":157},{"id":"FTL005","title":"Peri Peri Paneer Footlong","description":"Veg Footlong","price":157},{"id":"FTL006","title":"Veg Extravaganza Footlong","description":"Veg Footlong","price":157},{"id":"FTL007","title":"Veg Cheese Burst Footlong","description":"Veg Footlong","price":167}],"Non Veg Footlongs":[{"id":"FTL008","title":"Simply Chicken Footlong","description":"Chicken Footlong","price":146},{"id":"FTL009","title":"Chicken Tikka Footlong","description":"Chicken Footlong","price":157},{"id":"FTL010","title":"Spicy Chicken Footlong","description":"Chicken Footlong","price":157},{"id":"FTL011","title":"Deluxe Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL012","title":"Peri Peri Chicken Footlong","description":"Chicken Footlong","price":167},{"id":"FTL013","title":"Chicken Extravaganza Footlong","description":"Chicken Footlong","price":167},{"id":"FTL014","title":"Chicken Cheese Burst Footlong","description":"Chicken Footlong","price":177}],"Veg Sandwiches":[{"id":"SAN001","title":"Veg Grilled Sandwich","description":"Veg Sandwich","price":105},{"id":"SAN002","title":"Tandoori Paneer Tikka Sandwich","description":"Veg Sandwich","price":125},{"id":"SAN003","title":"Italian Veg Sandwich","description":"Veg Sandwich","price":136}],"Non Veg Sandwiches":[{"id":"SAN004","title":"Chicken Grilled Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN005","title":"Tandoori Chicken Tikka Sandwich","description":"Chicken Sandwich","price":136},{"id":"SAN006","title":"Italian Chicken Sandwich","description":"Chicken Sandwich","price":146}],"Veg Pizza":[{"id":"PIZ001","title":"Margherita Pizza - Pan (6 Inch)","description":"Veg Pizza","price":95},{"id":"PIZ002","title":"Margherita Pizza - Regular (9 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ003","title":"Veggie Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":115},{"id":"PIZ004","title":"Veggie Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ005","title":"Tandoori Paneer Tikka Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ006","title":"Tandoori Paneer Tikka Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ007","title":"Teekha Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ008","title":"Teekha Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ009","title":"Indi Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ010","title":"Indi Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ011","title":"Peri Peri Paneer Pizza - Pan (6 Inch)","description":"Veg Pizza","price":146},{"id":"PIZ012","title":"Peri Peri Paneer Pizza - Regular (9 Inch)","description":"Veg Pizza","price":250},{"id":"PIZ013","title":"Deluxe Veggie Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ014","title":"Deluxe Veggie Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ015","title":"Mushroom Delight Pizza - Pan (6 Inch)","description":"Veg Pizza","price":157},{"id":"PIZ016","title":"Mushroom Delight Pizza - Regular (9 Inch)","description":"Veg Pizza","price":262},{"id":"PIZ017","title":"Veg Extravaganza Pizza - Pan (6 Inch)","description":"Veg Pizza","price":178},{"id":"PIZ018","title":"Veg Extravaganza Pizza - Regular (9 Inch)","description":"Veg Pizza","price":292},{"id":"PIZ019","title":"Veg Overloaded Pizza - Pan (6 Inch)","description":"Veg Pizza","price":199},{"id":"PIZ020","title":"Veg Overloaded Pizza - Regular (9 Inch)","description":"Veg Pizza","price":314},{"id":"ADDPIZ001","title":"Cheese Burst Add-on - Pan (6 Inch)","description":"Add-on for Pan Pizza only","price":89,"is_addon":true,"addon_size":"pan"},{"id":"ADDPIZ002","title":"Cheese Burst Add-on - Regular (9 Inch)","description":"Add-on for Regular Pizza only","price":109,"is_addon":true,"addon_size":"regular"}],"Non Veg Pizza":[{"id":"PIZ021","title":"Chicken Delight Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":136},{"id":"PIZ022","title":"Chicken Delight Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":229},{"id":"PIZ023","title":"Tandoori Chicken Tikka Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ024","title":"Tandoori Chicken Tikka Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ025","title":"Teekha Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ026","title":"Teekha Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ027","title":"Indi Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ028","title":"Indi Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ029","title":"Peri Peri Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":157},{"id":"PIZ030","title":"Peri Peri Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":272},{"id":"PIZ031","title":"Deluxe Chicken Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ032","title":"Deluxe Chicken Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ033","title":"Chicken Seekh Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":167},{"id":"PIZ034","title":"Chicken Seekh Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":282},{"id":"PIZ035","title":"Chicken Extravaganza Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":199},{"id":"PIZ036","title":"Chicken Extravaganza Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":335},{"id":"PIZ037","title":"Chicken Overloaded Pizza - Pan (6 Inch)","description":"Chicken Pizza","price":219},{"id":"PIZ038","title":"Chicken Overloaded Pizza - Regular (9 Inch)","description":"Chicken Pizza","price":345},{"id":"ADDPIZ003","title":"Cheese Burst Add-on - Pan (6 Inch)","description":"Add-on for Pan Pizza only","price":89,"is_addon":true,"addon_size":"pan"},{"id":"ADDPIZ004","title":"Cheese Burst Add-on - Regular (9 Inch)","description":"Add-on for Regular Pizza only","price":109,"is_addon":true,"addon_size":"regular"}],"Pastas":[{"id":"PAS001","title":"Veg Arrabbiata Penne","description":"Veg Pasta","price":136},{"id":"PAS002","title":"Veg Creamy White Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS003","title":"Mix Sauce Veg Penne Pasta","description":"Veg Pasta","price":146},{"id":"PAS004","title":"Chicken Arrabbiata Penne","description":"Chicken Pasta","price":157},{"id":"PAS005","title":"Chicken Creamy White Penne Pasta","description":"Chicken Pasta","price":167},{"id":"PAS006","title":"Mix Sauce Chicken Penne Pasta","description":"Chicken Pasta","price":167}],"Garlic Breads":[{"id":"GRB001","title":"Garlic Bread with Cheese","description":"Veg Garlic Bread","price":115},{"id":"GRB002","title":"Garlic Bread Supreme","description":"Veg Garlic Bread","price":125},{"id":"GRB003","title":"Chicken Garlic Bread with Cheese","description":"Chicken Garlic Bread","price":125},{"id":"GRB004","title":"Chicken Garlic Bread Supreme","description":"Chicken Garlic Bread","price":135}],"Veg Snacks":[{"id":"SNK001","title":"Paneer Pops (6 Pieces)","description":"Veg Snack","price":115},{"id":"SNK002","title":"Paneer Pops (16 Pieces)","description":"Veg Snack","price":209},{"id":"SNK003","title":"Paneer Strips (4 Pieces)","description":"Veg Snack","price":125},{"id":"SNK004","title":"Paneer Strips (8 Pieces)","description":"Veg Snack","price":219},{"id":"FRI001","title":"French Fries - Regular","description":"Fries","price":62},{"id":"FRI002","title":"French Fries - Large","description":"Fries","price":83},{"id":"FRI003","title":"Peri Peri Fries - Regular","description":"Fries","price":83},{"id":"FRI004","title":"Peri Peri Fries - Large","description":"Fries","price":104},{"id":"FRI005","title":"Hot & Spicy Fries - Regular","description":"Fries","price":83},{"id":"FRI006","title":"Hot & Spicy Fries - Large","description":"Fries","price":104},{"id":"FRI007","title":"Peri Peri Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI008","title":"Hot & Spicy Overloaded Fries","description":"Loaded Fries","price":125},{"id":"FRI009","title":"Crispy Paneer Overloaded Fries","description":"Loaded Fries","price":146}],"Non Veg Snacks":[{"id":"SNK005","title":"Chicken Nuggets (6 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK006","title":"Chicken Nuggets (12 Pieces)","description":"Chicken Snack","price":250},{"id":"SNK007","title":"Chicken Popcorn (8 Pieces)","description":"Chicken Snack","price":136},{"id":"SNK008","title":"Chicken Popcorn (16 Pieces)","description":"Chicken Snack","price":252},{"id":"SNK009","title":"Chicken Strips (3 Pieces)","description":"Chicken Snack","price":125},{"id":"FRI010","title":"Crispy Chicken Overloaded Fries","description":"Loaded Fries","price":157}],"Beverages":[{"id":"BEV001","title":"Coke","description":"Soft Drink","price":41},{"id":"BEV002","title":"Sprite","description":"Soft Drink","price":41},{"id":"BEV003","title":"Fanta","description":"Soft Drink","price":41},{"id":"BEV004","title":"Iced Tea Lemon","description":"Cold Beverage","price":75},{"id":"BEV005","title":"Fresh Lime Soda","description":"Cold Beverage","price":95},{"id":"BEV006","title":"Mojito","description":"Cold Beverage","price":95},{"id":"BEV007","title":"Mango Delight","description":"Beverage","price":95},{"id":"BEV008","title":"Strawberry Blast","description":"Beverage","price":95},{"id":"BEV009","title":"Cafe Frappe","description":"Beverage","price":105},{"id":"BEV010","title":"Mango Shake","description":"Milkshake","price":105},{"id":"BEV011","title":"Strawberry Shake","description":"Milkshake","price":105},{"id":"BEV012","title":"Chocolate Shake","description":"Milkshake","price":105},{"id":"BEV013","title":"Butterscotch Shake","description":"Milkshake","price":105},{"id":"BEV014","title":"Oreo Shake","description":"Milkshake","price":125},{"id":"BEV015","title":"Kit Kat Shake","description":"Milkshake","price":125},{"id":"BEV016","title":"Packaged Drinking Water","description":"Drinking Water","price":10}],"Desserts":[{"id":"DES004","title":"Mango Ice Cream","description":"Dessert","price":58},{"id":"DES005","title":"Vanilla Ice Cream","description":"Dessert","price":58},{"id":"DES006","title":"Strawberry Ice Cream","description":"Dessert","price":58},{"id":"DES007","title":"Chocolate Ice Cream","description":"Dessert","price":58},{"id":"DES002","title":"Hot Chocolate Fudge","description":"Dessert","price":105},{"id":"DES003","title":"Fruit Sundae","description":"Dessert","price":105}],"Add Ons":[{"id":"ADD002","title":"Cheese Dip","description":"Add-on","price":30},{"id":"ADD005","title":"Extra Cheese","description":"Add-on","price":27}],"Combos":[{"id":"FMB001","title":"Veg Fun Meal Box","description":"Veg Surprise Burger, Reg. Fries, Paneer Pops (4 pcs), Coke, Perk Chocolate","price":279},{"id":"FMB002","title":"Non Veg Fun Meal Box","description":"Fried Chicken Burger, Reg. Fries, Chicken Popcorn (4 pcs), Coke, Perk Chocolate","price":289},{"id":"COM001","title":"Add 2 Pieces Garlic Bread + Coke","description":"Meal Combo Add-on","price":105},{"id":"COM002","title":"Add Fries + Coke Combo","description":"Meal Combo Add-on","price":119},{"id":"COM003","title":"Add 1 Piece Fried Chicken + Coke","description":"Meal Combo Add-on","price":135},{"id":"COM004","title":"Add Chicken Popcorn + Coke","description":"Meal Combo Add-on","price":159},{"id":"COM005","title":"Add 2 Pieces Garlic Bread Supreme + Coke","description":"Meal Combo Add-on","price":115}]}'''
 MENU_DATA = json.loads(MENU_JSON)
 ITEMS_BY_ID = {}
+CATEGORY_BY_ID = {}
 for _cat, _items in MENU_DATA.items():
     for _it in _items:
         ITEMS_BY_ID[_it["id"]] = _it
+        CATEGORY_BY_ID[_it["id"]] = _cat
+
+
+# ── OUT-OF-STOCK GROUPS ──────────────────────────────────────────────
+# Group membership is computed dynamically from the menu (not hardcoded
+# item ids) so it stays correct automatically if the menu ever changes.
+# Beverages and Desserts are deliberately NOT included as groups here —
+# those are toggled individually instead (see /api/stock-status).
+def _grp_pizza_pan(item_id, item, cat):
+    return item_id.startswith("PIZ") and ("- Pan" in item["title"] or item.get("addon_size") == "pan")
+
+def _grp_pizza_regular(item_id, item, cat):
+    return item_id.startswith("PIZ") and ("- Regular" in item["title"] or item.get("addon_size") == "regular")
+
+def _grp_burgers(item_id, item, cat):
+    return cat in ("Veg Burgers", "Non Veg Burgers") and not item_id.startswith("ADD")
+
+def _grp_sandwiches(item_id, item, cat):
+    return cat in ("Veg Sandwiches", "Non Veg Sandwiches")
+
+def _grp_wraps(item_id, item, cat):
+    return cat == "Wraps"
+
+def _grp_pastas(item_id, item, cat):
+    return cat == "Pastas"
+
+def _grp_fries(item_id, item, cat):
+    return item_id.startswith("FRI")
+
+def _grp_footlong(item_id, item, cat):
+    return cat in ("Veg Footlongs", "Non Veg Footlongs")
+
+def _grp_paneer(item_id, item, cat):
+    text = (item["title"] + " " + item.get("description", "")).lower()
+    return "paneer" in text
+
+def _grp_tandoori_chicken(item_id, item, cat):
+    return "tandoori chicken" in item["title"].lower()
+
+STOCK_GROUPS = {
+    "pizza_pan": ("Pizza — Pan (6\")", _grp_pizza_pan),
+    "pizza_regular": ("Pizza — Regular (9\")", _grp_pizza_regular),
+    "burgers": ("Burgers", _grp_burgers),
+    "sandwiches": ("Sandwiches", _grp_sandwiches),
+    "wraps": ("Wraps", _grp_wraps),
+    "pastas": ("Pastas", _grp_pastas),
+    "fries": ("Fries (incl. Overloaded)", _grp_fries),
+    "footlong": ("Footlongs", _grp_footlong),
+    "paneer": ("All Paneer Items", _grp_paneer),
+    "tandoori_chicken": ("All Tandoori Chicken Items", _grp_tandoori_chicken),
+}
+
+
+def group_item_ids(group_key):
+    """All menu item ids belonging to a given stock group."""
+    _, matcher = STOCK_GROUPS[group_key]
+    return [iid for iid, item in ITEMS_BY_ID.items() if matcher(iid, item, CATEGORY_BY_ID[iid])]
+
+
+def compute_out_of_stock_item_ids(stock_settings):
+    """Expands the group toggles + individually-toggled items into the
+    full set of item ids currently out of stock."""
+    ids = set(stock_settings.get("out_of_stock_items", []))
+    for group_key in stock_settings.get("out_of_stock_groups", []):
+        if group_key in STOCK_GROUPS:
+            ids.update(group_item_ids(group_key))
+    return sorted(ids)
 
 
 # ── PACKAGING CHARGE LOGIC (Python port — used by the POS) ──────────────
@@ -726,14 +802,77 @@ def format_kot_datetime(order_time_str):
 
 
 def shorten_pizza_name(name):
-    """Shortens pizza names for print: drops the '(9 Inch)'/'(6 Inch)'
-    size hint (that's only useful to the customer browsing online — the
-    kitchen/receipt just needs 'Regular' or 'Pan') and drops the dash
-    before it, e.g. 'Indi Chicken Pizza - Pan (6 Inch)' becomes
-    'Indi Chicken Pizza Pan'. Used on both the receipt and the KOT."""
+    """Shortens pizza names for the RECEIPT only: drops the '(9 Inch)'/
+    '(6 Inch)' size hint (that's only useful to the customer browsing
+    online) and drops the dash before it, e.g. 'Indi Chicken Pizza - Pan
+    (6 Inch)' becomes 'Indi Chicken Pizza Pan'. The KOT uses the more
+    detailed kot_item_name() below instead, matching the old POS output."""
     name = name.replace(" (9 Inch)", "").replace(" (6 Inch)", "")
     name = name.replace(" - Regular", " Regular").replace(" - Pan", " Pan")
     return name
+
+
+# Explicit overrides for KOT item names that don't follow a clean pattern
+# — matched exactly against the customer-facing menu title, based on the
+# old POS's reference printouts you provided.
+KOT_NAME_OVERRIDES = {
+    "Peri Peri Overloaded Fries": "Peri Peri Cheesy Fries",
+    "Hot & Spicy Overloaded Fries": "Hot & Spicy Cheesy Fries",
+    "Tandoori Grilled Chicken - Half (4 Pieces)": "Tandoori Grilled Chicken (Half)",
+    "Tandoori Grilled Chicken - Full (8 Pieces)": "Tandoori Grilled Chicken (Full)",
+    "Hot Chocolate Fudge": "Chocolate Fudge Dessert",
+    "Fruit Sundae": "Fruit Sundae Dessert",
+    # Combo add-ons — the menu/receipt keep the customer-facing wording;
+    # only the KOT uses this shorthand the kitchen is used to.
+    "Add 2 Pieces Garlic Bread + Coke": "Pay Rs 105 More & Add Garlic Bread Cheese + Coke",
+    "Add 2 Pieces Garlic Bread Supreme + Coke": "Pay Rs 115 More & Add Garlic Bread Supreme + Coke",
+    "Add Fries + Coke Combo": "Pay Rs 119 More & Add Fries + Coke",
+    "Add 1 Piece Fried Chicken + Coke": "Add 1 pcs Fried Chicken + Coke",
+    "Add Chicken Popcorn + Coke": "Add Chicken Popcorn 8 pcs + Coke",
+}
+
+
+def kot_item_name(name):
+    """Renames items for the KOT to match the old POS's exact output
+    (per the reference printouts) — the kitchen staff are used to these
+    names, so the KOT should read the same even though the customer-
+    facing site and receipt use the fuller/clearer names. Only affects
+    the KOT; the receipt uses shorten_pizza_name() above instead."""
+    # Split off any note in brackets first, e.g. "Pizza - Pan (6 Inch) [extra cheese]"
+    note = ""
+    if " [" in name and name.endswith("]"):
+        name, note = name[:name.index(" [")], name[name.index(" ["):]
+
+    if name in KOT_NAME_OVERRIDES:
+        return KOT_NAME_OVERRIDES[name] + note
+
+    # Pizza sizing: "X Pizza - Regular (9 Inch)" -> "X Pizza (Regular)"
+    #               "X Pizza - Pan (6 Inch)"     -> "X Pizza Pan"
+    name = name.replace(" - Regular (9 Inch)", " (Regular)")
+    name = name.replace(" - Pan (6 Inch)", " Pan")
+
+    # Footlong: old POS appends a bare "6" (half-foot indicator)
+    if "Footlong" in name and "Footlong 6" not in name:
+        name = name.replace("Footlong", "Footlong 6")
+
+    # Fries: "X Fries - Regular"/"- Large" -> "X Fries (Regular)"/"(Large)"
+    m = re.match(r"^(.*) Fries - (Regular|Large)$", name)
+    if m:
+        name = f"{m.group(1)} Fries ({m.group(2)})"
+    name = name.replace("Hot & Spicy Fries (Regular)", "Hot N Spicy Fries (Regular)")
+    name = name.replace("Hot & Spicy Fries (Large)", "Hot N Spicy Fries (Large)")
+    name = name.replace("French Fries (Regular)", "Classic French Fries (Regular)")
+    name = name.replace("French Fries (Large)", "Classic French Fries (Large)")
+
+    # "(N Pieces)" -> "(N pcs)", and "Strips" items drop the parens entirely
+    name = name.replace("Pieces)", "pcs)")
+    if "Strips" in name:
+        name = re.sub(r"\((\d+) pcs\)", r"\1 pcs", name)
+
+    # Ice creams print as "<Flavor> Dessert" on the old POS
+    name = re.sub(r"^(\w+) Ice Cream$", r"\1 Dessert", name)
+
+    return name + note
 
 
 def print_order(order):
@@ -876,7 +1015,7 @@ def print_order(order):
     add(encode(divider()))
 
     for item in items:
-        name = shorten_pizza_name(item.get("product_retailer_id", "Unknown"))[:35]
+        name = kot_item_name(item.get("product_retailer_id", "Unknown"))[:35]
         qty = item.get("quantity", 1)
         add(encode(f"{name:<36}{qty:>12}"))
         add(LF)  # extra vertical spacing between items, matching the reference KOT layout
@@ -935,6 +1074,56 @@ def web_order():
 
 
 # ── SETTINGS ROUTES (special hours + banner) ──────────────
+@app.route("/api/stock-status", methods=["GET", "OPTIONS"])
+def api_get_stock_status():
+    if request.method == "OPTIONS":
+        response = Response("", status=200)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+
+    settings = load_settings()
+    out_of_stock_ids = compute_out_of_stock_item_ids(settings["stock"])
+    response = Response(json.dumps({"out_of_stock_item_ids": out_of_stock_ids}), status=200, mimetype="application/json")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
+
+@app.route("/api/stock-groups")
+def api_get_stock_groups():
+    """Returns the available groups (with labels + current item counts)
+    plus the Beverages/Desserts items, for the dashboard Settings UI."""
+    settings = load_settings()
+    stock = settings["stock"]
+    groups = [
+        {"key": key, "label": label, "count": len(group_item_ids(key)), "active": key in stock["out_of_stock_groups"]}
+        for key, (label, _) in STOCK_GROUPS.items()
+    ]
+    individual_categories = {}
+    for cat in ("Beverages", "Desserts"):
+        individual_categories[cat] = [
+            {"id": it["id"], "title": it["title"], "active": it["id"] in stock["out_of_stock_items"]}
+            for it in MENU_DATA.get(cat, [])
+        ]
+    return Response(json.dumps({"groups": groups, "individual": individual_categories}), status=200, mimetype="application/json")
+
+
+@app.route("/api/stock-status", methods=["POST"])
+def api_set_stock_status():
+    data = request.get_json() or {}
+    if data.get("password") != DASHBOARD_PASSWORD:
+        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
+
+    settings = load_settings()
+    if "out_of_stock_groups" in data:
+        settings["stock"]["out_of_stock_groups"] = [g for g in data["out_of_stock_groups"] if g in STOCK_GROUPS]
+    if "out_of_stock_items" in data:
+        settings["stock"]["out_of_stock_items"] = [i for i in data["out_of_stock_items"] if i in ITEMS_BY_ID]
+    save_settings(settings)
+    return Response(json.dumps({"status": "ok"}), status=200, mimetype="application/json")
+
+
 @app.route("/api/settings", methods=["GET", "OPTIONS"])
 def api_get_settings():
     if request.method == "OPTIONS":
@@ -1440,6 +1629,8 @@ DASHBOARD_HTML = """
   .pos-cat-btn{flex-shrink:0;background:var(--panel);border:1px solid var(--border);border-radius:22px;color:var(--muted);font-size:0.95rem;font-weight:700;padding:0.6rem 1.2rem;cursor:pointer;white-space:nowrap;}
   .pos-cat-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
   .pos-item-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.3rem;margin-bottom:0.65rem;cursor:pointer;}
+  .pos-item-row.pos-item-oos{opacity:0.45;cursor:not-allowed;}
+  .pos-item-oos-tag{font-size:0.78rem;color:var(--red);font-weight:700;}
   .pos-item-row:active{background:var(--charcoal);}
   .pos-item-left{display:flex;align-items:center;gap:0.8rem;flex:1;min-width:0;}
   .pos-item-name{font-size:1.15rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -1545,6 +1736,10 @@ DASHBOARD_HTML = """
   .sales-empty{text-align:center;color:var(--muted);padding:2rem 1rem;font-size:0.85rem;}
   .settings-section{background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;}
   .settings-section-title{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.8rem;}
+  .stock-toggle-row{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;font-size:0.85rem;color:var(--white);cursor:pointer;border-bottom:1px solid var(--border);}
+  .stock-toggle-row input{width:18px;height:18px;cursor:pointer;flex-shrink:0;}
+  .stock-count{color:var(--muted);font-size:0.75rem;}
+  .stock-cat-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--orange);margin:0.8rem 0 0.3rem;}
   .field-label{font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem;}
   .settings-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.9rem;padding:0.6rem 0.75rem;outline:none;margin-bottom:0.8rem;}
   .settings-input:focus{border-color:var(--orange);}
@@ -2125,8 +2320,81 @@ function renderSettings() {
       '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="sendReportNow()">📧 Send Today\\'s Report Now</button>' +
     '</div>';
 
-  main.innerHTML = bannerHtml + datesHtml + backupHtml + reportHtml +
+  main.innerHTML = bannerHtml + datesHtml + '<div id="stockSection"></div>' + backupHtml + reportHtml +
     '<button class="btn-save" onclick="saveAllSettings()">💾 Save Settings</button>';
+  loadStockSection();
+}
+
+let stockGroupsCache = null;
+
+function loadStockSection() {
+  fetch('/api/stock-groups').then(r => r.json()).then(data => {
+    stockGroupsCache = data;
+    renderStockSection();
+  }).catch(e => console.log('Stock groups load error', e));
+}
+
+function renderStockSection() {
+  const el = document.getElementById('stockSection');
+  if (!el || !stockGroupsCache) return;
+
+  const groupsHtml = stockGroupsCache.groups.map(g =>
+    '<label class="stock-toggle-row">' +
+      '<input type="checkbox" ' + (g.active ? 'checked' : '') + ' onchange="toggleStockGroup(&quot;' + g.key + '&quot;, this.checked)">' +
+      '<span>' + g.label + ' <span class="stock-count">(' + g.count + ' items)</span></span>' +
+    '</label>'
+  ).join('');
+
+  const individualHtml = Object.entries(stockGroupsCache.individual).map(([cat, items]) =>
+    '<div class="stock-cat-label">' + cat + '</div>' +
+    items.map(it =>
+      '<label class="stock-toggle-row">' +
+        '<input type="checkbox" ' + (it.active ? 'checked' : '') + ' onchange="toggleStockItem(&quot;' + it.id + '&quot;, this.checked)">' +
+        '<span>' + it.title + '</span>' +
+      '</label>'
+    ).join('')
+  ).join('');
+
+  el.innerHTML =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📦 Out of Stock</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Toggling any of these takes effect immediately on the website and POS — no need to hit Save Settings below. Group toggles cover whole categories (e.g. all Pan-size pizzas); Beverages and Desserts are toggled individually.</div>' +
+      groupsHtml +
+      '<div style="margin-top:0.8rem;">' + individualHtml + '</div>' +
+    '</div>';
+}
+
+function toggleStockGroup(key, checked) {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password:') || '';
+    if (!dashPassword) { loadStockSection(); return; }
+  }
+  stockGroupsCache.groups.forEach(g => { if (g.key === key) g.active = checked; });
+  const groups = stockGroupsCache.groups.filter(g => g.active).map(g => g.key);
+  fetch('/api/stock-status', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ password: dashPassword, out_of_stock_groups: groups })
+  }).then(r => r.json()).then(res => {
+    if (res.status !== 'ok') { dashPassword = ''; alert(res.message || 'Failed to update.'); }
+    loadStockSection();
+  });
+}
+
+function toggleStockItem(id, checked) {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password:') || '';
+    if (!dashPassword) { loadStockSection(); return; }
+  }
+  const allItems = Object.values(stockGroupsCache.individual).flat();
+  allItems.forEach(it => { if (it.id === id) it.active = checked; });
+  const items = allItems.filter(it => it.active).map(it => it.id);
+  fetch('/api/stock-status', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ password: dashPassword, out_of_stock_items: items })
+  }).then(r => r.json()).then(res => {
+    if (res.status !== 'ok') { dashPassword = ''; alert(res.message || 'Failed to update.'); }
+    loadStockSection();
+  });
 }
 
 function sendReportNow() {
@@ -2225,6 +2493,16 @@ function saveAllSettings() {
 }
 
 // ── POS: rendering ──────────────────────────────────────────────────
+let posOutOfStockIds = new Set();
+
+function fetchPosStockStatus() {
+  fetch('/api/stock-status').then(r => r.json()).then(data => {
+    posOutOfStockIds = new Set(data.out_of_stock_item_ids || []);
+    renderPosItemList();
+    renderPosFavorites();
+  }).catch(e => console.log('Stock status load error', e));
+}
+
 function renderPOS() {
   const main = document.getElementById('mainContent');
   main.innerHTML =
@@ -2254,6 +2532,7 @@ function renderPOS() {
   renderPosItemList();
   renderPosOrderTypeBar();
   renderPosCart();
+  fetchPosStockStatus();
 }
 
 // Top sellers are fetched from actual sales (last 7 days) — see
@@ -2274,9 +2553,10 @@ function renderPosFavorites() {
     return;
   }
 
-  if (posFavoritesCache.length === 0) { el.innerHTML = ''; return; }
+  const availableFavs = posFavoritesCache.filter(it => !posOutOfStockIds.has(it.id));
+  if (availableFavs.length === 0) { el.innerHTML = ''; return; }
   el.innerHTML = '<div class="pos-fav-label">⭐ Quick Add — top sellers, last 30 days</div><div class="pos-fav-strip">' +
-    posFavoritesCache.map(it =>
+    availableFavs.map(it =>
       '<button class="pos-fav-btn" data-id="' + it.id + '" onclick="posItemClick(this.dataset.id)" onmousedown="posStartLongPress(this.dataset.id)" ontouchstart="posStartLongPress(this.dataset.id)" onmouseup="posEndLongPress()" ontouchend="posEndLongPress()">' +
         '<div class="pos-fav-name">' + it.title + '</div><div class="pos-fav-price">₹' + it.price + '</div>' +
       '</button>'
@@ -2327,10 +2607,12 @@ function renderPosItemList() {
   }
   el.innerHTML = items.map(it => {
     const veg = posIsVeg(it);
-    return '<div class="pos-item-row" data-id="' + it.id + '" onclick="posItemClick(this.dataset.id)" onmousedown="posStartLongPress(this.dataset.id)" ontouchstart="posStartLongPress(this.dataset.id)" onmouseup="posEndLongPress()" ontouchend="posEndLongPress()">' +
+    const oos = posOutOfStockIds.has(it.id);
+    const handlers = oos ? '' : 'onclick="posItemClick(this.dataset.id)" onmousedown="posStartLongPress(this.dataset.id)" ontouchstart="posStartLongPress(this.dataset.id)" onmouseup="posEndLongPress()" ontouchend="posEndLongPress()"';
+    return '<div class="pos-item-row' + (oos ? ' pos-item-oos' : '') + '" data-id="' + it.id + '" ' + handlers + '>' +
       '<div class="pos-item-left"><div class="pos-veg-dot ' + (veg ? 'veg' : 'nonveg') + '"></div>' +
       '<div class="pos-item-name">' + it.title + '</div></div>' +
-      '<div class="pos-item-price">₹' + it.price + '</div>' +
+      (oos ? '<div class="pos-item-oos-tag">Out of Stock</div>' : '<div class="pos-item-price">₹' + it.price + '</div>') +
     '</div>';
   }).join('');
 }
@@ -2433,6 +2715,7 @@ function findMenuItemByTitle(title) {
 }
 
 function posAddItem(id) {
+  if (posOutOfStockIds.has(id)) { alert('This item is currently marked Out of Stock.'); return; }
   let item = null;
   for (const cat of MENU_CATEGORIES) {
     const found = MENU[cat].find(i => i.id === id);
