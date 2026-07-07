@@ -34,8 +34,8 @@ SETTINGS_PATH = "settings.json"
 #   3. Create an "App Password" at https://myaccount.google.com/apppasswords
 #      (NOT your normal Gmail password — a 16-character app-specific one).
 #   4. Paste that below. Leave SMTP_EMAIL blank to disable email receipts entirely.
-SMTP_EMAIL = "orders@grillinnfalkawn.in"            # e.g. "grillinnfalkawn@gmail.com"
-SMTP_APP_PASSWORD = "rdxtzyxnacrilszd"     # 16-character Gmail App Password
+SMTP_EMAIL = "grillinnfalkawn@gmail.com"            # e.g. "grillinnfalkawn@gmail.com"
+SMTP_APP_PASSWORD = "gervpwotqmzohgvb"     # 16-character Gmail App Password
 RESTAURANT_NAME = "Grill Inn, Falkawn"
 RESTAURANT_PHONE = "9612992023"
 
@@ -50,7 +50,7 @@ UPI_MCC = "0000"
 # OWNER_REPORT_EMAIL blank to disable this entirely. Time is 24h "HH:MM".
 # NOTE: this only fires if orders.py is actually running at that time —
 # if the PC is off or asleep at 21:30, that day's report won't send.
-OWNER_REPORT_EMAIL = "dianarinsiami@gmail.com"    # e.g. "youremail@gmail.com" — where to send the daily report
+OWNER_REPORT_EMAIL = ""    # e.g. "youremail@gmail.com" — where to send the daily report
 DAILY_REPORT_TIME = "21:30"
 # ────────────────────────────────────────────────────────
 
@@ -1254,6 +1254,30 @@ def print_order(order):
     return success
 
 
+# ── DASHBOARD AUTH ────────────────────────────────────────
+# Every dashboard-only route (viewing orders, sales, or taking any action
+# on them) sits behind this — checked from the query string for GET
+# requests, or the JSON body for POST requests. Customer-facing routes
+# (/web-order, /api/settings GET, /api/stock-status GET) are deliberately
+# left open since the public website needs them with no login involved.
+from functools import wraps
+
+def require_dashboard_auth(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        pw = request.args.get("password", "")
+        if not pw:
+            data = request.get_json(silent=True) or {}
+            pw = data.get("password", "")
+        if pw != DASHBOARD_PASSWORD:
+            return Response(
+                json.dumps({"status": "error", "message": "Incorrect or missing password"}),
+                status=401, mimetype="application/json"
+            )
+        return fn(*args, **kwargs)
+    return wrapper
+
+
 # ── WEBSITE ORDER ROUTE ──────────────────────────────────
 @app.route("/web-order", methods=["POST", "OPTIONS"])
 def web_order():
@@ -1311,6 +1335,7 @@ def api_get_stock_status():
 
 
 @app.route("/api/stock-groups")
+@require_dashboard_auth
 def api_get_stock_groups():
     """Returns every group as an expandable section — its own bulk toggle
     plus every individual item within it with its own toggle — for the
@@ -1335,10 +1360,9 @@ def api_get_stock_groups():
 
 
 @app.route("/api/stock-status", methods=["POST"])
+@require_dashboard_auth
 def api_set_stock_status():
     data = request.get_json() or {}
-    if data.get("password") != DASHBOARD_PASSWORD:
-        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
 
     settings = load_settings()
     if "out_of_stock_groups" in data:
@@ -1365,11 +1389,9 @@ def api_get_settings():
 
 
 @app.route("/api/settings", methods=["POST"])
+@require_dashboard_auth
 def api_save_settings():
     data = request.get_json() or {}
-
-    if data.get("password") != DASHBOARD_PASSWORD:
-        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
 
     settings = load_settings()
     if "special_dates" in data:
@@ -1414,10 +1436,8 @@ def api_save_settings():
 
 # ── DASHBOARD ROUTES ──────────────────────────────────────
 @app.route("/api/send-daily-report", methods=["POST"])
+@require_dashboard_auth
 def api_send_daily_report():
-    data = request.get_json() or {}
-    if data.get("password") != DASHBOARD_PASSWORD:
-        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
     if not OWNER_REPORT_EMAIL or not SMTP_EMAIL or not SMTP_APP_PASSWORD:
         return Response('{"status":"error","message":"Email/report not configured in orders.py"}', status=400, mimetype="application/json")
     ok = send_daily_sales_report()
@@ -1425,11 +1445,8 @@ def api_send_daily_report():
 
 
 @app.route("/api/download-backup")
+@require_dashboard_auth
 def api_download_backup():
-    password = request.args.get("password", "")
-    if password != DASHBOARD_PASSWORD:
-        return Response('{"status":"error","message":"Incorrect password"}', status=401, mimetype="application/json")
-
     run_backup()  # make sure today's backup exists before serving it
     try:
         with open(DB_PATH, "rb") as f:
@@ -1456,12 +1473,14 @@ def api_login():
 
 
 @app.route("/api/pending-orders")
+@require_dashboard_auth
 def api_pending_orders():
     orders = get_pending_orders()
     return Response(json.dumps(orders), status=200, mimetype="application/json")
 
 
 @app.route("/api/recent-orders")
+@require_dashboard_auth
 def api_recent_orders():
     date_param = request.args.get("date")
     if date_param:
@@ -1472,6 +1491,7 @@ def api_recent_orders():
 
 
 @app.route("/api/search-orders")
+@require_dashboard_auth
 def api_search_orders():
     query = request.args.get("q", "").strip()
     date_param = request.args.get("date", "").strip() or None
@@ -1628,6 +1648,7 @@ threading.Thread(target=daily_report_loop, daemon=True).start()
 
 
 @app.route("/api/confirm-order/<int:order_id>", methods=["POST"])
+@require_dashboard_auth
 def api_confirm_order(order_id):
     order = get_order_by_id(order_id)
     if not order:
@@ -1662,6 +1683,7 @@ def api_confirm_order(order_id):
 
 
 @app.route("/api/top-sellers")
+@require_dashboard_auth
 def api_top_sellers():
     days = request.args.get("days", 30, type=int)
     limit = request.args.get("limit", 8, type=int)
@@ -1670,6 +1692,7 @@ def api_top_sellers():
 
 
 @app.route("/api/sales-summary")
+@require_dashboard_auth
 def api_sales_summary():
     today = datetime.now().strftime("%Y-%m-%d")
     start = request.args.get("start") or today
@@ -1679,6 +1702,7 @@ def api_sales_summary():
 
 
 @app.route("/api/export-orders-csv")
+@require_dashboard_auth
 def api_export_orders_csv():
     import io
     import csv as csv_module
@@ -1725,6 +1749,7 @@ def api_export_orders_csv():
 
 
 @app.route("/api/reject-order/<int:order_id>", methods=["POST"])
+@require_dashboard_auth
 def api_reject_order(order_id):
     data = request.get_json() or {}
     reason = (data.get("reason") or "").strip()
@@ -1739,6 +1764,7 @@ def api_reject_order(order_id):
 
 
 @app.route("/api/restore-order/<int:order_id>", methods=["POST"])
+@require_dashboard_auth
 def api_restore_order(order_id):
     """Undoes a reject — puts the order back into the pending queue.
     Used by the 5-second Undo toast so a fat-fingered Reject isn't final."""
@@ -1747,6 +1773,7 @@ def api_restore_order(order_id):
 
 
 @app.route("/api/cancel-order/<int:order_id>", methods=["POST"])
+@require_dashboard_auth
 def api_cancel_order(order_id):
     order = get_order_by_id(order_id)
     if not order:
@@ -1756,6 +1783,7 @@ def api_cancel_order(order_id):
 
 
 @app.route("/api/pos-order", methods=["POST"])
+@require_dashboard_auth
 def api_pos_order():
     """In-restaurant POS checkout — skips the pending queue entirely and
     prints immediately, since the cashier is standing at the counter
@@ -1838,6 +1866,7 @@ def api_pos_order():
 
 
 @app.route("/api/void-order/<int:order_id>", methods=["POST"])
+@require_dashboard_auth
 def api_void_order(order_id):
     order = get_order_by_id(order_id)
     if not order:
@@ -1849,6 +1878,7 @@ def api_void_order(order_id):
 
 
 @app.route("/api/reprint-order/<int:order_id>", methods=["POST"])
+@require_dashboard_auth
 def api_reprint_order(order_id):
     order = get_order_by_id(order_id)
     if not order:
@@ -1938,7 +1968,13 @@ DASHBOARD_HTML = """
   .conn-dot.conn-ok{background:#22c55e;}
   .conn-dot.conn-down{background:var(--red);}
   .overdue-tag{font-size:0.68rem;color:white;background:var(--red);font-weight:700;margin-left:0.5rem;padding:0.15rem 0.5rem;border-radius:10px;}
+  .overdue-tag.critical{background:#b91c1c;}
   .order-card.overdue{border-color:var(--red);box-shadow:0 0 0 1px var(--red);}
+  .order-card.critical{animation:criticalPulse 1.4s ease-in-out infinite;}
+  @keyframes criticalPulse{
+    0%,100%{box-shadow:0 0 0 1px var(--red);}
+    50%{box-shadow:0 0 0 3px #b91c1c, 0 0 14px rgba(185,28,28,0.6);}
+  }
   .undo-toast{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%) translateY(100px);background:#1f1f1f;border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem;display:flex;align-items:center;gap:1rem;color:white;font-size:0.85rem;box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:200;transition:transform 0.25s;}
   .undo-toast.show{transform:translateX(-50%) translateY(0);}
   .undo-toast button{background:var(--orange);border:none;color:white;font-weight:700;padding:0.4rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.8rem;}
@@ -2097,14 +2133,52 @@ function login() {
     body: JSON.stringify({password: pw})
   }).then(r => {
     if (r.ok) {
+      dashPassword = pw;
+      // Kept for this tab's session only (cleared when the tab closes) —
+      // every dashboard API call needs it now, not just the write actions,
+      // so we restore it on refresh instead of re-prompting constantly.
+      sessionStorage.setItem('gi_dash_auth_pw', pw);
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('app').classList.add('visible');
-      sessionStorage.setItem('gi_dash_auth', '1');
       startPolling();
     } else {
       alert('Incorrect password');
     }
   });
+}
+
+function dashFetch(url, opts) {
+  opts = opts || {};
+  const method = (opts.method || 'GET').toUpperCase();
+  if (method === 'GET') {
+    url += (url.indexOf('?') !== -1 ? '&' : '?') + 'password=' + encodeURIComponent(dashPassword);
+  } else {
+    let body = {};
+    try { body = opts.body ? JSON.parse(opts.body) : {}; } catch(e) {}
+    body.password = dashPassword;
+    opts.headers = opts.headers || {'Content-Type':'application/json'};
+    opts.body = JSON.stringify(body);
+  }
+  return fetch(url, opts).then(r => {
+    if (r.status === 401) { handleAuthFailure(); return new Promise(() => {}); } // halt the chain — we're navigating to the login screen anyway
+    return r;
+  });
+}
+
+function logoutDashboard() {
+  dashPassword = '';
+  sessionStorage.removeItem('gi_dash_auth_pw');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+function handleAuthFailure() {
+  // Any dashboard call can come back 401 if the password was wrong, or if
+  // it's stale (DASHBOARD_PASSWORD changed in orders.py since this tab
+  // logged in). Send back to the login screen instead of silently failing
+  // or spamming alerts from the 5-second poll.
+  if (dashPassword) alert('Session expired or password changed — please log in again.');
+  logoutDashboard();
 }
 
 function switchTab(tab) {
@@ -2154,6 +2228,38 @@ function playNotifySound() {
   } catch(e) { console.log('Sound failed', e); }
 }
 
+function playCriticalAlertSound() {
+  // Deliberately harsher and busier than playNotifySound(): higher-pitched
+  // (more piercing to the ear), sawtooth instead of square (more edge to
+  // the tone), louder peak gain, more repeats packed closer together, and
+  // a longer/more insistent vibration — for an order that's gone past
+  // "running a little behind" into "needs eyes on it right now."
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const playBeep = (freq, start, dur) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(1.0, ctx.currentTime + start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dur);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur + 0.02);
+    };
+    const pattern = [
+      [1760, 0.00, 0.15], [2200, 0.17, 0.15],
+      [1760, 0.34, 0.15], [2200, 0.51, 0.15],
+      [1760, 0.68, 0.15], [2200, 0.85, 0.15],
+      [1760, 1.02, 0.15], [2200, 1.19, 0.22],
+    ];
+    pattern.forEach(([freq, start, dur]) => playBeep(freq, start, dur));
+    if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400, 100, 400]);
+  } catch(e) { console.log('Critical alert sound failed', e); }
+}
+
 function fmtItems(itemsJson) {
   let items;
   try { items = JSON.parse(itemsJson); } catch(e) { items = []; }
@@ -2173,7 +2279,12 @@ function renderOrderCard(order, isPending) {
 
   const minutesWaiting = isPending ? Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000) : 0;
   const isOverdue = isPending && minutesWaiting >= 3;
-  const overdueTag = isOverdue ? '<span class="overdue-tag">⏰ Waiting ' + minutesWaiting + 'm</span>' : '';
+  const isCritical = isPending && minutesWaiting >= 5; // needs attention right now, not just "running a little behind"
+  const overdueTag = isCritical
+    ? '<span class="overdue-tag critical">🚨 Waiting ' + minutesWaiting + 'm</span>'
+    : isOverdue
+      ? '<span class="overdue-tag">⏰ Waiting ' + minutesWaiting + 'm</span>'
+      : '';
 
   let actionsHtml = '';
   if (isPending) {
@@ -2198,7 +2309,7 @@ function renderOrderCard(order, isPending) {
       (order.status === 'rejected' && order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + order.reject_reason + '</div>' : '');
   }
 
-  return '<div class="order-card ' + (isPending ? 'pending' : '') + (isOverdue ? ' overdue' : '') + '">' +
+  return '<div class="order-card ' + (isPending ? 'pending' : '') + (isOverdue ? ' overdue' : '') + (isCritical ? ' critical' : '') + '">' +
     '<div class="order-header"><span class="order-num">#' + order.order_number + sourceTag + overdueTag + '</span><span class="order-type-tag ' + typeClass + '">' + order.order_type + '</span></div>' +
     '<div class="order-meta">' + order.customer_name + ' • ' + order.customer_phone + (order.address ? '<br>📍 ' + order.address : '') + '<br>🕒 ' + order.order_time + '</div>' +
     '<div class="order-items">' + itemsHtml +
@@ -2215,9 +2326,10 @@ function renderOrderCard(order, isPending) {
 // the Pending tab, so switching to History silenced new-order alerts).
 // If the Pending tab happens to be open, it also renders the list.
 let lastOverdueAlertTime = 0;
+let lastCriticalAlertTime = 0;
 
 function checkForNewOrders(forceRender) {
-  fetch('/api/pending-orders').then(r => r.json()).then(orders => {
+  dashFetch('/api/pending-orders').then(r => r.json()).then(orders => {
     setConnDot(true);
     const currentIds = new Set(orders.map(o => o.id));
 
@@ -2228,11 +2340,25 @@ function checkForNewOrders(forceRender) {
 
     // Nudge again if any order has been waiting 3+ minutes unconfirmed —
     // easy to miss during a rush when new-order alerts blend together.
+    // Once an order is critical (5+ min) it escalates to the louder alarm
+    // below instead, so the two don't both fire on top of each other.
     const now = Date.now();
-    const overdue = orders.some(o => now - new Date(o.created_at).getTime() > 3 * 60 * 1000);
+    const overdue = orders.some(o => {
+      const waitMs = now - new Date(o.created_at).getTime();
+      return waitMs > 3 * 60 * 1000 && waitMs <= 5 * 60 * 1000;
+    });
     if (overdue && now - lastOverdueAlertTime > 60 * 1000) {
       playNotifySound();
       lastOverdueAlertTime = now;
+    }
+
+    // Critical tier (5+ minutes): louder, more piercing, and repeats twice
+    // as often as the standard reminder — this is meant to actually be
+    // hard to ignore, since by this point something's gone wrong.
+    const critical = orders.some(o => now - new Date(o.created_at).getTime() > 5 * 60 * 1000);
+    if (critical && now - lastCriticalAlertTime > 30 * 1000) {
+      playCriticalAlertSound();
+      lastCriticalAlertTime = now;
     }
 
     const idsUnchanged = !isFirstLoad &&
@@ -2316,12 +2442,12 @@ function loadOrders() {
   const dateParam = historyDate || toDateStr(new Date());
   if (historySearchQuery) {
     const dateFilter = historySearchAllDates ? '' : '&date=' + dateParam;
-    fetch('/api/search-orders?q=' + encodeURIComponent(historySearchQuery) + dateFilter).then(r => r.json()).then(orders => {
+    dashFetch('/api/search-orders?q=' + encodeURIComponent(historySearchQuery) + dateFilter).then(r => r.json()).then(orders => {
       renderHistoryList(orders, dateParam);
     }).catch(e => console.log('Search error', e));
     return;
   }
-  fetch('/api/recent-orders?date=' + dateParam).then(r => r.json()).then(orders => {
+  dashFetch('/api/recent-orders?date=' + dateParam).then(r => r.json()).then(orders => {
     renderHistoryList(orders, dateParam);
   }).catch(e => console.log('Load error', e));
 }
@@ -2392,7 +2518,7 @@ function setHistoryDate(dateStr) {
 function cancelOrder(id) {
   if (!confirm('Void this confirmed order? This cannot be undone.')) return;
   const reason = prompt('Reason for voiding this order (optional):') || '';
-  fetch('/api/void-order/' + id, {
+  dashFetch('/api/void-order/' + id, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ reason })
@@ -2404,7 +2530,7 @@ function cancelOrder(id) {
 function confirmOrder(id) {
   const dcInput = document.getElementById('dc-' + id);
   const deliveryCharge = dcInput ? parseInt(dcInput.value) || 0 : 0;
-  fetch('/api/confirm-order/' + id, {
+  dashFetch('/api/confirm-order/' + id, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({delivery_charge: deliveryCharge})
@@ -2424,7 +2550,7 @@ function rejectOrder(id) {
   reason = reason.trim();
   if (!reason) { alert('A reason is required to reject an order — this keeps rejections deliberate, not accidental.'); return; }
 
-  fetch('/api/reject-order/' + id, {
+  dashFetch('/api/reject-order/' + id, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ reason })
@@ -2432,7 +2558,7 @@ function rejectOrder(id) {
     if (res.status !== 'ok') { alert(res.message || 'Could not reject order.'); return; }
     loadOrders();
     showUndoToast('Order rejected.', () => {
-      fetch('/api/restore-order/' + id, {method:'POST'}).then(r => r.json()).then(() => loadOrders());
+      dashFetch('/api/restore-order/' + id, {method:'POST'}).then(r => r.json()).then(() => loadOrders());
     });
   });
 }
@@ -2460,7 +2586,7 @@ function undoToastAction() {
 }
 
 function reprintOrder(id) {
-  fetch('/api/reprint-order/' + id, {method:'POST'}).then(r => r.json()).then(res => {
+  dashFetch('/api/reprint-order/' + id, {method:'POST'}).then(r => r.json()).then(res => {
     alert(res.status === 'ok' ? 'Reprinted!' : 'Print failed');
   });
 }
@@ -2487,7 +2613,7 @@ function loadSales(quick) {
     end = (eEl && eEl.value) || toDateStr(new Date());
   }
 
-  fetch('/api/sales-summary?start=' + start + '&end=' + end)
+  dashFetch('/api/sales-summary?start=' + start + '&end=' + end)
     .then(r => r.json())
     .then(summary => renderSales(summary, quick))
     .catch(e => { console.log('Sales load error', e); main.innerHTML = '<div class="sales-empty">Failed to load sales data.</div>'; });
@@ -2503,7 +2629,7 @@ function renderSales(summary, activeQuick) {
       '<input type="date" id="salesStart" value="' + summary.start_date + '" onchange="loadSales(\\'range\\')">' +
       '<span style="color:var(--muted);font-size:0.8rem;">to</span>' +
       '<input type="date" id="salesEnd" value="' + summary.end_date + '" onchange="loadSales(\\'range\\')">' +
-      '<a class="sales-quick-btn" style="text-decoration:none;" href="/api/export-orders-csv?start=' + summary.start_date + '&end=' + summary.end_date + '">⬇️ CSV</a>' +
+      '<a class="sales-quick-btn" style="text-decoration:none;" href="/api/export-orders-csv?start=' + summary.start_date + '&end=' + summary.end_date + '&password=' + encodeURIComponent(dashPassword) + '">⬇️ CSV</a>' +
     '</div>';
 
   if (summary.total_orders === 0) {
@@ -2794,7 +2920,7 @@ let stockGroupsCache = null;
 let stockExpanded = new Set(); // which group keys are currently expanded
 
 function loadStockSection() {
-  fetch('/api/stock-groups').then(r => r.json()).then(data => {
+  dashFetch('/api/stock-groups').then(r => r.json()).then(data => {
     stockGroupsCache = data;
     renderStockSection();
   }).catch(e => console.log('Stock groups load error', e));
@@ -3034,7 +3160,7 @@ function renderPosFavorites() {
 
   if (posFavoritesCache === null) {
     el.innerHTML = '<div class="pos-fav-label">⭐ Quick Add (loading...)</div>';
-    fetch('/api/top-sellers?days=30&limit=8').then(r => r.json()).then(items => {
+    dashFetch('/api/top-sellers?days=30&limit=8').then(r => r.json()).then(items => {
       posFavoritesCache = items;
       renderPosFavorites();
     }).catch(e => { posFavoritesCache = []; renderPosFavorites(); });
@@ -3173,7 +3299,7 @@ function posRepeatLastOrder() {
   captureCartFields();
   const phone = (posCustomerPhone || '').trim();
   if (!phone) { alert('Enter a phone number first to find their last order.'); return; }
-  fetch('/api/search-orders?q=' + encodeURIComponent(phone)).then(r => r.json()).then(orders => {
+  dashFetch('/api/search-orders?q=' + encodeURIComponent(phone)).then(r => r.json()).then(orders => {
     const match = orders.find(o => o.customer_phone === phone);
     if (!match) { alert('No previous order found for that phone number.'); return; }
     if (Object.keys(posCart).length > 0 && !confirm('Replace the current cart with their last order (' + match.order_number + ')?')) return;
@@ -3474,7 +3600,7 @@ function posConfirmOrder() {
 
   const items = Object.values(posCart).map(i => ({ id: i.id, qty: i.qty, note: i.note || '' }));
 
-  fetch('/api/pos-order', {
+  dashFetch('/api/pos-order', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -3513,7 +3639,9 @@ function startPolling() {
   setInterval(() => { if (currentTab !== 'pending') loadOrders(); }, 5000); // keeps history/search results fresh while viewing them
 }
 
-if (sessionStorage.getItem('gi_dash_auth') === '1') {
+const savedDashPw = sessionStorage.getItem('gi_dash_auth_pw');
+if (savedDashPw) {
+  dashPassword = savedDashPw;
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').classList.add('visible');
   startPolling();
