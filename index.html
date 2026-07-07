@@ -410,6 +410,8 @@ const HOURS = { open: [11,11,11,11,11,11,null], close: [21.5,21.5,21.5,21.5,21.5
 // if the fetch fails, so normal weekly HOURS logic below still applies.
 let SPECIAL_DATES = {};
 let OUT_OF_STOCK_IDS = new Set();
+let THRESHOLD_OFFER = { active: false, threshold_amount: 499, discount_percent: 10 };
+let QTY_OFFERS = [];
 
 function getDateKey(d) {
   const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
@@ -417,6 +419,89 @@ function getDateKey(d) {
 }
 
 const MENU = {"Veg Burgers": [{"id": "BUR001", "title": "Aloo Tikki Burger", "description": "Veg Burger", "price": 52}, {"id": "BUR002", "title": "Veg Surprise Burger", "description": "Veg Burger", "price": 94}, {"id": "BUR003", "title": "Chilli Lava Burger", "description": "Veg Burger", "price": 105}, {"id": "BUR004", "title": "Crunchy Corn Burger", "description": "Veg Burger", "price": 105}, {"id": "BUR005", "title": "Crispy Paneer Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR006", "title": "Paneer Tikka Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR007", "title": "Peri Peri Paneer Burger", "description": "Veg Burger", "price": 125}, {"id": "BUR008", "title": "Maha Veggie Burger", "description": "Veg Burger", "price": 135}, {"id": "ADD003", "title": "Extra Cheese (Burger)", "description": "Add-on", "price": 27}], "Non Veg Burgers": [{"id": "BUR009", "title": "Fried Chicken Burger", "description": "Chicken Burger", "price": 105}, {"id": "BUR010", "title": "Chicken Surprise Burger", "description": "Chicken Burger", "price": 115}, {"id": "BUR011", "title": "Chicken Chilli Lava Burger", "description": "Chicken Burger", "price": 136}, {"id": "BUR012", "title": "Tandoori Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR013", "title": "Peri Peri Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR014", "title": "Premium Fried Chicken Burger", "description": "Chicken Burger", "price": 146}, {"id": "BUR015", "title": "Maha Chicken Burger", "description": "Chicken Burger", "price": 157}, {"id": "ADD004", "title": "Extra Cheese (Burger)", "description": "Add-on", "price": 27}], "Wraps": [{"id": "WRP001", "title": "Crispy Paneer Wrap", "description": "Veg Wrap", "price": 136}, {"id": "WRP002", "title": "Tandoori Paneer Tikka Wrap", "description": "Veg Wrap", "price": 136}, {"id": "WRP003", "title": "Crispy Chicken Wrap", "description": "Chicken Wrap", "price": 146}, {"id": "WRP004", "title": "Tandoori Chicken Tikka Wrap", "description": "Chicken Wrap", "price": 146}], "Fried Chicken": [{"id": "FCH001", "title": "Fried Chicken (2 Pieces)", "description": "Fried Chicken", "price": 188}, {"id": "FCH002", "title": "Fried Chicken (4 Pieces)", "description": "Fried Chicken", "price": 356}, {"id": "FCH003", "title": "Fried Chicken (6 Pieces)", "description": "Fried Chicken", "price": 535}, {"id": "FCH004", "title": "Fried Chicken (9 Pieces)", "description": "Fried Chicken", "price": 745}], "Grilled Chicken": [{"id": "GRC001", "title": "Tandoori Grilled Chicken - Half (4 Pieces)", "description": "Grilled Chicken", "price": 349}, {"id": "GRC002", "title": "Tandoori Grilled Chicken - Full (8 Pieces)", "description": "Grilled Chicken", "price": 649}], "Veg Footlongs": [{"id": "FTL001", "title": "Veggie Delight Footlong", "description": "Veg Footlong", "price": 125}, {"id": "FTL002", "title": "Paneer Tikka Footlong", "description": "Veg Footlong", "price": 146}, {"id": "FTL003", "title": "Spicy Paneer Footlong", "description": "Veg Footlong", "price": 146}, {"id": "FTL004", "title": "Deluxe Veggie Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL005", "title": "Peri Peri Paneer Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL006", "title": "Veg Extravaganza Footlong", "description": "Veg Footlong", "price": 157}, {"id": "FTL007", "title": "Veg Cheese Burst Footlong", "description": "Veg Footlong", "price": 167}], "Non Veg Footlongs": [{"id": "FTL008", "title": "Simply Chicken Footlong", "description": "Chicken Footlong", "price": 146}, {"id": "FTL009", "title": "Chicken Tikka Footlong", "description": "Chicken Footlong", "price": 157}, {"id": "FTL010", "title": "Spicy Chicken Footlong", "description": "Chicken Footlong", "price": 157}, {"id": "FTL011", "title": "Deluxe Chicken Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL012", "title": "Peri Peri Chicken Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL013", "title": "Chicken Extravaganza Footlong", "description": "Chicken Footlong", "price": 167}, {"id": "FTL014", "title": "Chicken Cheese Burst Footlong", "description": "Chicken Footlong", "price": 177}], "Veg Sandwiches": [{"id": "SAN001", "title": "Veg Grilled Sandwich", "description": "Veg Sandwich", "price": 105}, {"id": "SAN002", "title": "Tandoori Paneer Tikka Sandwich", "description": "Veg Sandwich", "price": 125}, {"id": "SAN003", "title": "Italian Veg Sandwich", "description": "Veg Sandwich", "price": 136}], "Non Veg Sandwiches": [{"id": "SAN004", "title": "Chicken Grilled Sandwich", "description": "Chicken Sandwich", "price": 136}, {"id": "SAN005", "title": "Tandoori Chicken Tikka Sandwich", "description": "Chicken Sandwich", "price": 136}, {"id": "SAN006", "title": "Italian Chicken Sandwich", "description": "Chicken Sandwich", "price": 146}], "Veg Pizza": [{"id": "PIZ001", "title": "Margherita Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 95}, {"id": "PIZ002", "title": "Margherita Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ003", "title": "Veggie Delight Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 115}, {"id": "PIZ004", "title": "Veggie Delight Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 199}, {"id": "PIZ005", "title": "Tandoori Paneer Tikka Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ006", "title": "Tandoori Paneer Tikka Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ007", "title": "Teekha Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ008", "title": "Teekha Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ009", "title": "Indi Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ010", "title": "Indi Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ011", "title": "Peri Peri Paneer Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 146}, {"id": "PIZ012", "title": "Peri Peri Paneer Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 250}, {"id": "PIZ013", "title": "Deluxe Veggie Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 157}, {"id": "PIZ014", "title": "Deluxe Veggie Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 262}, {"id": "PIZ015", "title": "Mushroom Delight Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 157}, {"id": "PIZ016", "title": "Mushroom Delight Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 262}, {"id": "PIZ017", "title": "Veg Extravaganza Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 178}, {"id": "PIZ018", "title": "Veg Extravaganza Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 292}, {"id": "PIZ019", "title": "Veg Overloaded Pizza - Pan (6 Inch)", "description": "Veg Pizza", "price": 199}, {"id": "PIZ020", "title": "Veg Overloaded Pizza - Regular (9 Inch)", "description": "Veg Pizza", "price": 314}, {"id": "ADDPIZ001", "title": "Cheese Burst Add-on - Pan (6 Inch)", "description": "Add-on for Pan Pizza only", "price": 89, "is_addon": true, "addon_size": "pan"}, {"id": "ADDPIZ002", "title": "Cheese Burst Add-on - Regular (9 Inch)", "description": "Add-on for Regular Pizza only", "price": 109, "is_addon": true, "addon_size": "regular"}], "Non Veg Pizza": [{"id": "PIZ021", "title": "Chicken Delight Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 136}, {"id": "PIZ022", "title": "Chicken Delight Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 229}, {"id": "PIZ023", "title": "Tandoori Chicken Tikka Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ024", "title": "Tandoori Chicken Tikka Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ025", "title": "Teekha Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ026", "title": "Teekha Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ027", "title": "Indi Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ028", "title": "Indi Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ029", "title": "Peri Peri Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 157}, {"id": "PIZ030", "title": "Peri Peri Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 272}, {"id": "PIZ031", "title": "Deluxe Chicken Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 167}, {"id": "PIZ032", "title": "Deluxe Chicken Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 282}, {"id": "PIZ033", "title": "Chicken Seekh Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 167}, {"id": "PIZ034", "title": "Chicken Seekh Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 282}, {"id": "PIZ035", "title": "Chicken Extravaganza Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 199}, {"id": "PIZ036", "title": "Chicken Extravaganza Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 335}, {"id": "PIZ037", "title": "Chicken Overloaded Pizza - Pan (6 Inch)", "description": "Chicken Pizza", "price": 219}, {"id": "PIZ038", "title": "Chicken Overloaded Pizza - Regular (9 Inch)", "description": "Chicken Pizza", "price": 345}, {"id": "ADDPIZ003", "title": "Cheese Burst Add-on - Pan (6 Inch)", "description": "Add-on for Pan Pizza only", "price": 89, "is_addon": true, "addon_size": "pan"}, {"id": "ADDPIZ004", "title": "Cheese Burst Add-on - Regular (9 Inch)", "description": "Add-on for Regular Pizza only", "price": 109, "is_addon": true, "addon_size": "regular"}], "Pastas": [{"id": "PAS001", "title": "Veg Arrabbiata Penne", "description": "Veg Pasta", "price": 136}, {"id": "PAS002", "title": "Veg Creamy White Penne Pasta", "description": "Veg Pasta", "price": 146}, {"id": "PAS003", "title": "Mix Sauce Veg Penne Pasta", "description": "Veg Pasta", "price": 146}, {"id": "PAS004", "title": "Chicken Arrabbiata Penne", "description": "Chicken Pasta", "price": 157}, {"id": "PAS005", "title": "Chicken Creamy White Penne Pasta", "description": "Chicken Pasta", "price": 167}, {"id": "PAS006", "title": "Mix Sauce Chicken Penne Pasta", "description": "Chicken Pasta", "price": 167}], "Garlic Breads": [{"id": "GRB001", "title": "Garlic Bread with Cheese", "description": "Veg Garlic Bread", "price": 115}, {"id": "GRB002", "title": "Garlic Bread Supreme", "description": "Veg Garlic Bread", "price": 125}, {"id": "GRB003", "title": "Chicken Garlic Bread with Cheese", "description": "Chicken Garlic Bread", "price": 125}, {"id": "GRB004", "title": "Chicken Garlic Bread Supreme", "description": "Chicken Garlic Bread", "price": 135}], "Veg Snacks": [{"id": "SNK001", "title": "Paneer Pops (6 Pieces)", "description": "Veg Snack", "price": 115}, {"id": "SNK002", "title": "Paneer Pops (16 Pieces)", "description": "Veg Snack", "price": 209}, {"id": "SNK003", "title": "Paneer Strips (4 Pieces)", "description": "Veg Snack", "price": 125}, {"id": "SNK004", "title": "Paneer Strips (8 Pieces)", "description": "Veg Snack", "price": 219}, {"id": "FRI001", "title": "French Fries - Regular", "description": "Fries", "price": 62}, {"id": "FRI002", "title": "French Fries - Large", "description": "Fries", "price": 83}, {"id": "FRI003", "title": "Peri Peri Fries - Regular", "description": "Fries", "price": 83}, {"id": "FRI004", "title": "Peri Peri Fries - Large", "description": "Fries", "price": 104}, {"id": "FRI005", "title": "Hot & Spicy Fries - Regular", "description": "Fries", "price": 83}, {"id": "FRI006", "title": "Hot & Spicy Fries - Large", "description": "Fries", "price": 104}, {"id": "FRI007", "title": "Peri Peri Overloaded Fries", "description": "Loaded Fries", "price": 125}, {"id": "FRI008", "title": "Hot & Spicy Overloaded Fries", "description": "Loaded Fries", "price": 125}, {"id": "FRI009", "title": "Crispy Paneer Overloaded Fries", "description": "Loaded Fries", "price": 146}], "Non Veg Snacks": [{"id": "SNK005", "title": "Chicken Nuggets (6 Pieces)", "description": "Chicken Snack", "price": 136}, {"id": "SNK006", "title": "Chicken Nuggets (12 Pieces)", "description": "Chicken Snack", "price": 250}, {"id": "SNK007", "title": "Chicken Popcorn (8 Pieces)", "description": "Chicken Snack", "price": 136}, {"id": "SNK008", "title": "Chicken Popcorn (16 Pieces)", "description": "Chicken Snack", "price": 252}, {"id": "SNK009", "title": "Chicken Strips (3 Pieces)", "description": "Chicken Snack", "price": 125}, {"id": "FRI010", "title": "Crispy Chicken Overloaded Fries", "description": "Loaded Fries", "price": 157}], "Beverages": [{"id": "BEV001", "title": "Coke", "description": "Soft Drink", "price": 41}, {"id": "BEV002", "title": "Sprite", "description": "Soft Drink", "price": 41}, {"id": "BEV003", "title": "Fanta", "description": "Soft Drink", "price": 41}, {"id": "BEV004", "title": "Iced Tea Lemon", "description": "Cold Beverage", "price": 75}, {"id": "BEV005", "title": "Fresh Lime Soda", "description": "Cold Beverage", "price": 95}, {"id": "BEV006", "title": "Mojito", "description": "Cold Beverage", "price": 95}, {"id": "BEV007", "title": "Mango Delight", "description": "Beverage", "price": 95}, {"id": "BEV008", "title": "Strawberry Blast", "description": "Beverage", "price": 95}, {"id": "BEV009", "title": "Cafe Frappe", "description": "Beverage", "price": 105}, {"id": "BEV010", "title": "Mango Shake", "description": "Milkshake", "price": 105}, {"id": "BEV011", "title": "Strawberry Shake", "description": "Milkshake", "price": 105}, {"id": "BEV012", "title": "Chocolate Shake", "description": "Milkshake", "price": 105}, {"id": "BEV013", "title": "Butterscotch Shake", "description": "Milkshake", "price": 105}, {"id": "BEV014", "title": "Oreo Shake", "description": "Milkshake", "price": 125}, {"id": "BEV015", "title": "Kit Kat Shake", "description": "Milkshake", "price": 125}, {"id": "BEV016", "title": "Packaged Drinking Water", "description": "Drinking Water", "price": 10}], "Desserts": [{"id": "DES004", "title": "Mango Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES005", "title": "Vanilla Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES006", "title": "Strawberry Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES007", "title": "Chocolate Ice Cream", "description": "Dessert", "price": 58}, {"id": "DES002", "title": "Hot Chocolate Fudge", "description": "Dessert", "price": 105}, {"id": "DES003", "title": "Fruit Sundae", "description": "Dessert", "price": 105}], "Add Ons": [{"id": "ADD002", "title": "Cheese Dip", "description": "Add-on", "price": 30},{"id": "ADD005", "title": "Extra Cheese", "description": "Add-on", "price": 27}], "Combos": [{"id": "FMB001", "title": "Veg Fun Meal Box", "description": "Veg Surprise Burger, Reg. Fries, Paneer Pops (4 pcs), Coke, Perk Chocolate", "price": 279}, {"id": "FMB002", "title": "Non Veg Fun Meal Box", "description": "Fried Chicken Burger, Reg. Fries, Chicken Popcorn (4 pcs), Coke, Perk Chocolate", "price": 289}, {"id": "COM001", "title": "Add 2 Pieces Garlic Bread + Coke", "description": "Meal Combo Add-on", "price": 105}, {"id": "COM002", "title": "Add Fries + Coke Combo", "description": "Meal Combo Add-on", "price": 119}, {"id": "COM003", "title": "Add 1 Piece Fried Chicken + Coke", "description": "Meal Combo Add-on", "price": 135}, {"id": "COM004", "title": "Add Chicken Popcorn + Coke", "description": "Meal Combo Add-on", "price": 159}, {"id": "COM005", "title": "Add 2 Pieces Garlic Bread Supreme + Coke", "description": "Meal Combo Add-on", "price": 115}]};
+
+// Mirrors QTY_OFFER_GROUPS / the _grp_* matchers on the server, so the
+// live "you get X free" preview here agrees with what the server will
+// actually apply when the order lands.
+const QTY_OFFER_GROUPS_LIST = [
+  {key:'pizza_pan', label:'Pizza — Pan (6")', noun:'Pizza (Pan)'},
+  {key:'pizza_regular', label:'Pizza — Regular (9")', noun:'Pizza (Regular)'},
+  {key:'burgers', label:'Burgers', noun:'Burger'},
+  {key:'sandwiches', label:'Sandwiches', noun:'Sandwich'},
+  {key:'wraps', label:'Wraps', noun:'Wrap'},
+  {key:'garlic_bread', label:'Garlic Bread', noun:'Garlic Bread'},
+  {key:'fried_chicken', label:'Fried Chicken', noun:'Fried Chicken'},
+  {key:'grilled_chicken', label:'Tandoori Grilled Chicken', noun:'Tandoori Grilled Chicken'},
+  {key:'pastas', label:'Pastas', noun:'Pasta'},
+];
+
+const ITEM_BY_ID = {};
+const ITEM_CATEGORY_BY_ID = {};
+Object.keys(MENU).forEach(cat => (MENU[cat] || []).forEach(it => {
+  ITEM_BY_ID[it.id] = it;
+  ITEM_CATEGORY_BY_ID[it.id] = cat;
+}));
+
+const QTY_OFFER_GROUP_MATCHERS = {
+  pizza_pan: (id, item) => id.startsWith('PIZ') && (item.title.indexOf('- Pan') !== -1 || item.addon_size === 'pan'),
+  pizza_regular: (id, item) => id.startsWith('PIZ') && (item.title.indexOf('- Regular') !== -1 || item.addon_size === 'regular'),
+  burgers: (id, item, cat) => (cat === 'Veg Burgers' || cat === 'Non Veg Burgers') && !id.startsWith('ADD'),
+  sandwiches: (id, item, cat) => (cat === 'Veg Sandwiches' || cat === 'Non Veg Sandwiches'),
+  wraps: (id, item, cat) => cat === 'Wraps',
+  garlic_bread: (id, item, cat) => cat === 'Garlic Breads',
+  fried_chicken: (id, item, cat) => cat === 'Fried Chicken',
+  grilled_chicken: (id, item, cat) => cat === 'Grilled Chicken',
+  pastas: (id, item, cat) => cat === 'Pastas',
+};
+
+function itemPieceCount(id) {
+  const item = ITEM_BY_ID[id];
+  if (!item) return 1;
+  const m = item.title.match(/\(([0-9]+)\s*Pieces?\)/i);
+  return m ? parseInt(m[1]) : 1;
+}
+
+function groupPieceCountInCart(cartItems, groupKey) {
+  const matcher = QTY_OFFER_GROUP_MATCHERS[groupKey];
+  if (!matcher) return 0;
+  let total = 0;
+  cartItems.forEach(it => {
+    const item = ITEM_BY_ID[it.id];
+    if (!item || !it.qty) return;
+    if (matcher(it.id, item, ITEM_CATEGORY_BY_ID[it.id])) {
+      total += itemPieceCount(it.id) * it.qty;
+    }
+  });
+  return total;
+}
+
+function computeQtyOfferLines(cartItems) {
+  const rules = QTY_OFFERS || [];
+  const lines = [];
+  rules.forEach(rule => {
+    if (!rule.active) return;
+    const buyQty = rule.buy_qty || 0;
+    const freeQty = rule.free_qty || 0;
+    if (!rule.buy_group || !QTY_OFFER_GROUP_MATCHERS[rule.buy_group] || buyQty <= 0 || freeQty <= 0 || !rule.free_target) return;
+    const piecesInCart = groupPieceCountInCart(cartItems, rule.buy_group);
+    const multiples = Math.floor(piecesInCart / buyQty);
+    if (multiples <= 0) return;
+    const totalFree = multiples * freeQty;
+    let noun;
+    if (rule.free_target_type === 'group') {
+      const g = QTY_OFFER_GROUPS_LIST.find(g => g.key === rule.free_target);
+      if (!g) return;
+      noun = g.noun;
+    } else {
+      const item = ITEM_BY_ID[rule.free_target];
+      if (!item) return;
+      noun = item.title.replace(/\s*\(\d+\s*Pieces?\)/i, '').trim();
+    }
+    const unitWord = totalFree === 1 ? 'pc' : 'pcs';
+    lines.push({ label: totalFree + ' ' + unitWord + ' ' + noun + ' FREE', qty: totalFree });
+  });
+  return lines;
+}
 
 const IMAGE_MAP = {
   "BUR001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Veg-Burgers/AlooTIkki.jpeg",
@@ -884,18 +969,34 @@ function refreshCard(id) {
   }
 }
 
+function computeThresholdDiscount(amount) {
+  // Mirrors compute_threshold_discount() on the server exactly, so what the
+  // customer sees live in their cart matches what actually gets applied.
+  // The server always recomputes this independently when the order lands —
+  // it never trusts a discount figure sent from here — so this is purely
+  // for a responsive preview, not the source of truth.
+  if (!THRESHOLD_OFFER.active) return { percent: 0, amount: 0 };
+  const threshold = THRESHOLD_OFFER.threshold_amount || 0;
+  const percent = THRESHOLD_OFFER.discount_percent || 0;
+  if (percent <= 0 || amount < threshold) return { percent: 0, amount: 0 };
+  return { percent, amount: Math.round(amount * percent / 100) };
+}
+
 function calcTotals() {
   const items = Object.values(cart);
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   // Packing charge only for Takeaway and Delivery, not Dine In
   const packingCharge = calcPackagingCharge(items, orderType);
   const count = items.reduce((s, i) => s + i.qty, 0);
-  return { subtotal, packingCharge, count };
+  const discount = computeThresholdDiscount(subtotal + packingCharge);
+  const cartForMatching = Object.entries(cart).map(([id, item]) => ({ id, qty: item.qty }));
+  const offerLines = computeQtyOfferLines(cartForMatching);
+  return { subtotal, packingCharge, count, discountPercent: discount.percent, discountAmount: discount.amount, offerLines };
 }
 
 function updateCartUI() {
-  const { subtotal, packingCharge, count } = calcTotals();
-  const total = subtotal + packingCharge;
+  const { subtotal, packingCharge, count, discountAmount } = calcTotals();
+  const total = subtotal + packingCharge - discountAmount;
   document.getElementById('cartCount').textContent = count;
   const bar = document.getElementById('cartBar');
   if (count > 0) {
@@ -912,8 +1013,8 @@ function closeCart() { document.getElementById('overlay').classList.remove('open
 
 function renderDrawer() {
   const items = Object.entries(cart);
-  const { subtotal, packingCharge, count } = calcTotals();
-  const total = subtotal + packingCharge;
+  const { subtotal, packingCharge, count, discountPercent, discountAmount, offerLines } = calcTotals();
+  const total = subtotal + packingCharge - discountAmount;
   const content = document.getElementById('cartContent');
   const status = getStatus();
 
@@ -932,11 +1033,34 @@ function renderDrawer() {
     html += '<div class="cart-item"><div style="flex:1"><div class="cart-item-name">'+dot+' '+item.title+'</div>'+(item.note ? '<div class="cart-item-note">📝 '+item.note+'</div>' : '')+'</div><div class="qty-ctrl" style="margin:0 0.5rem;"><button onclick="updateQty(\''+id+'\',-1);renderDrawer()">−</button><span class="qty-num">'+item.qty+'</span><button onclick="updateQty(\''+id+'\',1);renderDrawer()">+</button></div><div class="cart-item-price">₹'+(item.price*item.qty)+'</div></div>';
   });
 
+  // "Buy X, get Y free" rows — purely derived from the current cart each
+  // render, so they appear/disappear automatically as items are added or
+  // removed, with no separate add/remove step needed.
+  offerLines.forEach(ol => {
+    html += '<div class="cart-item" style="background:rgba(46,125,50,0.1);border:1px dashed rgba(46,125,50,0.45);border-radius:8px;"><div style="flex:1"><div class="cart-item-name">🎁 '+ol.label+'</div></div><div class="cart-item-price" style="color:var(--muted);">₹0</div></div>';
+  });
+
+  // Live threshold-offer messaging: either an "almost there" nudge, or the
+  // applied discount, depending on how close the cart is to qualifying.
+  let offerHtml = '';
+  if (THRESHOLD_OFFER.active && (THRESHOLD_OFFER.discount_percent || 0) > 0) {
+    const preDiscountTotal = subtotal + packingCharge;
+    if (discountAmount > 0) {
+      offerHtml = '<div class="note-box" style="margin-bottom:0.6rem;border-color:var(--accent, #2e7d32);">🎉 '+discountPercent+'% discount applied — you saved ₹'+discountAmount+'!</div>';
+    } else {
+      const remaining = (THRESHOLD_OFFER.threshold_amount || 0) - preDiscountTotal;
+      if (remaining > 0) {
+        offerHtml = '<div class="note-box" style="margin-bottom:0.6rem;">🎁 Add ₹'+remaining+' more to get '+THRESHOLD_OFFER.discount_percent+'% off your order!</div>';
+      }
+    }
+  }
+  html = offerHtml + html;
+
   const totalRow = orderType === 'Delivery'
   ? '<div class="summary-row total"><span>Total</span><span>₹'+total+' + Delivery Charges</span></div>'
   : '<div class="summary-row total"><span>Total</span><span>₹'+total+'</span></div>';
 
-html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges</span><span>₹'+packingCharge+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
+html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges</span><span>₹'+packingCharge+'</span></div>' : '')+(discountAmount > 0 ? '<div class="summary-row" style="color:var(--accent, #2e7d32);"><span>Discount ('+discountPercent+'%)</span><span>−₹'+discountAmount+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
 
   const etaText = orderType ? estimatePrepRange(cart) + (orderType === 'Delivery' ? ' (+ delivery time)' : '') : '';
   html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns"><button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button><button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div>'+(etaText ? '<div class="eta-hint">⏱ Estimated: <strong>'+etaText+'</strong></div>' : '')+'<div id="checkoutForm"></div></div>';
@@ -1166,10 +1290,10 @@ async function placeOrder() {
   localStorage.setItem('gi_counter', orderCounter);
   const orderNumber = String(orderCounter).padStart(3, '0');
 
-  const { subtotal, packingCharge } = calcTotals();
-  const grandTotal = subtotal + packingCharge + deliveryCharge;
+  const { subtotal, packingCharge, discountPercent, discountAmount } = calcTotals();
 
   const items = Object.entries(cart).map(([id, item]) => ({
+    id: id,
     product_retailer_id: item.title + (item.note ? ' ['+item.note+']' : ''),
     quantity: item.qty,
     item_price: item.price
@@ -1180,7 +1304,8 @@ async function placeOrder() {
     customer_email: email,
     order_type: orderType, address: orderType === 'Delivery' ? address : '',
     delivery_charge: 0, packing_charge: packingCharge, subtotal: subtotal,
-    grand_total: subtotal + packingCharge, notes: notes, items: items,
+    discount_percent: discountPercent, discount_amount: discountAmount,
+    grand_total: subtotal + packingCharge - discountAmount, notes: notes, items: items,
     order_time: new Date().toLocaleString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})
   };
 
@@ -1417,8 +1542,11 @@ async function loadRemoteSettings() {
     if (!res.ok) return;
     const settings = await res.json();
     SPECIAL_DATES = settings.special_dates || {};
+    THRESHOLD_OFFER = settings.threshold_offer || THRESHOLD_OFFER;
+    QTY_OFFERS = settings.qty_offers || [];
     applyBanner(settings.banner);
     refreshStatusBanner(); // re-check status now that special dates are loaded
+    updateCartUI(); // reflect any offer change immediately if cart is already open/populated
   } catch (e) {
     console.log('Could not load settings from server, using default hours.', e);
   }

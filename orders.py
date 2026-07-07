@@ -68,7 +68,25 @@ DEFAULT_SETTINGS = {
     "stock": {
         "out_of_stock_groups": [],  # e.g. ["pizza_pan", "burgers"]
         "out_of_stock_items": []    # individual item ids, e.g. ["BEV001", "DES004"]
-    }
+    },
+    "threshold_offer": {
+        # "Spend ₹X, get Y% off" — auto-applied on the website, live in the
+        # customer's cart, and independently re-verified/enforced here on
+        # the server when the order actually arrives (the server never
+        # trusts a discount figure the browser sends). Toggle "active" from
+        # the dashboard to turn this on/off as promotions come and go.
+        "active": False,
+        "threshold_amount": 499,
+        "discount_percent": 10
+    },
+    "qty_offers": [
+        # "Buy X, get Y free" rules — an ADDITIVE freebie (an extra ₹0 line
+        # on the order, not a discount off an existing item), e.g.:
+        # {"id": "abc123", "active": True, "buy_group": "fried_chicken",
+        #  "buy_qty": 9, "free_target_type": "group",
+        #  "free_target": "fried_chicken", "free_qty": 1}
+        # -> "Buy 9 pcs Fried Chicken, get 1 pc Fried Chicken free"
+    ]
 }
 
 
@@ -86,6 +104,11 @@ def load_settings():
             merged.setdefault("stock", DEFAULT_SETTINGS["stock"])
             merged["stock"].setdefault("out_of_stock_groups", [])
             merged["stock"].setdefault("out_of_stock_items", [])
+            merged.setdefault("threshold_offer", DEFAULT_SETTINGS["threshold_offer"])
+            merged["threshold_offer"].setdefault("active", False)
+            merged["threshold_offer"].setdefault("threshold_amount", 499)
+            merged["threshold_offer"].setdefault("discount_percent", 10)
+            merged.setdefault("qty_offers", [])
             return merged
     except Exception as e:
         print(f"[SETTINGS LOAD ERROR] {e}")
@@ -261,6 +284,12 @@ def _grp_paneer(item_id, item, cat):
 def _grp_tandoori_chicken(item_id, item, cat):
     return "tandoori chicken" in item["title"].lower()
 
+def _grp_fried_chicken(item_id, item, cat):
+    return cat == "Fried Chicken"
+
+def _grp_grilled_chicken(item_id, item, cat):
+    return cat == "Grilled Chicken"
+
 STOCK_GROUPS = {
     "pizza_pan": ("Pizza — Pan (6\")", _grp_pizza_pan),
     "pizza_regular": ("Pizza — Regular (9\")", _grp_pizza_regular),
@@ -273,6 +302,8 @@ STOCK_GROUPS = {
     "footlong": ("Footlongs", _grp_footlong),
     "paneer": ("All Paneer Items", _grp_paneer),
     "tandoori_chicken": ("All Tandoori Chicken Items", _grp_tandoori_chicken),
+    "fried_chicken": ("Fried Chicken", _grp_fried_chicken),
+    "grilled_chicken": ("Tandoori Grilled Chicken", _grp_grilled_chicken),
 }
 
 
@@ -280,6 +311,117 @@ def group_item_ids(group_key):
     """All menu item ids belonging to a given stock group."""
     _, matcher = STOCK_GROUPS[group_key]
     return [iid for iid, item in ITEMS_BY_ID.items() if matcher(iid, item, CATEGORY_BY_ID[iid])]
+
+
+def item_piece_count(item_id):
+    """How many actual pieces one unit of this item represents — parsed
+    straight from the menu title (e.g. 'Fried Chicken (9 Pieces)' -> 9).
+    Defaults to 1 for items that aren't sold in multi-piece packs (a
+    sandwich, a pizza, a wrap — one order unit is inherently "1 of it"),
+    so the exact same buy/free-quantity math works uniformly across every
+    group without needing to special-case pack sizes anywhere else."""
+    item = ITEMS_BY_ID.get(item_id)
+    if not item:
+        return 1
+    m = re.search(r"\((\d+)\s*Pieces?\)", item["title"], re.IGNORECASE)
+    return int(m.group(1)) if m else 1
+
+
+# ── BUY-X-GET-Y-FREE OFFER GROUPS ────────────────────────────────────
+# A curated subset of STOCK_GROUPS, reused so the two features always
+# agree on what counts as "Fried Chicken", "Sandwiches", etc. Each entry
+# is (dropdown label, singular noun used on the printed OFFER line).
+QTY_OFFER_GROUPS = {
+    "pizza_pan": ("Pizza — Pan (6\")", "Pizza (Pan)"),
+    "pizza_regular": ("Pizza — Regular (9\")", "Pizza (Regular)"),
+    "burgers": ("Burgers", "Burger"),
+    "sandwiches": ("Sandwiches", "Sandwich"),
+    "wraps": ("Wraps", "Wrap"),
+    "garlic_bread": ("Garlic Bread", "Garlic Bread"),
+    "fried_chicken": ("Fried Chicken", "Fried Chicken"),
+    "grilled_chicken": ("Tandoori Grilled Chicken", "Tandoori Grilled Chicken"),
+    "pastas": ("Pastas", "Pasta"),
+}
+
+# Individual items selectable as a free reward (not just whole groups) —
+# scoped to the snack categories, per how this is actually used in practice
+# (a specific "free fries" or "free chicken popcorn", rather than a vague
+# "any item from Fries").
+QTY_OFFER_FREE_ITEM_CATEGORIES = ("Veg Snacks", "Non Veg Snacks")
+
+
+def group_piece_count_in_cart(cart_items, group_key):
+    """cart_items: list of {"id":..., "qty":...}. Sums (pieces-per-unit ×
+    qty) across every cart line belonging to the given group."""
+    if group_key not in QTY_OFFER_GROUPS:
+        return 0
+    _, matcher = STOCK_GROUPS[group_key]
+    total = 0
+    for it in cart_items:
+        iid = it.get("id", "")
+        qty = it.get("qty", 0) or 0
+        item = ITEMS_BY_ID.get(iid)
+        if not item or qty <= 0:
+            continue
+        if matcher(iid, item, CATEGORY_BY_ID.get(iid)):
+            total += item_piece_count(iid) * qty
+    return total
+
+
+def compute_qty_offers(cart_items, settings=None):
+    """Evaluates every active 'Buy X, get Y free' rule against the current
+    cart and returns a list of ready-to-print order lines for whichever
+    ones the cart qualifies for — each a real ₹0 line (not a discount),
+    e.g. "OFFER — 1 pc Fried Chicken FREE", so it shows up on the KOT and
+    the kitchen actually preps the extra piece(s). If the cart clears the
+    threshold multiple times over (e.g. double the required quantity),
+    the free amount scales with it (floor(actual / required) multiples).
+    All rules are evaluated independently and all qualifying ones apply —
+    they can stack. This is the single source of truth: the website
+    mirrors this same logic to show it live in the cart, but the server
+    always recomputes independently when the order actually lands,
+    exactly like the order number and the threshold discount."""
+    settings = settings or load_settings()
+    rules = settings.get("qty_offers", [])
+    offer_lines = []
+    for rule in rules:
+        if not rule.get("active"):
+            continue
+        buy_group = rule.get("buy_group")
+        buy_qty = int(rule.get("buy_qty", 0) or 0)
+        free_qty = int(rule.get("free_qty", 0) or 0)
+        free_target_type = rule.get("free_target_type")
+        free_target = rule.get("free_target")
+        if not buy_group or buy_group not in QTY_OFFER_GROUPS or buy_qty <= 0 or free_qty <= 0 or not free_target:
+            continue
+
+        pieces_in_cart = group_piece_count_in_cart(cart_items, buy_group)
+        multiples = pieces_in_cart // buy_qty
+        if multiples <= 0:
+            continue
+
+        total_free = multiples * free_qty
+        if free_target_type == "group":
+            if free_target not in QTY_OFFER_GROUPS:
+                continue
+            noun = QTY_OFFER_GROUPS[free_target][1]
+        elif free_target_type == "item":
+            item = ITEMS_BY_ID.get(free_target)
+            if not item:
+                continue
+            noun = re.sub(r"\s*\(\d+\s*Pieces?\)", "", item["title"], flags=re.IGNORECASE).strip()
+        else:
+            continue
+
+        unit_word = "pc" if total_free == 1 else "pcs"
+        label = f"OFFER — {total_free} {unit_word} {noun} FREE"
+        offer_lines.append({
+            "product_retailer_id": label,
+            "quantity": 1,
+            "item_price": 0,
+            "is_offer": True
+        })
+    return offer_lines
 
 
 def compute_out_of_stock_item_ids(stock_settings):
@@ -344,6 +486,28 @@ def calc_packaging_charge(items, order_type):
     return packaging_slab(actual_cost)
 
 
+def compute_threshold_discount(amount, settings=None):
+    """Given the pre-delivery amount an order qualifies on (subtotal +
+    packing charge — delivery charge is deliberately excluded since for
+    Delivery orders it isn't even known yet at this point; it's entered
+    manually by staff at confirm time), returns (discount_percent,
+    discount_amount) based on the currently active threshold offer.
+    Returns (0, 0) if the offer is off, the percent is 0, or the amount
+    doesn't reach the threshold. This is the single source of truth for
+    the discount — the website mirrors this same logic to show it live in
+    the cart, but the server always recomputes independently here rather
+    than trusting whatever the browser sent, exactly like order numbers."""
+    settings = settings or load_settings()
+    offer = settings.get("threshold_offer", DEFAULT_SETTINGS["threshold_offer"])
+    if not offer.get("active"):
+        return 0, 0
+    threshold = offer.get("threshold_amount", 0) or 0
+    percent = offer.get("discount_percent", 0) or 0
+    if percent <= 0 or amount < threshold:
+        return 0, 0
+    return percent, round(amount * percent / 100)
+
+
 def save_order(data):
     """Assigns the order number here on the server — never trusts a number
     the browser might send — so numbering is a single, authoritative,
@@ -370,7 +534,7 @@ def save_order(data):
 
     if client_ref:
         c.execute("""
-            SELECT id, order_number FROM orders
+            SELECT id, order_number, discount_percent, discount_amount, grand_total FROM orders
             WHERE client_ref = ?
               AND created_at >= datetime('now', '-30 minutes')
             LIMIT 1
@@ -378,15 +542,31 @@ def save_order(data):
         existing = c.fetchone()
         if existing:
             conn.close()
-            return {"id": existing[0], "order_number": existing[1]}
+            return {"id": existing[0], "order_number": existing[1], "discount_percent": existing[2] or 0, "discount_amount": existing[3] or 0, "grand_total": existing[4] or 0}
 
     order_number = next_website_order_number()
+
+    subtotal = data.get("subtotal", 0) or 0
+    packing_charge = data.get("packing_charge", 0) or 0
+    # Discount is computed here, independently — never trust a discount
+    # figure the browser might send, same principle as the order number.
+    discount_percent, discount_amount = compute_threshold_discount(subtotal + packing_charge)
+    grand_total = subtotal + packing_charge - discount_amount
+
+    settings = load_settings()
+    raw_items = data.get("items", [])
+    # {"id":, "qty":} view of the cart, for group/piece-count matching —
+    # falls back to an empty list (no offers) if an older cached page
+    # hasn't been reloaded yet and isn't sending item ids.
+    cart_for_matching = [{"id": it.get("id", ""), "qty": it.get("quantity", 0)} for it in raw_items if it.get("id")]
+    offer_lines = compute_qty_offers(cart_for_matching, settings)
+    all_items = raw_items + offer_lines
 
     c.execute("""
         INSERT INTO orders (order_number, customer_name, customer_phone, customer_email, order_type,
             address, notes, items_json, subtotal, packing_charge, delivery_charge,
-            grand_total, order_time, status, created_at, client_ref)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+            grand_total, order_time, status, created_at, client_ref, discount_percent, discount_amount)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
     """, (
         order_number,
         data.get("customer_name", ""),
@@ -395,19 +575,21 @@ def save_order(data):
         data.get("order_type", ""),
         data.get("address", ""),
         data.get("notes", ""),
-        json.dumps(data.get("items", [])),
-        data.get("subtotal", 0),
-        data.get("packing_charge", 0),
+        json.dumps(all_items),
+        subtotal,
+        packing_charge,
         data.get("delivery_charge", 0),
-        data.get("grand_total", 0),
+        grand_total,
         data.get("order_time", ""),
         datetime.now().isoformat(),
-        client_ref
+        client_ref,
+        discount_percent,
+        discount_amount
     ))
     conn.commit()
     order_id = c.lastrowid
     conn.close()
-    return {"id": order_id, "order_number": order_number}
+    return {"id": order_id, "order_number": order_number, "discount_percent": discount_percent, "discount_amount": discount_amount, "grand_total": grand_total}
 
 
 def _next_seq_for_today(source_filter, today_iso):
@@ -1070,7 +1252,14 @@ def web_order():
         print(f"[ORDER SAVED] DB ID #{result['id']} — Order #{result['order_number']} — PENDING CONFIRMATION")
 
         response = Response(
-            json.dumps({"status": "ok", "order_id": result["id"], "order_number": result["order_number"]}),
+            json.dumps({
+                "status": "ok",
+                "order_id": result["id"],
+                "order_number": result["order_number"],
+                "discount_percent": result.get("discount_percent", 0),
+                "discount_amount": result.get("discount_amount", 0),
+                "grand_total": result.get("grand_total", 0)
+            }),
             status=200,
             mimetype="application/json"
         )
@@ -1162,6 +1351,37 @@ def api_save_settings():
         settings["special_dates"] = data["special_dates"]
     if "banner" in data:
         settings["banner"] = data["banner"]
+    if "threshold_offer" in data:
+        offer = data["threshold_offer"] or {}
+        settings["threshold_offer"] = {
+            "active": bool(offer.get("active", False)),
+            "threshold_amount": max(0, int(offer.get("threshold_amount", 0) or 0)),
+            "discount_percent": max(0, min(100, int(offer.get("discount_percent", 0) or 0)))
+        }
+    if "qty_offers" in data:
+        clean_rules = []
+        for i, rule in enumerate(data["qty_offers"] or []):
+            buy_group = rule.get("buy_group")
+            free_target_type = rule.get("free_target_type")
+            free_target = rule.get("free_target")
+            if buy_group not in QTY_OFFER_GROUPS:
+                continue
+            if free_target_type == "group" and free_target not in QTY_OFFER_GROUPS:
+                continue
+            if free_target_type == "item" and free_target not in ITEMS_BY_ID:
+                continue
+            if free_target_type not in ("group", "item"):
+                continue
+            clean_rules.append({
+                "id": rule.get("id") or f"rule{i}_{int(datetime.now().timestamp())}",
+                "active": bool(rule.get("active", False)),
+                "buy_group": buy_group,
+                "buy_qty": max(1, int(rule.get("buy_qty", 0) or 0)),
+                "free_target_type": free_target_type,
+                "free_target": free_target,
+                "free_qty": max(1, int(rule.get("free_qty", 0) or 0))
+            })
+        settings["qty_offers"] = clean_rules
 
     save_settings(settings)
     return Response(json.dumps({"status": "ok"}), status=200, mimetype="application/json")
@@ -1555,8 +1775,25 @@ def api_pos_order():
         return Response(json.dumps({"status": "error", "message": "No valid items in cart"}), status=400, mimetype="application/json")
 
     packing_charge = calc_packaging_charge(packaging_items, order_type)
+
+    # Threshold discount: the dashboard toggle applies here too now. If the
+    # cashier hasn't manually typed a discount (still 0) and the order
+    # qualifies, auto-apply it — same rule, same numbers as the website.
+    # If staff DID type their own discount %, that's respected as-is rather
+    # than stacked with the auto one.
+    settings = load_settings()
+    if discount_percent == 0:
+        auto_percent, _ = compute_threshold_discount(subtotal + packing_charge, settings)
+        if auto_percent > 0:
+            discount_percent = auto_percent
+
     discount_amount = round(subtotal * discount_percent / 100)
     grand_total = subtotal + packing_charge - discount_amount + (delivery_charge if order_type == "Delivery" else 0)
+
+    # Buy-X-get-Y-free rules apply the same way here as on the website —
+    # an extra ₹0 "OFFER" line gets added to the printed order/KOT.
+    offer_lines = compute_qty_offers(packaging_items, settings)
+    items_for_receipt = items_for_receipt + offer_lines
 
     order_number = next_pos_order_number()
     order_id = save_pos_order(
@@ -1810,6 +2047,7 @@ let posCart = {};              // { itemId: {id, title, price, qty, note, isVeg}
 let posSearch = '';
 let posOrderType = 'Dine In';
 let posDiscountPercent = 0;
+let posDiscountManual = false; // true once staff types their own discount %, so we stop auto-overriding it
 let posDeliveryCharge = 0;
 let posDetailsExpanded = false; // customer detail fields collapsed by default so cart items stay visible without scrolling
 let posLastRemovedItem = null; // for Undo
@@ -2266,8 +2504,169 @@ function renderSales(summary, activeQuick) {
     '<div class="sales-section"><div class="sales-section-title">Top Items</div>' + topItemsHtml + '</div>';
 }
 
-let currentSettings = { special_dates: {}, banner: { active: false, text: '', emoji: '🎉' } };
+let currentSettings = { special_dates: {}, banner: { active: false, text: '', emoji: '🎉' }, threshold_offer: { active: false, threshold_amount: 499, discount_percent: 10 }, qty_offers: [] };
 let dashPassword = '';
+
+// Mirrors QTY_OFFER_GROUPS on the server — keep in sync if groups change.
+const QTY_OFFER_GROUPS_LIST = [
+  {key:'pizza_pan', label:'Pizza — Pan (6")', noun:'Pizza (Pan)'},
+  {key:'pizza_regular', label:'Pizza — Regular (9")', noun:'Pizza (Regular)'},
+  {key:'burgers', label:'Burgers', noun:'Burger'},
+  {key:'sandwiches', label:'Sandwiches', noun:'Sandwich'},
+  {key:'wraps', label:'Wraps', noun:'Wrap'},
+  {key:'garlic_bread', label:'Garlic Bread', noun:'Garlic Bread'},
+  {key:'fried_chicken', label:'Fried Chicken', noun:'Fried Chicken'},
+  {key:'grilled_chicken', label:'Tandoori Grilled Chicken', noun:'Tandoori Grilled Chicken'},
+  {key:'pastas', label:'Pastas', noun:'Pasta'},
+];
+
+// Item/category lookup + group matchers — mirrors CATEGORY_BY_ID and the
+// _grp_* matcher functions on the server, so POS's live "you get X free"
+// preview agrees with what the server will actually apply at confirm time.
+const ITEM_BY_ID = {};
+const ITEM_CATEGORY_BY_ID = {};
+MENU_CATEGORIES.forEach(cat => (MENU[cat] || []).forEach(it => {
+  ITEM_BY_ID[it.id] = it;
+  ITEM_CATEGORY_BY_ID[it.id] = cat;
+}));
+
+const QTY_OFFER_GROUP_MATCHERS = {
+  pizza_pan: (id, item) => id.startsWith('PIZ') && (item.title.indexOf('- Pan') !== -1 || item.addon_size === 'pan'),
+  pizza_regular: (id, item) => id.startsWith('PIZ') && (item.title.indexOf('- Regular') !== -1 || item.addon_size === 'regular'),
+  burgers: (id, item, cat) => (cat === 'Veg Burgers' || cat === 'Non Veg Burgers') && !id.startsWith('ADD'),
+  sandwiches: (id, item, cat) => (cat === 'Veg Sandwiches' || cat === 'Non Veg Sandwiches'),
+  wraps: (id, item, cat) => cat === 'Wraps',
+  garlic_bread: (id, item, cat) => cat === 'Garlic Breads',
+  fried_chicken: (id, item, cat) => cat === 'Fried Chicken',
+  grilled_chicken: (id, item, cat) => cat === 'Grilled Chicken',
+  pastas: (id, item, cat) => cat === 'Pastas',
+};
+
+function itemPieceCount(id) {
+  const item = ITEM_BY_ID[id];
+  if (!item) return 1;
+  const m = item.title.match(/\\(([0-9]+)\\s*Pieces?\\)/i);
+  return m ? parseInt(m[1]) : 1;
+}
+
+function groupPieceCountInCart(cartItems, groupKey) {
+  const matcher = QTY_OFFER_GROUP_MATCHERS[groupKey];
+  if (!matcher) return 0;
+  let total = 0;
+  cartItems.forEach(it => {
+    const item = ITEM_BY_ID[it.id];
+    if (!item || !it.qty) return;
+    if (matcher(it.id, item, ITEM_CATEGORY_BY_ID[it.id])) {
+      total += itemPieceCount(it.id) * it.qty;
+    }
+  });
+  return total;
+}
+
+function computeQtyOfferLines(cartItems) {
+  const rules = currentSettings.qty_offers || [];
+  const lines = [];
+  rules.forEach(rule => {
+    if (!rule.active) return;
+    const buyQty = rule.buy_qty || 0;
+    const freeQty = rule.free_qty || 0;
+    if (!rule.buy_group || !QTY_OFFER_GROUP_MATCHERS[rule.buy_group] || buyQty <= 0 || freeQty <= 0 || !rule.free_target) return;
+    const piecesInCart = groupPieceCountInCart(cartItems, rule.buy_group);
+    const multiples = Math.floor(piecesInCart / buyQty);
+    if (multiples <= 0) return;
+    const totalFree = multiples * freeQty;
+    let noun;
+    if (rule.free_target_type === 'group') {
+      const g = QTY_OFFER_GROUPS_LIST.find(g => g.key === rule.free_target);
+      if (!g) return;
+      noun = g.noun;
+    } else {
+      const item = ITEM_BY_ID[rule.free_target];
+      if (!item) return;
+      noun = item.title.replace(/\\s*\\(\\d+\\s*Pieces?\\)/i, '').trim();
+    }
+    const unitWord = totalFree === 1 ? 'pc' : 'pcs';
+    lines.push({ label: 'OFFER — ' + totalFree + ' ' + unitWord + ' ' + noun + ' FREE', qty: totalFree });
+  });
+  return lines;
+}
+
+function computeThresholdDiscountJS(amount) {
+  const offer = currentSettings.threshold_offer || {};
+  if (!offer.active) return { percent: 0, amount: 0 };
+  const threshold = offer.threshold_amount || 0;
+  const percent = offer.discount_percent || 0;
+  if (percent <= 0 || amount < threshold) return { percent: 0, amount: 0 };
+  return { percent, amount: Math.round(amount * percent / 100) };
+}
+
+function qtyOfferFreeItemOptions() {
+  return [].concat(MENU['Veg Snacks'] || [], MENU['Non Veg Snacks'] || []);
+}
+
+function renderQtyOfferCard(rule) {
+  const groupOptions = QTY_OFFER_GROUPS_LIST.map(g =>
+    '<option value="' + g.key + '"' + (rule.buy_group === g.key ? ' selected' : '') + '>' + g.label + '</option>'
+  ).join('');
+  const freeGroupOptions = QTY_OFFER_GROUPS_LIST.map(g =>
+    '<option value="group:' + g.key + '"' + (rule.free_target_type === 'group' && rule.free_target === g.key ? ' selected' : '') + '>' + g.label + '</option>'
+  ).join('');
+  const freeItemOptions = qtyOfferFreeItemOptions().map(it =>
+    '<option value="item:' + it.id + '"' + (rule.free_target_type === 'item' && rule.free_target === it.id ? ' selected' : '') + '>' + it.title + '</option>'
+  ).join('');
+  return '<div class="special-date-card qty-offer-card" data-rule-id="' + rule.id + '">' +
+    '<div class="special-date-header">' +
+      '<div class="toggle-row" style="margin-bottom:0;"><span>Active</span><div class="toggle-switch ' + (rule.active ? 'on' : '') + '" data-field="active" onclick="this.classList.toggle(\\'on\\')"></div></div>' +
+      '<button class="btn-remove-date" onclick="removeQtyOfferRule(\\'' + rule.id + '\\')">✕ Remove</button>' +
+    '</div>' +
+    '<div class="row-2col">' +
+      '<div><label class="field-label">Buy Qty (pieces/units)</label><input class="settings-input" type="number" min="1" data-field="buy_qty" value="' + rule.buy_qty + '"></div>' +
+      '<div><label class="field-label">Buy Item Group</label><select class="settings-input" data-field="buy_group">' + groupOptions + '</select></div>' +
+    '</div>' +
+    '<div class="row-2col">' +
+      '<div><label class="field-label">Free Qty (pieces/units)</label><input class="settings-input" type="number" min="1" data-field="free_qty" value="' + rule.free_qty + '"></div>' +
+      '<div><label class="field-label">Free Item</label><select class="settings-input" data-field="free_target"><optgroup label="Whole Groups">' + freeGroupOptions + '</optgroup><optgroup label="Individual Snack Items">' + freeItemOptions + '</optgroup></select></div>' +
+    '</div>' +
+  '</div>';
+}
+
+function syncQtyOfferRulesFromDOM() {
+  document.querySelectorAll('.qty-offer-card').forEach(card => {
+    const id = card.dataset.ruleId;
+    const rule = (currentSettings.qty_offers || []).find(r => r.id === id);
+    if (!rule) return;
+    rule.active = card.querySelector('[data-field="active"]').classList.contains('on');
+    rule.buy_qty = parseInt(card.querySelector('[data-field="buy_qty"]').value) || 1;
+    rule.buy_group = card.querySelector('[data-field="buy_group"]').value;
+    rule.free_qty = parseInt(card.querySelector('[data-field="free_qty"]').value) || 1;
+    const freeVal = card.querySelector('[data-field="free_target"]').value; // "group:xxx" or "item:xxx"
+    const sep = freeVal.indexOf(':');
+    rule.free_target_type = freeVal.slice(0, sep);
+    rule.free_target = freeVal.slice(sep + 1);
+  });
+}
+
+function addQtyOfferRule() {
+  syncQtyOfferRulesFromDOM();
+  if (!currentSettings.qty_offers) currentSettings.qty_offers = [];
+  currentSettings.qty_offers.push({
+    id: 'rule_' + Date.now(),
+    active: true,
+    buy_group: 'fried_chicken',
+    buy_qty: 9,
+    free_target_type: 'group',
+    free_target: 'fried_chicken',
+    free_qty: 1
+  });
+  renderSettings();
+}
+
+function removeQtyOfferRule(id) {
+  if (!confirm('Remove this offer rule?')) return;
+  syncQtyOfferRulesFromDOM();
+  currentSettings.qty_offers = (currentSettings.qty_offers || []).filter(r => r.id !== id);
+  renderSettings();
+}
 
 function loadSettings() {
   const main = document.getElementById('mainContent');
@@ -2284,6 +2683,27 @@ function renderSettings() {
   const main = document.getElementById('mainContent');
   const banner = currentSettings.banner || { active: false, text: '', emoji: '🎉' };
   const dates = currentSettings.special_dates || {};
+  const offer = currentSettings.threshold_offer || { active: false, threshold_amount: 499, discount_percent: 10 };
+
+  const offerHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🎯 Threshold Discount Offer</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">"Spend ₹X, get Y% off" — shown live in the customer\\'s cart on the website, and applied automatically to the order when they check out. Turn it on only while the promotion is running.</div>' +
+      '<div class="toggle-row"><span>Active</span><div class="toggle-switch ' + (offer.active ? 'on' : '') + '" id="offerToggle" onclick="toggleOffer()"></div></div>' +
+      '<div class="row-2col">' +
+        '<div><label class="field-label">Minimum order amount (₹)</label><input class="settings-input" id="offerThreshold" type="number" min="0" value="' + (offer.threshold_amount || 0) + '"></div>' +
+        '<div><label class="field-label">Discount (%)</label><input class="settings-input" id="offerPercent" type="number" min="0" max="100" value="' + (offer.discount_percent || 0) + '"></div>' +
+      '</div>' +
+    '</div>';
+
+  const qtyOfferCards = (currentSettings.qty_offers || []).map(renderQtyOfferCard).join('');
+  const qtyOffersHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🎁 Buy X, Get Y Free Offers</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Adds a real ₹0 line to the order once the cart qualifies — e.g. "OFFER — 1 pc Fried Chicken FREE" — so it prints on the KOT and the kitchen preps the extra piece(s). Quantities count actual pieces, not order lines (a 9-piece Fried Chicken pack counts as 9, and any combination of packs reaching the same total also qualifies). Rules can be turned on/off individually, and more than one can apply to the same order.</div>' +
+      qtyOfferCards +
+      '<button class="btn-add-date" onclick="addQtyOfferRule()">+ Add Rule</button>' +
+    '</div>';
 
   const bannerHtml =
     '<div class="settings-section">' +
@@ -2334,7 +2754,7 @@ function renderSettings() {
       '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="sendReportNow()">📧 Send Today\\'s Report Now</button>' +
     '</div>';
 
-  main.innerHTML = bannerHtml + datesHtml + '<div id="stockSection"></div>' + backupHtml + reportHtml +
+  main.innerHTML = bannerHtml + offerHtml + qtyOffersHtml + datesHtml + '<div id="stockSection"></div>' + backupHtml + reportHtml +
     '<button class="btn-save" onclick="saveAllSettings()">💾 Save Settings</button>';
   loadStockSection();
 }
@@ -2442,6 +2862,10 @@ function toggleBanner() {
   document.getElementById('bannerToggle').classList.toggle('on');
 }
 
+function toggleOffer() {
+  document.getElementById('offerToggle').classList.toggle('on');
+}
+
 function addSpecialDate() {
   const todayStr = toDateStr(new Date());
   if (!currentSettings.special_dates) currentSettings.special_dates = {};
@@ -2457,10 +2881,18 @@ function removeSpecialDate(dateKey) {
 }
 
 function collectSettingsFromForm() {
+  syncQtyOfferRulesFromDOM();
+
   const banner = {
     active: document.getElementById('bannerToggle').classList.contains('on'),
     text: document.getElementById('bannerText').value.trim(),
     emoji: document.getElementById('bannerEmoji').value.trim() || '🎉'
+  };
+
+  const threshold_offer = {
+    active: document.getElementById('offerToggle').classList.contains('on'),
+    threshold_amount: parseInt(document.getElementById('offerThreshold').value) || 0,
+    discount_percent: Math.max(0, Math.min(100, parseInt(document.getElementById('offerPercent').value) || 0))
   };
 
   const special_dates = {};
@@ -2479,7 +2911,7 @@ function collectSettingsFromForm() {
     }
   });
 
-  return { banner, special_dates };
+  return { banner, special_dates, threshold_offer, qty_offers: currentSettings.qty_offers || [] };
 }
 
 function saveAllSettings() {
@@ -2787,6 +3219,7 @@ function posClearCart() {
   if (!confirm('Clear the current order?')) return;
   posCart = {};
   posDiscountPercent = 0;
+  posDiscountManual = false;
   posDetailsExpanded = false;
   renderPosCart();
 }
@@ -2796,9 +3229,15 @@ function posCalcTotals() {
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const packagingItems = items.map(i => ({ id: i.id, qty: i.qty }));
   const packingCharge = calcPosPackaging(packagingItems, posOrderType);
+  // Auto-apply the threshold discount unless the cashier has manually typed
+  // their own discount % — same rule as the website, live, no extra tap needed.
+  if (!posDiscountManual) {
+    posDiscountPercent = computeThresholdDiscountJS(subtotal + packingCharge).percent;
+  }
   const discountAmount = Math.round(subtotal * posDiscountPercent / 100);
   const grandTotal = subtotal + packingCharge - discountAmount + (posOrderType === 'Delivery' ? posDeliveryCharge : 0);
-  return { subtotal, packingCharge, discountAmount, grandTotal };
+  const offerLines = computeQtyOfferLines(packagingItems);
+  return { subtotal, packingCharge, discountAmount, grandTotal, offerLines };
 }
 
 // Same packaging logic as the customer site / backend, kept in sync manually.
@@ -2850,9 +3289,16 @@ function renderPosCart() {
   if (!itemsEl || !footerEl) return; // not on POS tab
 
   const items = Object.values(posCart);
+  const { subtotal, packingCharge, discountAmount, grandTotal, offerLines } = posCalcTotals();
+
   if (items.length === 0) {
     itemsEl.innerHTML = '<div class="pos-empty-cart">Cart is empty.<br>Tap items on the left to add them.</div>';
   } else {
+    const offerLinesHtml = offerLines.map(ol =>
+      '<div class="pos-cart-item" style="background:rgba(46,125,50,0.12);border:1px dashed rgba(46,125,50,0.5);">' +
+        '<div class="pos-cart-item-top"><div class="pos-cart-item-name">🎁 ' + ol.label + '</div><div class="pos-cart-item-price">₹0</div></div>' +
+      '</div>'
+    ).join('');
     itemsEl.innerHTML = items.map(it =>
       '<div class="pos-cart-item">' +
         '<div class="pos-cart-item-top"><div class="pos-cart-item-name">' + it.title + '</div><div class="pos-cart-item-price">₹' + (it.price * it.qty) + '</div></div>' +
@@ -2863,10 +3309,9 @@ function renderPosCart() {
           '<button class="pos-qty-btn" style="margin-left:auto;color:var(--red);" onclick="posRemoveItem(&quot;' + it.id + '&quot;)">✕</button>' +
         '</div>' +
       '</div>'
-    ).join('');
+    ).join('') + offerLinesHtml;
   }
 
-  const { subtotal, packingCharge, discountAmount, grandTotal } = posCalcTotals();
   const deliveryPresets = [30, 40, 50];
 
   const detailsPreview = [posCustomerName, posCustomerPhone].filter(Boolean).join(', ') || 'optional';
@@ -2883,8 +3328,8 @@ function renderPosCart() {
       ).join('') + '<button class="pos-preset-btn ' + (deliveryPresets.indexOf(posDeliveryCharge) === -1 ? 'active' : '') + '" onclick="posFocusDeliveryCharge()">Custom</button></div>' : '') +
     '<input class="pos-field" id="posNotes" placeholder="Notes (optional)" value="' + esc2(posNotes || '') + '">' +
     '<div class="pos-field" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.65rem;">' +
-      '<span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;">Discount %</span>' +
-      '<input type="number" min="0" max="100" value="' + posDiscountPercent + '" style="width:100%;background:transparent;border:none;color:var(--white);outline:none;text-align:right;" onchange="posDiscountPercent=Math.max(0,Math.min(100,parseInt(this.value)||0));renderPosCart();">' +
+      '<span style="font-size:0.78rem;color:var(--muted);white-space:nowrap;">Discount % ' + (!posDiscountManual && posDiscountPercent > 0 ? '<span style="color:var(--muted);font-style:italic;">(auto)</span>' : '') + '</span>' +
+      '<input type="number" min="0" max="100" value="' + posDiscountPercent + '" style="width:100%;background:transparent;border:none;color:var(--white);outline:none;text-align:right;" onchange="posDiscountManual=true;posDiscountPercent=Math.max(0,Math.min(100,parseInt(this.value)||0));renderPosCart();">' +
     '</div>';
 
   footerEl.innerHTML =
@@ -2951,10 +3396,10 @@ function posHoldOrder() {
   posHeldOrders.push({
     label, cart: posCart, orderType: posOrderType,
     name: posCustomerName, phone: posCustomerPhone, address: posAddress, notes: posNotes,
-    discountPercent: posDiscountPercent, deliveryCharge: posDeliveryCharge
+    discountPercent: posDiscountPercent, discountManual: posDiscountManual, deliveryCharge: posDeliveryCharge
   });
   posCart = {}; posCustomerName = ''; posCustomerPhone = ''; posAddress = ''; posNotes = '';
-  posDiscountPercent = 0; posDeliveryCharge = 0; posOrderType = 'Dine In'; posDetailsExpanded = false;
+  posDiscountPercent = 0; posDiscountManual = false; posDeliveryCharge = 0; posOrderType = 'Dine In'; posDetailsExpanded = false;
   renderPOS();
 }
 
@@ -2966,7 +3411,7 @@ function resumeHeldOrder(index) {
   posCart = held.cart;
   posOrderType = held.orderType;
   posCustomerName = held.name; posCustomerPhone = held.phone; posAddress = held.address; posNotes = held.notes;
-  posDiscountPercent = held.discountPercent || 0; posDeliveryCharge = held.deliveryCharge || 0;
+  posDiscountPercent = held.discountPercent || 0; posDiscountManual = held.discountManual || false; posDeliveryCharge = held.deliveryCharge || 0;
   posDetailsExpanded = false;
   renderPOS();
 }
@@ -3004,7 +3449,7 @@ function posConfirmOrder() {
     if (body.status === 'ok' || body.status === 'print_failed') {
       if (body.status === 'print_failed') alert('Order #' + body.order_number + ' saved, but printing failed — check the printer.');
       posCart = {}; posCustomerName = ''; posCustomerPhone = ''; posAddress = ''; posNotes = '';
-      posDiscountPercent = 0; posDeliveryCharge = 0; posOrderType = 'Dine In'; posDetailsExpanded = false;
+      posDiscountPercent = 0; posDiscountManual = false; posDeliveryCharge = 0; posOrderType = 'Dine In'; posDetailsExpanded = false;
       renderPOS();
     } else {
       alert('Could not place order: ' + (body.message || 'Unknown error'));
