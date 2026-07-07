@@ -34,8 +34,8 @@ SETTINGS_PATH = "settings.json"
 #   3. Create an "App Password" at https://myaccount.google.com/apppasswords
 #      (NOT your normal Gmail password — a 16-character app-specific one).
 #   4. Paste that below. Leave SMTP_EMAIL blank to disable email receipts entirely.
-SMTP_EMAIL = "grillinnfalkawn@gmail.com"            # e.g. "grillinnfalkawn@gmail.com"
-SMTP_APP_PASSWORD = "gervpwotqmzohgvb"     # 16-character Gmail App Password
+SMTP_EMAIL = "orders@grillinnfalkawn.in"            # e.g. "grillinnfalkawn@gmail.com"
+SMTP_APP_PASSWORD = "rdxtzyxnacrilszd"     # 16-character Gmail App Password
 RESTAURANT_NAME = "Grill Inn, Falkawn"
 RESTAURANT_PHONE = "9612992023"
 
@@ -50,7 +50,7 @@ UPI_MCC = "0000"
 # OWNER_REPORT_EMAIL blank to disable this entirely. Time is 24h "HH:MM".
 # NOTE: this only fires if orders.py is actually running at that time —
 # if the PC is off or asleep at 21:30, that day's report won't send.
-OWNER_REPORT_EMAIL = ""    # e.g. "youremail@gmail.com" — where to send the daily report
+OWNER_REPORT_EMAIL = "dianarinsiami@gmail.com"    # e.g. "youremail@gmail.com" — where to send the daily report
 DAILY_REPORT_TIME = "21:30"
 # ────────────────────────────────────────────────────────
 
@@ -290,6 +290,21 @@ def _grp_fried_chicken(item_id, item, cat):
 def _grp_grilled_chicken(item_id, item, cat):
     return cat == "Grilled Chicken"
 
+def _grp_shakes(item_id, item, cat):
+    return cat == "Beverages" and item.get("description") == "Milkshake"
+
+def _grp_beverages(item_id, item, cat):
+    return cat == "Beverages" and item.get("description") != "Milkshake"
+
+def _grp_desserts(item_id, item, cat):
+    return cat == "Desserts"
+
+def _grp_veg_snacks(item_id, item, cat):
+    return cat == "Veg Snacks"
+
+def _grp_non_veg_snacks(item_id, item, cat):
+    return cat == "Non Veg Snacks"
+
 STOCK_GROUPS = {
     "pizza_pan": ("Pizza — Pan (6\")", _grp_pizza_pan),
     "pizza_regular": ("Pizza — Regular (9\")", _grp_pizza_regular),
@@ -304,6 +319,11 @@ STOCK_GROUPS = {
     "tandoori_chicken": ("All Tandoori Chicken Items", _grp_tandoori_chicken),
     "fried_chicken": ("Fried Chicken", _grp_fried_chicken),
     "grilled_chicken": ("Tandoori Grilled Chicken", _grp_grilled_chicken),
+    "shakes": ("Shakes", _grp_shakes),
+    "beverages": ("Beverages", _grp_beverages),
+    "desserts": ("Desserts", _grp_desserts),
+    "veg_snacks": ("Veg Snacks", _grp_veg_snacks),
+    "non_veg_snacks": ("Non Veg Snacks", _grp_non_veg_snacks),
 }
 
 
@@ -1292,21 +1312,26 @@ def api_get_stock_status():
 
 @app.route("/api/stock-groups")
 def api_get_stock_groups():
-    """Returns the available groups (with labels + current item counts)
-    plus the Beverages/Desserts items, for the dashboard Settings UI."""
+    """Returns every group as an expandable section — its own bulk toggle
+    plus every individual item within it with its own toggle — for the
+    dashboard's Out of Stock tree. An item can be marked out of stock
+    either by its whole group being toggled, or individually, independent
+    of the group switch (see compute_out_of_stock_item_ids)."""
     settings = load_settings()
     stock = settings["stock"]
     groups = [
-        {"key": key, "label": label, "count": len(group_item_ids(key)), "active": key in stock["out_of_stock_groups"]}
+        {
+            "key": key,
+            "label": label,
+            "active": key in stock["out_of_stock_groups"],
+            "items": [
+                {"id": iid, "title": ITEMS_BY_ID[iid]["title"], "active": iid in stock["out_of_stock_items"]}
+                for iid in group_item_ids(key)
+            ]
+        }
         for key, (label, _) in STOCK_GROUPS.items()
     ]
-    individual_categories = {}
-    for cat in ("Beverages", "Desserts"):
-        individual_categories[cat] = [
-            {"id": it["id"], "title": it["title"], "active": it["id"] in stock["out_of_stock_items"]}
-            for it in MENU_DATA.get(cat, [])
-        ]
-    return Response(json.dumps({"groups": groups, "individual": individual_categories}), status=200, mimetype="application/json")
+    return Response(json.dumps({"groups": groups}), status=200, mimetype="application/json")
 
 
 @app.route("/api/stock-status", methods=["POST"])
@@ -1991,6 +2016,11 @@ DASHBOARD_HTML = """
   .stock-toggle-row input{width:18px;height:18px;cursor:pointer;flex-shrink:0;}
   .stock-count{color:var(--muted);font-size:0.75rem;}
   .stock-cat-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--orange);margin:0.8rem 0 0.3rem;}
+  .stock-group-block{border-bottom:1px solid var(--border);}
+  .stock-group-block .stock-toggle-row{border-bottom:none;}
+  .stock-group-items{background:rgba(255,255,255,0.03);border-left:2px solid var(--orange);margin-left:0.5rem;}
+  .stock-group-items .stock-toggle-row{border-bottom:1px dashed var(--border);}
+  .stock-group-items .stock-toggle-row:last-child{border-bottom:none;}
   .field-label{font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem;}
   .settings-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.9rem;padding:0.6rem 0.75rem;outline:none;margin-bottom:0.8rem;}
   .settings-input:focus{border-color:var(--orange);}
@@ -2761,6 +2791,8 @@ function renderSettings() {
 
 let stockGroupsCache = null;
 
+let stockExpanded = new Set(); // which group keys are currently expanded
+
 function loadStockSection() {
   fetch('/api/stock-groups').then(r => r.json()).then(data => {
     stockGroupsCache = data;
@@ -2768,33 +2800,38 @@ function loadStockSection() {
   }).catch(e => console.log('Stock groups load error', e));
 }
 
+function toggleStockExpand(key) {
+  if (stockExpanded.has(key)) stockExpanded.delete(key); else stockExpanded.add(key);
+  renderStockSection();
+}
+
 function renderStockSection() {
   const el = document.getElementById('stockSection');
   if (!el || !stockGroupsCache) return;
 
-  const groupsHtml = stockGroupsCache.groups.map(g =>
-    '<label class="stock-toggle-row">' +
-      '<input type="checkbox" ' + (g.active ? 'checked' : '') + ' onchange="toggleStockGroup(&quot;' + g.key + '&quot;, this.checked)">' +
-      '<span>' + g.label + ' <span class="stock-count">(' + g.count + ' items)</span></span>' +
-    '</label>'
-  ).join('');
-
-  const individualHtml = Object.entries(stockGroupsCache.individual).map(([cat, items]) =>
-    '<div class="stock-cat-label">' + cat + '</div>' +
-    items.map(it =>
-      '<label class="stock-toggle-row">' +
+  const groupsHtml = stockGroupsCache.groups.map(g => {
+    const isOpen = stockExpanded.has(g.key);
+    const itemsHtml = g.items.map(it =>
+      '<label class="stock-toggle-row" style="padding-left:1.8rem;">' +
         '<input type="checkbox" ' + (it.active ? 'checked' : '') + ' onchange="toggleStockItem(&quot;' + it.id + '&quot;, this.checked)">' +
         '<span>' + it.title + '</span>' +
       '</label>'
-    ).join('')
-  ).join('');
+    ).join('');
+    return '<div class="stock-group-block">' +
+      '<label class="stock-toggle-row">' +
+        '<input type="checkbox" ' + (g.active ? 'checked' : '') + ' onchange="toggleStockGroup(&quot;' + g.key + '&quot;, this.checked)">' +
+        '<span style="flex:1;">' + g.label + ' <span class="stock-count">(' + g.items.length + ' items)</span></span>' +
+        '<span onclick="toggleStockExpand(&quot;' + g.key + '&quot;)" style="cursor:pointer;padding:0.2rem 0.5rem;color:var(--muted);">' + (isOpen ? '▾' : '▸') + '</span>' +
+      '</label>' +
+      (isOpen ? '<div class="stock-group-items">' + itemsHtml + '</div>' : '') +
+    '</div>';
+  }).join('');
 
   el.innerHTML =
     '<div class="settings-section">' +
       '<div class="settings-section-title">📦 Out of Stock</div>' +
-      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Toggling any of these takes effect immediately on the website and POS — no need to hit Save Settings below. Group toggles cover whole categories (e.g. all Pan-size pizzas); Beverages and Desserts are toggled individually.</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Toggling any of these takes effect immediately on the website and POS — no need to hit Save Settings below. Tick a group\\'s own checkbox to mark the whole thing out of stock at once, or tap ▸ to expand it and toggle individual items — the two work independently, so an item can be out of stock on its own even if the rest of its group is fine.</div>' +
       groupsHtml +
-      '<div style="margin-top:0.8rem;">' + individualHtml + '</div>' +
     '</div>';
 }
 
@@ -2819,9 +2856,14 @@ function toggleStockItem(id, checked) {
     dashPassword = prompt('Re-enter dashboard password:') || '';
     if (!dashPassword) { loadStockSection(); return; }
   }
-  const allItems = Object.values(stockGroupsCache.individual).flat();
-  allItems.forEach(it => { if (it.id === id) it.active = checked; });
-  const items = allItems.filter(it => it.active).map(it => it.id);
+  // An item can appear under more than one group (e.g. a paneer sandwich
+  // shows up under both "Sandwiches" and "All Paneer Items"), so gather
+  // the full out-of-stock item list across every group's items, not just
+  // the one the checkbox was clicked in.
+  const allItemsById = {};
+  stockGroupsCache.groups.forEach(g => g.items.forEach(it => { allItemsById[it.id] = it; }));
+  if (allItemsById[id]) allItemsById[id].active = checked;
+  const items = Object.values(allItemsById).filter(it => it.active).map(it => it.id);
   fetch('/api/stock-status', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ password: dashPassword, out_of_stock_items: items })
