@@ -35,7 +35,7 @@ SETTINGS_PATH = "settings.json"
 #      (NOT your normal Gmail password — a 16-character app-specific one).
 #   4. Paste that below. Leave SMTP_EMAIL blank to disable email receipts entirely.
 SMTP_EMAIL = "grillinnfalkawn@gmail.com"            # e.g. "grillinnfalkawn@gmail.com"
-SMTP_APP_PASSWORD = "gervpwotqmzohgvb"     # 16-character Gmail App Password
+SMTP_APP_PASSWORD = ""     # 16-character Gmail App Password
 RESTAURANT_NAME = "Grill Inn, Falkawn"
 RESTAURANT_PHONE = "9612992023"
 
@@ -50,7 +50,7 @@ UPI_MCC = "0000"
 # OWNER_REPORT_EMAIL blank to disable this entirely. Time is 24h "HH:MM".
 # NOTE: this only fires if orders.py is actually running at that time —
 # if the PC is off or asleep at 21:30, that day's report won't send.
-OWNER_REPORT_EMAIL = ""    # e.g. "youremail@gmail.com" — where to send the daily report
+OWNER_REPORT_EMAIL = "dianarinsiami@gmail.com"    # e.g. "youremail@gmail.com" — where to send the daily report
 DAILY_REPORT_TIME = "21:30"
 # ────────────────────────────────────────────────────────
 
