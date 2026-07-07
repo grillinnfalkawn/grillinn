@@ -1464,12 +1464,22 @@ def dashboard():
     return DASHBOARD_HTML.replace("__MENU_JSON_PLACEHOLDER__", MENU_JSON)
 
 
-@app.route("/api/login", methods=["POST"])
+@app.route("/api/login", methods=["POST", "OPTIONS"])
 def api_login():
+    if request.method == "OPTIONS":
+        response = Response("", status=200)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+
     data = request.get_json()
     if data.get("password") == DASHBOARD_PASSWORD:
-        return Response('{"status":"ok"}', status=200, mimetype="application/json")
-    return Response('{"status":"error"}', status=401, mimetype="application/json")
+        response = Response('{"status":"ok"}', status=200, mimetype="application/json")
+    else:
+        response = Response('{"status":"error"}', status=401, mimetype="application/json")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 
 @app.route("/api/pending-orders")
@@ -1487,7 +1497,9 @@ def api_recent_orders():
         orders = get_orders_by_date(date_param)
     else:
         orders = get_recent_orders(100)
-    return Response(json.dumps(orders), status=200, mimetype="application/json")
+    response = Response(json.dumps(orders), status=200, mimetype="application/json")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 
 @app.route("/api/search-orders")
@@ -1496,9 +1508,13 @@ def api_search_orders():
     query = request.args.get("q", "").strip()
     date_param = request.args.get("date", "").strip() or None
     if not query:
-        return Response(json.dumps([]), status=200, mimetype="application/json")
+        response = Response(json.dumps([]), status=200, mimetype="application/json")
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
     orders = search_orders(query, date_str=date_param)
-    return Response(json.dumps(orders), status=200, mimetype="application/json")
+    response = Response(json.dumps(orders), status=200, mimetype="application/json")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 
 def send_receipt_email(order):
@@ -1698,7 +1714,9 @@ def api_sales_summary():
     start = request.args.get("start") or today
     end = request.args.get("end") or today
     summary = get_sales_summary(start, end)
-    return Response(json.dumps(summary), status=200, mimetype="application/json")
+    response = Response(json.dumps(summary), status=200, mimetype="application/json")
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 
 @app.route("/api/export-orders-csv")
