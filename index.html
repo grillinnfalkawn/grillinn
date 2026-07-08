@@ -28,8 +28,9 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--black);color:var(--white);font-family:'Inter',sans-serif;min-height:100vh;}
 body.no-scroll{overflow:hidden;}
-header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0 1rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:60px;}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+header{background:radial-gradient(circle at 15% -20%,rgba(249,115,22,0.18),transparent 55%),linear-gradient(160deg,#231208 0%,var(--charcoal) 55%,var(--charcoal) 100%);border-bottom:2px solid var(--flame);box-shadow:0 2px 14px rgba(0,0,0,0.35);padding:0 1rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:60px;overflow:hidden;}
+header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px;background:linear-gradient(90deg,transparent,var(--orange),var(--red),var(--orange),transparent);opacity:0.9;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.15rem,5.5vw,2rem);letter-spacing:1.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(249,115,22,0.25));}
 .view-toggle{display:flex;gap:0.4rem;align-items:center;}
 .vtoggle-btn{background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.3rem 0.6rem;transition:all 0.2s;white-space:nowrap;}
 .vtoggle-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
@@ -40,7 +41,7 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .status-open{background:rgba(34,197,94,0.15);color:#4ade80;border-bottom:1px solid rgba(34,197,94,0.2);}
 .status-closed{background:rgba(220,38,38,0.15);color:#f87171;border-bottom:1px solid rgba(220,38,38,0.2);}
 .disclaimer-banner{background:rgba(249,115,22,0.08);border-bottom:1px solid rgba(249,115,22,0.15);padding:0.4rem 1rem;text-align:center;font-size:0.68rem;color:var(--muted);line-height:1.4;}
-.search-wrap{padding:0.75rem 1rem;background:var(--charcoal);border-bottom:1px solid var(--border);position:sticky;top:60px;z-index:95;position:relative;}
+.search-wrap{padding:0.75rem 1rem;background:var(--charcoal);border-bottom:1px solid var(--border);position:sticky;top:60px;z-index:95;}
 .search-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.9rem;padding:0.6rem 0.8rem 0.6rem 2.4rem;outline:none;transition:border-color 0.2s;}
 .search-input:focus{border-color:var(--orange);}
 .search-icon{position:absolute;left:1.8rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none;}
@@ -48,17 +49,23 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .cat-nav::-webkit-scrollbar{display:none;}
 .cat-pill{background:var(--panel);border:1px solid var(--border);border-radius:20px;color:var(--muted);cursor:pointer;font-size:0.75rem;font-weight:600;padding:0.3rem 0.8rem;white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
 .cat-pill:hover,.cat-pill.active{background:var(--flame);border-color:var(--flame);color:white;}
-.main{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 6rem;}
+.main{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 6rem;animation:viewFadeIn 0.25s ease;}
 .main.hidden{display:none;}
+@keyframes viewFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 .cat-section{margin-bottom:2rem;}
-.cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;}
+.cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;text-shadow:0 0 14px rgba(249,115,22,0.18);}
 .veg-badge{font-size:0.65rem;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
 .nonveg-badge{font-size:0.65rem;background:rgba(220,38,38,0.15);color:#f87171;border:1px solid rgba(220,38,38,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
 .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.6rem;}
-.item-card{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color 0.2s,transform 0.15s;display:flex;flex-direction:column;}
-.item-card:hover{border-color:var(--flame);transform:translateY(-2px);}
-.item-img{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#2a1500,#1a0a0a);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;}
-.item-img img{width:100%;height:100%;object-fit:cover;}
+.item-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.2s,transform 0.2s,box-shadow 0.2s;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.item-card:hover{border-color:var(--flame);transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.4),0 0 0 1px rgba(249,115,22,0.15);}
+.item-card:active{transform:translateY(-1px) scale(0.99);}
+.item-img{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#2a1500,#1a0a0a);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;position:relative;}
+.item-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.35s ease,opacity 0.35s ease;opacity:0;}
+.item-img img.loaded{opacity:1;}
+.item-card:active .item-img img.loaded{transform:scale(1.06);}
+.item-img.shimmer::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,0.06) 50%,transparent 70%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;}
+@keyframes shimmer{0%{background-position:150% 0;}100%{background-position:-50% 0;}}
 .item-body{padding:0.55rem 0.65rem;flex:1;display:flex;flex-direction:column;gap:0.25rem;}
 .item-name-row{display:flex;align-items:flex-start;gap:0.3rem;}
 .veg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:2px;}
@@ -67,11 +74,17 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .item-name{font-size:0.78rem;font-weight:600;color:var(--white);line-height:1.3;}
 .item-desc{font-size:0.68rem;color:var(--muted);}
 .item-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:0.35rem;}
-.item-price{font-size:0.82rem;font-weight:700;color:var(--orange);}
+.item-price{font-size:0.82rem;font-weight:700;color:var(--orange);background:rgba(249,115,22,0.1);padding:0.2rem 0.5rem;border-radius:6px;}
 .oos-tag{font-size:0.75rem;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.1);padding:0.3rem 0.6rem;border-radius:6px;}
 .item-body.item-oos{opacity:0.55;}
 .text-item-name.item-oos{opacity:0.55;text-decoration:line-through;}
-.add-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:6px;color:white;cursor:pointer;font-size:1rem;font-weight:700;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.add-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:6px;color:white;cursor:pointer;font-size:1rem;font-weight:700;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.12s ease;}
+.add-btn:active{transform:scale(0.85);}
+.qty-ctrl button:active{transform:scale(0.85);}
+.cat-pill:active,.diet-pill:active,.vtoggle-btn:active,.cart-btn:active{transform:scale(0.95);}
+.cat-pill,.diet-pill,.vtoggle-btn,.cart-btn{transition:transform 0.12s ease,background 0.2s,border-color 0.2s,color 0.2s;}
+.cart-btn.bounce{animation:cartBounce 0.4s ease;}
+@keyframes cartBounce{0%{transform:scale(1);}30%{transform:scale(1.15) rotate(-4deg);}55%{transform:scale(0.96) rotate(3deg);}100%{transform:scale(1) rotate(0);}}
 .qty-ctrl{display:flex;align-items:center;gap:0.25rem;}
 .qty-ctrl button{background:var(--panel);border:1px solid var(--border);border-radius:4px;color:var(--white);cursor:pointer;font-size:0.8rem;font-weight:700;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 .qty-ctrl button:hover{border-color:var(--orange);color:var(--orange);}
@@ -82,7 +95,7 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 .text-cat-nav::-webkit-scrollbar{display:none;}
 .text-cat-nav.hidden{display:none;}
 .text-menu{display:none;max-width:700px;margin:0 auto;padding:1rem 1rem 6rem;}
-.text-menu.visible{display:block;}
+.text-menu.visible{display:block;animation:viewFadeIn 0.25s ease;}
 .text-cat-section{margin-bottom:1.5rem;}
 .text-cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;}
 .text-item{display:flex;align-items:center;padding:0.45rem 0.5rem;border-bottom:1px solid rgba(46,46,46,0.6);gap:0.5rem;border-radius:4px;}
@@ -233,7 +246,7 @@ header{background:var(--charcoal);border-bottom:2px solid var(--flame);padding:0
 
 <header>
   <div class="logo">Grill Inn Falkawn</div>
-  <div style="display:flex;align-items:center;gap:0.5rem;">
+  <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
     <div class="view-toggle">
       <button class="vtoggle-btn active" id="gridViewBtn" onclick="setView('grid')" title="Grid View">⊞ Grid</button>
       <button class="vtoggle-btn" id="textViewBtn" onclick="setView('text')" title="Text View">☰ List</button>
@@ -857,8 +870,15 @@ function addToCart(id) {
   refreshCard(id);
   refreshTextRow(id);
   pulseCard(id);
+  bounceCart();
   saveCartToStorage();
   updateCartUI();
+}
+
+function bounceCart() {
+  const btn = document.querySelector('.cart-btn');
+  if (!btn) return;
+  btn.classList.remove('bounce'); void btn.offsetWidth; btn.classList.add('bounce');
 }
 
 function pulseCard(id) {
@@ -878,7 +898,7 @@ function updateQty(id, delta) {
   }
   refreshCard(id);
   refreshTextRow(id);
-  if (delta > 0 && cart[id]) pulseCard(id);
+  if (delta > 0 && cart[id]) { pulseCard(id); bounceCart(); }
 
   // After any cart change, enforce cheese burst quantity caps
   ['pan','regular'].forEach(size => {
@@ -1384,9 +1404,9 @@ function makeCard(item) {
     : '<div class="item-price">₹'+item.price+'</div><button class="add-btn" onclick="addToCart(\''+item.id+'\')">+</button>';
   const catKey = Object.keys(MENU).find(k => MENU[k].some(i => i.id === item.id));
   const imgUrl = IMAGE_MAP[item.id];
-  const imgInner = imgUrl ? ('<img src="'+imgUrl+'" alt="'+item.title+'" loading="lazy" onerror="this.parentElement.textContent=\''+(CAT_ICONS[catKey]||'🍽️')+'\';">') : (CAT_ICONS[catKey] || '🍽️');
+  const imgInner = imgUrl ? ('<img src="'+imgUrl+'" alt="'+item.title+'" loading="lazy" onload="this.classList.add(\'loaded\');this.parentElement.classList.remove(\'shimmer\');" onerror="this.parentElement.classList.remove(\'shimmer\');this.parentElement.textContent=\''+(CAT_ICONS[catKey]||'🍽️')+'\';">') : (CAT_ICONS[catKey] || '🍽️');
   card.innerHTML =
-    '<div class="item-img">'+imgInner+'</div>'+
+    '<div class="item-img'+(imgUrl ? ' shimmer' : '')+'">'+imgInner+'</div>'+
     '<div class="item-body'+(oos ? ' item-oos' : '')+'"><div class="item-name-row"><div class="veg-dot '+(veg?'veg':'nonveg')+'"></div><div class="item-name">'+item.title+'</div></div><div class="item-desc">'+item.description+(item.is_addon ? ' <span style="color:var(--orange);font-weight:700;">⚡ Add-on</span>' : '')+'</div><div class="item-footer">'+footerHTML+'</div>'+(inCart && inCart.note ? '<div class="note-wrap">'+buildNoteWrapInner(item.id, inCart.note)+'</div>' : '')+'</div>';
   return card;
 }
