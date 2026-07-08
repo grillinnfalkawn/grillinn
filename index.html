@@ -1309,6 +1309,18 @@ async function trySubmitOrder(payload, attempts) {
           return { order_number: payload.order_number }; // response wasn't JSON for some reason — fall back rather than fail the whole order
         }
       }
+      if (res.status === 409) {
+        // Item(s) went out of stock between adding to cart and checkout —
+        // retrying is pointless, the item won't come back in stock on its
+        // own, so surface this distinctly instead of treating it like a
+        // dropped connection.
+        try {
+          const body = await res.json();
+          return { stockConflict: true, message: body.message || 'Some items in your cart are no longer available.' };
+        } catch(e) {
+          return { stockConflict: true, message: 'Some items in your cart are no longer available.' };
+        }
+      }
     } catch(e) { /* network error — fall through to retry/backoff */ }
     if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
   }
@@ -1332,7 +1344,7 @@ function retryUnsentOrder() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Retrying...';
   trySubmitOrder(payload, 2).then(result => {
-    if (result) {
+    if (result && result.order_number) {
       clearUnsentOrder();
       saveCustomerDetails(payload.customer_name, payload.customer_phone, payload.address, payload.customer_email);
       const prepRange = estimatePrepRange(cart);
@@ -1350,6 +1362,10 @@ function retryUnsentOrder() {
       cart = {}; orderType = null; updateCartUI();
       clearCartStorage();
       refreshReorderButtonVisibility();
+    } else if (result && result.stockConflict) {
+      clearUnsentOrder(); // retrying again won't fix it — stop nagging them to retry
+      document.getElementById('orderFailedScreen').classList.remove('show');
+      alert(result.message + '\n\nPlease remove it from your cart and try again.');
     } else {
       btn.disabled = false;
       btn.innerHTML = 'Try Again';
@@ -1364,7 +1380,7 @@ async function recoverUnsentOrderOnLoad() {
   const payload = getUnsentOrder();
   if (!payload) return;
   const result = await trySubmitOrder(payload, 1);
-  if (result) {
+  if (result && result.order_number) {
     clearUnsentOrder();
     saveLastOrder(cart, payload.order_type);
     cart = {}; orderType = null;
@@ -1373,6 +1389,8 @@ async function recoverUnsentOrderOnLoad() {
     buildTextMenu();
     updateCartUI();
     refreshReorderButtonVisibility();
+  } else if (result && result.stockConflict) {
+    clearUnsentOrder(); // stop nagging to retry something that can't succeed
   } else {
     showOrderFailedScreen(payload); // remind them it's still unsent
   }
@@ -1429,7 +1447,7 @@ async function placeOrder() {
 
   const result = await trySubmitOrder(payload, 3); // 3 attempts with short backoff — absorbs brief network blips
 
-  if (result) {
+  if (result && result.order_number) {
     clearUnsentOrder();
     saveCustomerDetails(name, phone, address, email);
     const prepRange = estimatePrepRange(cart);
@@ -1458,6 +1476,14 @@ async function placeOrder() {
       }
       refreshTextRow(id);
     });
+  } else if (result && result.stockConflict) {
+    // Retrying won't help here — the item is genuinely unavailable, not a
+    // dropped connection — so don't leave a doomed "unsent order" hanging
+    // around waiting to be retried, and be specific about what to fix.
+    clearUnsentOrder();
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+    alert(result.message + '\n\nPlease remove it from your cart and try again.');
   } else {
     // Order stays saved in localStorage (not cleared) so it's never lost —
     // customer sees full order details + a direct call link, and can also
