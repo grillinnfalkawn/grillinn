@@ -143,6 +143,10 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .form-group select option{background:var(--panel);}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange);}
 .note-box{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:8px;color:var(--orange);font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;}
+.meal-suggestion{display:flex;align-items:center;gap:0.5rem;justify-content:space-between;background:rgba(255,255,255,0.04);border:1px dashed var(--border);border-radius:8px;padding:0.5rem 0.65rem;margin-bottom:0.7rem;}
+.meal-suggestion-text{font-size:0.74rem;color:var(--muted);line-height:1.3;}
+.meal-suggestion-btn{flex:none;background:transparent;border:1px solid var(--orange);color:var(--orange);font-weight:700;font-size:0.72rem;border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer;white-space:nowrap;}
+.meal-suggestion-btn:hover{background:var(--orange);color:#fff;}
 .closed-box{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#f87171;font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;text-align:center;}
 .autofill-note{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:#4ade80;font-size:0.75rem;padding:0.55rem 0.75rem;margin-bottom:0.7rem;}
 .autofill-note a{color:#4ade80;text-decoration:underline;}
@@ -255,7 +259,7 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
       <button class="vtoggle-btn active" id="gridViewBtn" onclick="setView('grid')" title="Grid View">⊞ Grid</button>
       <button class="vtoggle-btn" id="textViewBtn" onclick="setView('text')" title="Text View">☰ List</button>
     </div>
-    <button class="cart-btn" onclick="openCart()">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
+    <button class="cart-btn" onclick="openCart()">🛒 <span id="cartHeaderTotal">₹0</span> <span class="cart-count" id="cartCount">0</span></button>
   </div>
 </header>
 
@@ -297,7 +301,7 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 </div>
 
 <div class="cart-bar" id="cartBar" onclick="openCart()">
-  <div style="font-size:0.85rem;font-weight:600;" id="cartBarLeft">0 items</div>
+  <div style="font-size:0.85rem;font-weight:600;" id="cartBarLeft">0 Items • ₹0</div>
   <div style="font-size:0.9rem;font-weight:700;" id="cartBarRight">View Cart →</div>
 </div>
 
@@ -377,6 +381,71 @@ function itemPackagingCost(id) {
   return 0;
 }
 
+// ── CARRY-BAG LOGIC ────────────────────────────────────────────────────
+// itemPackagingCost above only covers items with a dedicated box/bowl
+// (pizzas, sandwiches, footlongs, garlic bread, wraps, pastas). It says
+// nothing about how many *carry bags* an order needs. Previously a big pile
+// of box-less items (burgers, fried chicken, drinks, desserts, snacks) added
+// ₹0 to packaging no matter the quantity — 12 burgers cost the same to pack
+// as 1. This accounts for the carry bags those items actually need.
+//
+// BAG_CAPACITY = how many of each kind comfortably fit in one carry bag.
+// The algorithm sums fractional bag usage across the order and rounds up.
+// The FIRST non-pizza bag is on the house, so small orders stay free; only
+// once the order fills more than one bag do extra carry bags start counting.
+// Large (9") pizzas keep their own separate rule (they lie flat, 3 to a bag).
+//
+// To fine-tune after watching real packing, change ONLY the numbers below —
+// e.g. if a bag comfortably holds 8 burgers, set burger: 8. Nothing else
+// needs to change. This is intentionally the single knob for future tuning.
+const CARRY_BAG_COST = 9; // ₹ per carry bag (pre-slab actual cost)
+const BAG_CAPACITY = {
+  burger: 6,
+  wrap: 6,
+  sandwich: 6,
+  footlong: 4,
+  garlic_bread: 6,
+  fried_chicken: 4,   // buckets are bulky
+  grilled_chicken: 3,
+  snack: 6,
+  beverage: 8,
+  dessert: 8,
+  pasta: 4,
+  pizza_pan: 4,       // 6" pan boxes
+  default: 6,
+};
+
+// Map an item to its carry-bag capacity group. Large 9" pizzas return null
+// because they're handled by their own flat-stack rule; add-ons/combos also
+// return null (not separately bagged).
+function bagGroup(id) {
+  if (LARGE_PIZZA_IDS.has(id)) return null;
+  switch (ITEM_CATEGORY_BY_ID[id]) {
+    case 'Veg Burgers':
+    case 'Non Veg Burgers':     return 'burger';
+    case 'Wraps':               return 'wrap';
+    case 'Veg Sandwiches':
+    case 'Non Veg Sandwiches':  return 'sandwich';
+    case 'Veg Footlongs':
+    case 'Non Veg Footlongs':   return 'footlong';
+    case 'Garlic Breads':       return 'garlic_bread';
+    case 'Fried Chicken':       return 'fried_chicken';
+    case 'Grilled Chicken':     return 'grilled_chicken';
+    case 'Veg Snacks':
+    case 'Non Veg Snacks':      return 'snack';
+    case 'Beverages':           return 'beverage';
+    case 'Desserts':            return 'dessert';
+    case 'Pastas':              return 'pasta';
+    case 'Veg Pizza':
+    case 'Non Veg Pizza':       return 'pizza_pan'; // only 6" pan reaches here
+    default:                    return null;        // add-ons, combos
+  }
+}
+
+function bagCapacityFor(group) {
+  return BAG_CAPACITY[group] || BAG_CAPACITY.default;
+}
+
 // Step 6: convert actual packaging+bag cost into a clean customer-facing slab.
 function packagingSlab(actualCost) {
   if (actualCost <= 15) return 0;
@@ -392,24 +461,35 @@ function calcPackagingCharge(items, orderType) {
   // Step 1: Dine In never gets a packaging charge.
   if (orderType === 'Dine In') return 0;
 
-  // Step 3: base packaging cost across all items.
+  // Step 3: base box/bowl cost, plus tally the two things that drive carry
+  // bags — large flat pizzas, and everything else by fractional bag-fill.
   let base = 0;
   let largePizzaCount = 0;
+  let nonPizzaBagFill = 0;
   items.forEach(i => {
     base += itemPackagingCost(i.id) * i.qty;
-    if (LARGE_PIZZA_IDS.has(i.id)) largePizzaCount += i.qty;
+    if (LARGE_PIZZA_IDS.has(i.id)) {
+      largePizzaCount += i.qty;
+    } else {
+      const g = bagGroup(i.id);
+      if (g) nonPizzaBagFill += i.qty / bagCapacityFor(g);
+    }
   });
 
-  // Step 4: carry bag requirement.
-  let bags;
-  if (largePizzaCount > 0) {
-    bags = Math.ceil(largePizzaCount / 3); // Rule A
-  } else {
-    bags = base > 20 ? 1 : 0; // Rule B
-  }
+  // Step 4: carry bags.
+  //  - Large pizzas lie flat and stack, 3 to a bag — charged in full, exactly
+  //    as before, so existing pizza pricing is unchanged.
+  //  - Everything else is summed by fractional bag-fill and rounded up, with
+  //    the first such bag free so small orders (a burger and a drink, a couple
+  //    of footlongs) never pick up a packaging charge. Only genuinely large
+  //    orders spill into a second bag and start to count.
+  const pizzaBags = largePizzaCount > 0 ? Math.ceil(largePizzaCount / 3) : 0;
+  const nonPizzaBags = nonPizzaBagFill > 0 ? Math.ceil(nonPizzaBagFill) : 0;
+  const chargeableNonPizzaBags = Math.max(0, nonPizzaBags - 1); // first bag on the house
+  const bags = pizzaBags + chargeableNonPizzaBags;
 
-  // Step 5: actual cost, Step 6: slab conversion.
-  const actualCost = base + (bags * 9);
+  // Step 5: actual cost, Step 6: slab conversion (kept customer-friendly).
+  const actualCost = base + (bags * CARRY_BAG_COST);
   return packagingSlab(actualCost);
 }
 // ─────────────────────────────────────────────────────────────────────
@@ -693,7 +773,7 @@ function estimatePrepRange(cartItems) {
 function launchConfetti() {
   const container = document.getElementById('confettiContainer');
   if (!container) return;
-  container.innerHTML = '';
+  container.textContent = '';
   const colors = ['#f97316','#dc2626','#facc15','#4ade80','#f5f5f5'];
   for (let i = 0; i < 40; i++) {
     const piece = document.createElement('div');
@@ -705,7 +785,7 @@ function launchConfetti() {
     piece.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
     container.appendChild(piece);
   }
-  setTimeout(() => { container.innerHTML = ''; }, 3200);
+  setTimeout(() => { container.textContent = ''; }, 3200);
 }
 
 function isVegItem(item) {
@@ -1006,7 +1086,8 @@ function undoRemove() {
 
 function buildNoteWrapInner(id, note) {
   const n = note || '';
-  return '<textarea class="note-input" rows="1" maxlength="60" placeholder="Special instructions..." oninput="handleNoteInput(\''+id+'\',this)">'+n+'</textarea><div class="note-count">'+n.length+'/60</div>';
+  // n is customer-typed, so escape it before it goes inside the <textarea>.
+  return '<textarea class="note-input" rows="1" maxlength="60" placeholder="Special instructions..." oninput="handleNoteInput(\''+id+'\',this)">'+escapeHtml(n)+'</textarea><div class="note-count">'+n.length+'/60</div>';
 }
 
 function handleNoteInput(id, el) {
@@ -1065,11 +1146,12 @@ function updateCartUI() {
   const { subtotal, packingCharge, count, discountAmount } = calcTotals();
   const total = subtotal + packingCharge - discountAmount;
   document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartHeaderTotal').textContent = '₹' + total;
   const bar = document.getElementById('cartBar');
   if (count > 0) {
     bar.classList.add('visible');
-    document.getElementById('cartBarLeft').textContent = count + ' item' + (count > 1 ? 's' : '');
-    document.getElementById('cartBarRight').textContent = '₹' + total + ' — View Cart →';
+    document.getElementById('cartBarLeft').textContent = count + ' Item' + (count > 1 ? 's' : '') + ' • ₹' + total;
+    document.getElementById('cartBarRight').textContent = 'View Cart →';
   } else {
     bar.classList.remove('visible');
   }
@@ -1123,6 +1205,61 @@ function doClearCart() {
   renderDrawer();
 }
 
+// ── MEAL-COMPLETION SUGGESTION ─────────────────────────────────────────
+// A gentle, fully dynamic nudge: if the cart looks like a meal-in-progress
+// (a main course, maybe a side) but has nothing to drink, offer to add a
+// cold drink in one tap. Nothing here hardcodes specific item combinations —
+// it works off each item's *role*, derived from its category, so it keeps
+// working automatically as menu items come and go.
+const MEAL_ROLE_BY_CATEGORY = {
+  'Veg Burgers': 'main', 'Non Veg Burgers': 'main',
+  'Wraps': 'main',
+  'Veg Footlongs': 'main', 'Non Veg Footlongs': 'main',
+  'Veg Sandwiches': 'main', 'Non Veg Sandwiches': 'main',
+  'Veg Pizza': 'main', 'Non Veg Pizza': 'main',
+  'Pastas': 'main',
+  'Fried Chicken': 'main', 'Grilled Chicken': 'main',
+  'Veg Snacks': 'side', 'Non Veg Snacks': 'side',
+  'Garlic Breads': 'side',
+  'Beverages': 'drink',
+  'Desserts': 'dessert',
+};
+
+function mealRoleOf(id) {
+  const item = ALL_ITEMS[id];
+  if (!item || item.is_addon) return null;
+  return MEAL_ROLE_BY_CATEGORY[ITEM_CATEGORY_BY_ID[id]] || null;
+}
+
+// The cheapest in-stock soft drink, used as the one-tap "complete your meal"
+// pick. Derived live from the menu, so it adapts to price/stock changes.
+function cheapestDrinkSuggestion() {
+  const drinks = (MENU['Beverages'] || [])
+    .filter(d => d.description.toLowerCase().includes('soft drink') && !OUT_OF_STOCK_IDS.has(d.id));
+  if (!drinks.length) return null;
+  return drinks.reduce((a, b) => (b.price < a.price ? b : a));
+}
+
+// Returns a suggestion object, or null if nothing worth suggesting. Dynamic
+// each render: appears when there's a main but no drink, disappears the moment
+// a drink (or a combo, which already bundles one) is in the cart.
+function getMealSuggestion() {
+  const ids = Object.keys(cart);
+  if (!ids.length) return null;
+  // If a combo is already in the cart, it bundles a drink — don't nag.
+  if (ids.some(id => ITEM_CATEGORY_BY_ID[id] === 'Combos')) return null;
+  const roles = new Set(ids.map(mealRoleOf).filter(Boolean));
+  if (!roles.has('main') || roles.has('drink')) return null;
+  const drink = cheapestDrinkSuggestion();
+  if (!drink) return null;
+  return { type: 'drink', item: drink };
+}
+
+function addSuggestedItem(id) {
+  addToCart(id);
+  renderDrawer();
+}
+
 function renderDrawer() {
   const items = Object.entries(cart);
   const clearBtn = document.getElementById('clearCartBtn');
@@ -1144,14 +1281,16 @@ function renderDrawer() {
   let html = '';
   items.forEach(([id, item]) => {
     const dot = isVegItem(item) ? '🟢' : '🔴';
-    html += '<div class="cart-item"><div style="flex:1"><div class="cart-item-name">'+dot+' '+item.title+'</div>'+(item.note ? '<div class="cart-item-note">📝 '+item.note+'</div>' : '')+'</div><div class="qty-ctrl" style="margin:0 0.5rem;"><button onclick="updateQty(\''+id+'\',-1);renderDrawer()">−</button><span class="qty-num">'+item.qty+'</span><button onclick="updateQty(\''+id+'\',1);renderDrawer()">+</button></div><div class="cart-item-price">₹'+(item.price*item.qty)+'</div></div>';
+    // item.note is customer-typed → escape it (title is escaped too for safety)
+    html += '<div class="cart-item"><div style="flex:1"><div class="cart-item-name">'+dot+' '+escapeHtml(item.title)+'</div>'+(item.note ? '<div class="cart-item-note">📝 '+escapeHtml(item.note)+'</div>' : '')+'</div><div class="qty-ctrl" style="margin:0 0.5rem;"><button onclick="updateQty(\''+id+'\',-1);renderDrawer()">−</button><span class="qty-num">'+item.qty+'</span><button onclick="updateQty(\''+id+'\',1);renderDrawer()">+</button></div><div class="cart-item-price">₹'+(item.price*item.qty)+'</div></div>';
   });
 
   // "Buy X, get Y free" rows — purely derived from the current cart each
   // render, so they appear/disappear automatically as items are added or
   // removed, with no separate add/remove step needed.
   offerLines.forEach(ol => {
-    html += '<div class="cart-item" style="background:rgba(46,125,50,0.1);border:1px dashed rgba(46,125,50,0.45);border-radius:8px;"><div style="flex:1"><div class="cart-item-name">🎁 '+ol.label+'</div></div><div class="cart-item-price" style="color:var(--muted);">₹0</div></div>';
+    // ol.label comes from backend-configured offer rules → escape it.
+    html += '<div class="cart-item" style="background:rgba(46,125,50,0.1);border:1px dashed rgba(46,125,50,0.45);border-radius:8px;"><div style="flex:1"><div class="cart-item-name">🎁 '+escapeHtml(ol.label)+'</div></div><div class="cart-item-price" style="color:var(--muted);">₹0</div></div>';
   });
 
   // Live threshold-offer messaging: either an "almost there" nudge, or the
@@ -1168,7 +1307,20 @@ function renderDrawer() {
       }
     }
   }
-  html = offerHtml + html;
+  // Unobtrusive "complete your meal" nudge — a slim line with a one-tap add,
+  // shown only when the cart has a main course but no drink. All values here
+  // come from our own menu data, but they're escaped anyway as a good habit.
+  let suggestionHtml = '';
+  const suggestion = getMealSuggestion();
+  if (suggestion) {
+    const s = suggestion.item;
+    suggestionHtml =
+      '<div class="meal-suggestion">' +
+        '<span class="meal-suggestion-text">🥤 Add ' + escapeHtml(s.title) + ' to complete your meal?</span>' +
+        '<button class="meal-suggestion-btn" onclick="addSuggestedItem(\'' + s.id + '\')">+ ₹' + s.price + '</button>' +
+      '</div>';
+  }
+  html = offerHtml + suggestionHtml + html;
 
   const totalRow = orderType === 'Delivery'
   ? '<div class="summary-row total"><span>Total</span><span>₹'+total+' + Delivery Charges</span></div>'
@@ -1183,7 +1335,7 @@ html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</spa
   if (orderType) renderCheckoutForm(status);
 }
 
-function selectType(type) { orderType = type; renderDrawer(); }
+function selectType(type) { orderType = type; renderDrawer(); updateCartUI(); }
 
 // ── REMEMBER CUSTOMER DETAILS (name, phone, address) ─────────────────
 // Saved locally on this device after a successful order, and used to
@@ -1205,7 +1357,18 @@ function clearSavedCustomerDetails() {
   try { localStorage.removeItem(SAVED_DETAILS_KEY); } catch(e) {}
   renderCheckoutForm();
 }
-function esc(str) { return (str || '').replace(/"/g, '&quot;'); }
+// Full HTML-escaping for any value (customer input, notes, backend-supplied
+// text like announcements) interpolated into an HTML string. Safe both inside
+// attribute values (value="...") and inside element content.
+function escapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function esc(str) { return escapeHtml(str); }
 // ─────────────────────────────────────────────────────────────────────
 
 function renderCheckoutForm(status) {
@@ -1368,7 +1531,7 @@ function retryUnsentOrder() {
       alert(result.message + '\n\nPlease remove it from your cart and try again.');
     } else {
       btn.disabled = false;
-      btn.innerHTML = 'Try Again';
+      btn.textContent = 'Try Again';
     }
   });
 }
@@ -1496,14 +1659,79 @@ async function placeOrder() {
 
 function resetOrder() { document.getElementById('successScreen').classList.remove('show'); }
 
+// ── SEARCH ALIASES ─────────────────────────────────────────────────────
+// A search term doesn't have to appear verbatim in an item's title,
+// description or category. Each alias below lists the search words that
+// should surface a group of items — so "soda" finds Coke/Sprite/Fanta,
+// "drinks" finds the whole beverage range, "kfc" finds fried chicken, etc.
+//
+// `terms`    : words the customer might type (matched as substrings, so
+//              "coca" matches "coke" via the "coke"/"coca" entries, "ice
+//              cream" matches "ice", and typing part of a word still works).
+// `matches`  : decides whether a given menu item belongs to this alias group.
+//              Matching on category keeps it dynamic — new items added to a
+//              category are picked up automatically with no extra wiring.
+const SEARCH_ALIASES = [
+  { // "soda" / "coke" / "coca" / "cola" → the three fizzy soft drinks
+    terms: ['soda', 'coke', 'coca', 'cola', 'soft drink', 'softdrink'],
+    matches: (item) => item.description.toLowerCase().includes('soft drink'),
+  },
+  { // "drinks" / "beverage" → everything drinkable: soft drinks, shakes,
+    //  cold beverages, water — i.e. the whole Beverages category
+    terms: ['drink', 'drinks', 'beverage', 'beverages', 'cold drink', 'coldrink'],
+    matches: (item, category) => category === 'Beverages',
+  },
+  { // "shake" → milkshakes
+    terms: ['shake', 'shakes', 'milkshake', 'milkshakes'],
+    matches: (item) => item.description.toLowerCase().includes('milkshake'),
+  },
+  { // "ice cream" → the dessert range
+    terms: ['ice cream', 'icecream', 'ice-cream'],
+    matches: (item, category) => category === 'Desserts',
+  },
+  { // "rolls" → wraps
+    terms: ['roll', 'rolls'],
+    matches: (item, category) => category === 'Wraps',
+  },
+  { // "kfc" / "crispy chicken" / "fried" → the Fried Chicken category
+    //  (crispy chicken also still matches any item literally named that way,
+    //   e.g. "Crispy Chicken Wrap", via the normal title match below)
+    terms: ['kfc', 'crispy chicken', 'fried chicken', 'fried'],
+    matches: (item, category) => category === 'Fried Chicken',
+  },
+];
+
+// True if `item` (in `category`) should surface for the lowercased query `q`,
+// via title, description, category name, or any alias group.
+function itemMatchesQuery(item, category, q) {
+  if (item.title.toLowerCase().includes(q)) return true;
+  if (item.description.toLowerCase().includes(q)) return true;
+  if (category.toLowerCase().includes(q)) return true;
+  // Alias matching needs at least 2 characters — a single letter already
+  // matches plenty via title/description, and would over-trigger aliases.
+  if (q.length >= 2) {
+    for (const alias of SEARCH_ALIASES) {
+      if (alias.terms.some(t => t.includes(q) || q.includes(t)) && alias.matches(item, category)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function handleSearch(query) {
   const q = query.toLowerCase().trim();
   const main = document.getElementById('menuMain');
   if (!q) { buildMenu(); return; }
-  const results = Object.values(MENU).flat().filter(i => (i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q)) && matchesDiet(i));
-  main.innerHTML = '';
+  const results = Object.entries(MENU)
+    .flatMap(([category, items]) => items.map(item => ({ item, category })))
+    .filter(({ item, category }) => matchesDiet(item) && itemMatchesQuery(item, category, q))
+    .map(({ item }) => item);
+  main.textContent = '';
   if (results.length === 0) {
-    main.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+query+'"'+(dietFilter !== 'all' ? ' with the current filter' : '')+'</div></div>';
+    // `query` is exactly what the customer typed, so escape it before echoing
+    // it back into the page.
+    main.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+escapeHtml(query)+'"'+(dietFilter !== 'all' ? ' with the current filter' : '')+'</div></div>';
     return;
   }
   const sec = document.createElement('div');
@@ -1530,17 +1758,78 @@ function makeCard(item) {
     : '<div class="item-price">₹'+item.price+'</div><button class="add-btn" onclick="addToCart(\''+item.id+'\')">+</button>';
   const catKey = Object.keys(MENU).find(k => MENU[k].some(i => i.id === item.id));
   const imgUrl = IMAGE_MAP[item.id];
-  const imgInner = imgUrl ? ('<img src="'+imgUrl+'" alt="'+item.title+'" loading="lazy" onload="this.classList.add(\'loaded\');this.parentElement.classList.remove(\'shimmer\');" onerror="this.parentElement.classList.remove(\'shimmer\');this.parentElement.textContent=\''+(CAT_ICONS[catKey]||'🍽️')+'\';">') : (CAT_ICONS[catKey] || '🍽️');
+  const imgInner = imgUrl ? ('<img src="'+encodeURI(imgUrl)+'" alt="'+escapeHtml(item.title)+'" loading="lazy" onload="this.classList.add(\'loaded\');this.parentElement.classList.remove(\'shimmer\');" onerror="this.parentElement.classList.remove(\'shimmer\');this.parentElement.textContent=\''+(CAT_ICONS[catKey]||'🍽️')+'\';">') : (CAT_ICONS[catKey] || '🍽️');
   card.innerHTML =
     '<div class="item-img'+(imgUrl ? ' shimmer' : '')+'">'+imgInner+'</div>'+
-    '<div class="item-body'+(oos ? ' item-oos' : '')+'"><div class="item-name-row"><div class="veg-dot '+(veg?'veg':'nonveg')+'"></div><div class="item-name">'+item.title+'</div></div><div class="item-desc">'+item.description+(item.is_addon ? ' <span style="color:var(--orange);font-weight:700;">⚡ Add-on</span>' : '')+'</div><div class="item-footer">'+footerHTML+'</div>'+(inCart && inCart.note ? '<div class="note-wrap">'+buildNoteWrapInner(item.id, inCart.note)+'</div>' : '')+'</div>';
+    '<div class="item-body'+(oos ? ' item-oos' : '')+'"><div class="item-name-row"><div class="veg-dot '+(veg?'veg':'nonveg')+'"></div><div class="item-name">'+escapeHtml(item.title)+'</div></div><div class="item-desc">'+escapeHtml(item.description)+(item.is_addon ? ' <span style="color:var(--orange);font-weight:700;">⚡ Add-on</span>' : '')+'</div><div class="item-footer">'+footerHTML+'</div>'+(inCart && inCart.note ? '<div class="note-wrap">'+buildNoteWrapInner(item.id, inCart.note)+'</div>' : '')+'</div>';
   return card;
+}
+
+// ── CATEGORY NAV AUTO-HIGHLIGHT (IntersectionObserver, no scroll listeners) ──
+// Tracks which category section is most visible and highlights the
+// matching pill automatically. A manual pill click briefly suppresses
+// the observer (via suppressGridObserver/suppressTextObserver) so the
+// smooth-scroll animation doesn't fight with the observer re-highlighting
+// whatever section is passing by mid-scroll.
+let gridSectionObserver = null;
+let textSectionObserver = null;
+let suppressGridObserver = false;
+let suppressTextObserver = false;
+let gridSuppressTimeout = null;
+let textSuppressTimeout = null;
+
+function setupSectionObserver(navSelector, sectionSelector, pillIdPrefix, existingObserver, isSuppressed) {
+  if (existingObserver) existingObserver.disconnect();
+
+  const sections = document.querySelectorAll(sectionSelector);
+  if (sections.length === 0) return null;
+
+  // Tracks each section's current intersection ratio so we can pick the
+  // single most-visible one on every callback, rather than reacting to
+  // one section's event in isolation (which can cause two pills to look
+  // active momentarily, or none at all, while scrolling past a boundary).
+  const ratios = new Map();
+
+  const observer = new IntersectionObserver((entries) => {
+    if (isSuppressed()) return; // a manual click's smooth-scroll is still settling
+
+    entries.forEach(entry => {
+      ratios.set(entry.target.id, entry.intersectionRatio);
+    });
+
+    let bestId = null, bestRatio = 0;
+    ratios.forEach((ratio, id) => {
+      if (ratio > bestRatio) { bestRatio = ratio; bestId = id; }
+    });
+    if (!bestId || bestRatio === 0) return; // nothing meaningfully visible yet — keep prior highlight
+
+    const idx = bestId.split('-')[1];
+    const pill = document.getElementById(pillIdPrefix + idx);
+    if (!pill || pill.classList.contains('active')) return;
+
+    document.querySelectorAll(navSelector + ' .cat-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    pill.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+  }, {
+    root: null,
+    // Fires as a section crosses each 10% step of visibility — frequent
+    // enough for smooth, responsive highlighting without a scroll listener.
+    threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+    // Biases toward the upper portion of the viewport (just under the
+    // sticky header + sticky category nav) so the section that's actually
+    // being read is the one that wins, not whatever tall section merely
+    // fills the most total screen area.
+    rootMargin: '-140px 0px -60% 0px'
+  });
+
+  sections.forEach(sec => observer.observe(sec));
+  return observer;
 }
 
 function buildMenu() {
   const nav = document.getElementById('catNav');
   const main = document.getElementById('menuMain');
-  nav.innerHTML = ''; main.innerHTML = '';
+  nav.textContent = ''; main.textContent = '';
 
 
   Object.entries(MENU).forEach(([cat, items], i) => {
@@ -1549,9 +1838,17 @@ function buildMenu() {
 
     const pill = document.createElement('button');
     pill.className = 'cat-pill';
+    pill.id = 'catpill-' + i;
     const vegBadge = cat.startsWith('Veg ') ? ' 🟢' : (cat.startsWith('Non Veg ') || cat === 'Non Veg Snacks') ? ' 🔴' : '';
     pill.textContent = (CAT_ICONS[cat] || '🍽️') + ' ' + cat + vegBadge;
-    pill.onclick = () => { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); document.getElementById('sec-'+i).scrollIntoView({behavior:'smooth',block:'start'}); };
+    pill.onclick = () => {
+      suppressGridObserver = true;
+      document.querySelectorAll('#catNav .cat-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      document.getElementById('sec-'+i).scrollIntoView({behavior:'smooth',block:'start'});
+      clearTimeout(gridSuppressTimeout);
+      gridSuppressTimeout = setTimeout(() => { suppressGridObserver = false; }, 700);
+    };
     nav.appendChild(pill);
 
     const sec = document.createElement('div');
@@ -1564,6 +1861,10 @@ function buildMenu() {
     filteredItems.forEach(item => grid.appendChild(makeCard(item)));
     sec.appendChild(grid); main.appendChild(sec);
   });
+
+  gridSectionObserver = setupSectionObserver('#catNav', '.cat-section', 'catpill-', gridSectionObserver, () => suppressGridObserver);
+  const firstPill = nav.querySelector('.cat-pill');
+  if (firstPill && !nav.querySelector('.cat-pill.active')) firstPill.classList.add('active');
 }
 
 function setView(view) {
@@ -1590,7 +1891,7 @@ function setView(view) {
 function buildTextMenu() {
   const textMenu = document.getElementById('textMenu');
   const textCatNav = document.getElementById('textCatNav');
-  textMenu.innerHTML = ''; textCatNav.innerHTML = '';
+  textMenu.textContent = ''; textCatNav.textContent = '';
 
 
   Object.entries(MENU).forEach(([cat, items], i) => {
@@ -1599,8 +1900,16 @@ function buildTextMenu() {
 
     const pill = document.createElement('button');
     pill.className = 'cat-pill';
+    pill.id = 'textcatpill-' + i;
     pill.textContent = (CAT_ICONS[cat]||'🍽️') + ' ' + cat.replace('Chicken ','🔴 ').replace('Veg ','🟢 ');
-    pill.onclick = () => { document.querySelectorAll('#textCatNav .cat-pill').forEach(p=>p.classList.remove('active')); pill.classList.add('active'); document.getElementById('tsec-'+i).scrollIntoView({behavior:'smooth',block:'start'}); };
+    pill.onclick = () => {
+      suppressTextObserver = true;
+      document.querySelectorAll('#textCatNav .cat-pill').forEach(p=>p.classList.remove('active'));
+      pill.classList.add('active');
+      document.getElementById('tsec-'+i).scrollIntoView({behavior:'smooth',block:'start'});
+      clearTimeout(textSuppressTimeout);
+      textSuppressTimeout = setTimeout(() => { suppressTextObserver = false; }, 700);
+    };
     textCatNav.appendChild(pill);
     const sec = document.createElement('div');
     sec.className = 'text-cat-section'; sec.id = 'tsec-'+i;
@@ -1612,6 +1921,9 @@ function buildTextMenu() {
     textMenu.appendChild(sec);
   });
   textMenu.dataset.built = '1';
+  textSectionObserver = setupSectionObserver('#textCatNav', '.text-cat-section', 'textcatpill-', textSectionObserver, () => suppressTextObserver);
+  const firstTextPill = textCatNav.querySelector('.cat-pill');
+  if (firstTextPill && !textCatNav.querySelector('.cat-pill.active')) firstTextPill.classList.add('active');
 }
 
 function makeTextRow(item) {
@@ -1630,7 +1942,7 @@ function getTextRowHTML(item, veg) {
     : inCart
     ? '<div class="text-qty-ctrl"><button onclick="updateQty(\''+item.id+'\',-1)">−</button><span class="text-qty-num">'+inCart.qty+'</span><button onclick="updateQty(\''+item.id+'\',1)">+</button></div>'
     : '<button class="text-add-btn" onclick="addToCart(\''+item.id+'\')">+</button>';
-  return '<div class="text-dot '+(veg?'veg':'nonveg')+'"></div><div class="text-item-name'+(oos?' item-oos':'')+'">'+item.title+'</div><div class="text-item-price">₹'+item.price+'</div>'+ctrl;
+  return '<div class="text-dot '+(veg?'veg':'nonveg')+'"></div><div class="text-item-name'+(oos?' item-oos':'')+'">'+escapeHtml(item.title)+'</div><div class="text-item-price">₹'+item.price+'</div>'+ctrl;
 }
 
 function refreshTextRow(id) {
@@ -1648,7 +1960,8 @@ function applyBanner(banner) {
       el.style.display = 'none';
       return;
     }
-    el.innerHTML = '<span>' + text + '</span><button class="banner-close" onclick="dismissBanner()" aria-label="Dismiss announcement">✕</button>';
+    // banner text/emoji come from the backend settings feed → escape.
+    el.innerHTML = '<span>' + escapeHtml(text) + '</span><button class="banner-close" onclick="dismissBanner()" aria-label="Dismiss announcement">✕</button>';
     el.style.display = 'block';
   } else {
     el.style.display = 'none';
