@@ -242,6 +242,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .track-refresh{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:0.75rem;font-weight:600;padding:0.4rem 0.8rem;width:100%;margin-top:0.2rem;transition:border-color 0.2s,color 0.2s;}
 .track-refresh:hover{border-color:var(--orange);color:var(--orange);}
 
+/* Live order-status strip on the success screen */
+.live-status{margin:0.9rem auto 0;max-width:340px;border-radius:12px;padding:0.8rem 1rem;font-size:0.85rem;font-weight:600;line-height:1.45;animation:riseIn 0.4s ease both;}
+.live-status .ls-sub{display:block;font-size:0.72rem;font-weight:400;color:var(--muted);margin-top:0.3rem;}
+.live-status.st-waiting{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.35);color:var(--orange);}
+.live-status.st-waiting .ls-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange);margin-right:0.45rem;animation:lsPulse 1.4s ease-in-out infinite;}
+.live-status.st-accepted{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);color:#4ade80;animation:statusPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
+.live-status.st-rejected{background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.4);color:#f87171;animation:statusPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
+.live-status .ls-reason{display:block;font-size:0.78rem;font-weight:400;color:var(--white);margin-top:0.4rem;background:rgba(0,0,0,0.25);border-radius:8px;padding:0.45rem 0.6rem;}
+@keyframes lsPulse{0%,100%{opacity:0.4;transform:scale(0.85);}50%{opacity:1;transform:scale(1.15);}}
+@keyframes statusPop{0%{transform:scale(0.85);opacity:0;}60%{transform:scale(1.04);opacity:1;}100%{transform:scale(1);}}
+
 /* Anyone with "reduce motion" set at the OS level gets a still interface —
    the JS checks this too before launching confetti or the cart ember. */
 @media (prefers-reduced-motion:reduce){
@@ -419,7 +430,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <div class="success-sub" id="successWelcome" style="color:#4ade80;font-weight:600;"></div>
   <div class="success-order" id="successOrder"></div>
   <div class="success-sub" id="successPrepTime" style="color:var(--orange);font-weight:700;"></div>
-  <div class="success-sub">Your order has been received!</div>
+  <div class="live-status" id="liveStatus" style="display:none;"></div>
   <div class="success-sub" style="margin-top:0.5rem;">Payment: <span style="color:var(--orange);font-weight:700;">Payment on Delivery via Cash/UPI</span></div>
   <div class="success-sub" style="margin-top:0.5rem;">Questions? Call <span style="color:var(--orange);font-weight:700;">9612992023</span></div>
   <button class="new-order-btn" onclick="resetOrder()">Place Another Order</button>
@@ -1800,6 +1811,7 @@ function retryUnsentOrder() {
       document.getElementById('successPrepTime').textContent = '⏱ Estimated preparation time: ' + prepRange + prepSuffix;
       document.getElementById('successWelcome').textContent = welcomeLine;
       document.getElementById('successScreen').classList.add('show');
+      startStatusWatch(payload.client_ref);
       launchConfetti();
       cart = {}; orderType = null; updateCartUI();
       clearCartStorage();
@@ -1907,6 +1919,7 @@ async function placeOrder() {
     document.getElementById('successPrepTime').textContent = '⏱ Estimated preparation time: ' + prepRange + prepSuffix;
     document.getElementById('successWelcome').textContent = welcomeLine;
     document.getElementById('successScreen').classList.add('show');
+    startStatusWatch(payload.client_ref);
     launchConfetti();
     cart = {}; orderType = null; updateCartUI();
     clearCartStorage();
@@ -1948,7 +1961,12 @@ async function placeOrder() {
   }
 }
 
-function resetOrder() { document.getElementById('successScreen').classList.remove('show'); }
+function resetOrder() {
+  stopStatusWatch();
+  const ls = document.getElementById('liveStatus');
+  if (ls) { ls.style.display = 'none'; ls.innerHTML = ''; }
+  document.getElementById('successScreen').classList.remove('show');
+}
 
 // ── SEARCH ALIASES ─────────────────────────────────────────────────────
 // A search term doesn't have to appear verbatim in an item's title,
@@ -2362,6 +2380,90 @@ function dismissInstallNudge() {
   document.getElementById('installNudge').classList.remove('show');
   localStorage.setItem('gi_install_nudge_dismissed', '1');
 }
+
+// ── LIVE ORDER STATUS on the success screen ──────────────────────────
+// After placing an order, the success screen quietly watches it using the
+// order's reference code (the same public tracking endpoint the Track My
+// Order drawer uses) and updates in place the moment the restaurant
+// accepts or rejects it — including the rejection reason. Polls every 20s,
+// pauses while the tab is in the background (and checks immediately when
+// the customer returns), and gives up after 30 minutes with a pointer to
+// Track My Order.
+const ORIGINAL_TITLE = document.title;
+let statusWatchTimer = null, statusWatchRef = null, statusWatchStart = 0;
+
+function startStatusWatch(clientRef) {
+  const el = document.getElementById('liveStatus');
+  if (!clientRef || !el) return;
+  stopStatusWatch();
+  statusWatchRef = clientRef;
+  statusWatchStart = Date.now();
+  el.style.display = 'block';
+  el.className = 'live-status st-waiting';
+  el.innerHTML = '<span class="ls-dot"></span>Waiting for the restaurant to confirm...' +
+    '<span class="ls-sub">Keep this page open — it updates by itself the moment your order is accepted.</span>';
+  statusWatchTimer = setInterval(checkOrderStatus, 20000);
+  setTimeout(checkOrderStatus, 5000); // first check shortly after placing
+}
+
+function stopStatusWatch() {
+  if (statusWatchTimer) clearInterval(statusWatchTimer);
+  statusWatchTimer = null;
+  statusWatchRef = null;
+  document.title = ORIGINAL_TITLE;
+}
+
+function settleStatus(cls, html, title) {
+  const el = document.getElementById('liveStatus');
+  el.className = 'live-status ' + cls;
+  el.innerHTML = html;
+  if (statusWatchTimer) clearInterval(statusWatchTimer);
+  statusWatchTimer = null; statusWatchRef = null;
+  document.title = title; // visible even if they switched tabs
+  if (navigator.vibrate && !REDUCED_MOTION) navigator.vibrate(150);
+}
+
+async function checkOrderStatus() {
+  if (!statusWatchRef) return;
+  if (document.hidden) return; // no point polling a background tab — resumes on return
+  if (Date.now() - statusWatchStart > 30 * 60 * 1000) {
+    const el = document.getElementById('liveStatus');
+    el.innerHTML = '<span class="ls-dot"></span>Still waiting...' +
+      '<span class="ls-sub">Taking longer than usual — you can check anytime under \u201CTrack My Order\u201D at the bottom of the menu, or call ' + RESTAURANT_PHONE + '.</span>';
+    if (statusWatchTimer) clearInterval(statusWatchTimer);
+    statusWatchTimer = null; statusWatchRef = null;
+    return;
+  }
+  try {
+    const res = await fetch(SERVER_URL + '/api/track-order?ref=' + encodeURIComponent(statusWatchRef), { cache: 'no-store' });
+    if (!res.ok) return; // transient problem or rate limit — just try again next tick
+    const body = await res.json();
+    const o = body && body.orders && body.orders[0];
+    if (!o) return;
+    if (o.status === 'printed' || o.status === 'print_failed') {
+      settleStatus('st-accepted',
+        '\u2705 Order accepted \u2014 the kitchen is on it!' +
+        '<span class="ls-sub">' + (o.order_type === 'Delivery' ? 'It will be on its way to you soon.' : 'It will be ready for you soon.') + '</span>',
+        '\u2705 Order accepted! \u2014 Grill Inn');
+    } else if (o.status === 'rejected') {
+      settleStatus('st-rejected',
+        '\u2715 Sorry \u2014 we couldn\u2019t accept this order.' +
+        (o.reject_reason ? '<span class="ls-reason">Reason: ' + escapeHtml(o.reject_reason) + '</span>' : '') +
+        '<span class="ls-sub">Nothing has been charged. Questions? Call ' + RESTAURANT_PHONE + '.</span>',
+        'Order update \u2014 Grill Inn');
+    } else if (o.status === 'voided' || o.status === 'cancelled') {
+      settleStatus('st-rejected',
+        '\uD83D\uDEAB This order was cancelled.' +
+        '<span class="ls-sub">Questions? Call ' + RESTAURANT_PHONE + '.</span>',
+        'Order update \u2014 Grill Inn');
+    }
+    // still pending → leave the waiting strip as-is
+  } catch (e) { /* offline blip — next tick will retry */ }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && statusWatchRef) checkOrderStatus(); // instant refresh on return
+});
 
 // ── TRACK MY ORDER ───────────────────────────────────────────────────
 // Customers look up today's orders by the phone number they ordered with.
