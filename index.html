@@ -52,7 +52,7 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .main{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 6rem;animation:viewFadeIn 0.25s ease;}
 .main.hidden{display:none;}
 @keyframes viewFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-.cat-section{margin-bottom:2rem;}
+.cat-section{margin-bottom:2rem;scroll-margin-top:168px;}
 .cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;text-shadow:0 0 14px rgba(249,115,22,0.18);}
 .veg-badge{font-size:0.65rem;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
 .nonveg-badge{font-size:0.65rem;background:rgba(220,38,38,0.15);color:#f87171;border:1px solid rgba(220,38,38,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
@@ -96,7 +96,7 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .text-cat-nav.hidden{display:none;}
 .text-menu{display:none;max-width:700px;margin:0 auto;padding:1rem 1rem 6rem;}
 .text-menu.visible{display:block;animation:viewFadeIn 0.25s ease;}
-.text-cat-section{margin-bottom:1.5rem;}
+.text-cat-section{margin-bottom:1.5rem;scroll-margin-top:160px;}
 .text-cat-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;}
 .text-item{display:flex;align-items:center;padding:0.45rem 0.5rem;border-bottom:1px solid rgba(46,46,46,0.6);gap:0.5rem;border-radius:4px;}
 .text-item:hover{background:var(--panel);}
@@ -111,9 +111,9 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .text-qty-num{font-size:0.8rem;font-weight:700;min-width:14px;text-align:center;color:var(--orange);}
 .cart-bar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--orange),var(--red));padding:0.85rem 1.5rem calc(0.85rem + env(safe-area-inset-bottom));display:none;align-items:center;justify-content:space-between;cursor:pointer;z-index:200;box-shadow:0 -4px 20px rgba(249,115,22,0.3);}
 .cart-bar.visible{display:flex;}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;}
-.overlay.open{display:block;}
-.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);border-top:2px solid var(--flame);border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto;overscroll-behavior:contain;z-index:400;transform:translateY(100%);transition:transform 0.3s ease;padding:1.5rem 1rem calc(2rem + env(safe-area-inset-bottom));}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;opacity:0;visibility:hidden;transition:opacity 0.28s ease,visibility 0.28s;}
+.overlay.open{opacity:1;visibility:visible;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);border-top:2px solid var(--flame);border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto;overscroll-behavior:contain;z-index:400;transform:translateY(100%);transition:transform 0.38s cubic-bezier(0.32,0.72,0,1);padding:1.5rem 1rem calc(2rem + env(safe-area-inset-bottom));}
 .drawer.open{transform:translateY(0);}
 .drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
 .drawer-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:var(--orange);}
@@ -179,6 +179,74 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .announcement-banner{position:relative;padding:0.65rem 2.4rem;}
 .banner-close{position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.25);border:none;border-radius:50%;color:#fff;width:20px;height:20px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
 .banner-close:hover{background:rgba(255,255,255,0.4);}
+
+/* ── UI polish pass ─────────────────────────────────────────────────── */
+
+/* Fly-to-cart ember: a glowing dot arcs from the tapped + button to the
+   cart button in the header — instant, unambiguous "that went in" feedback. */
+.fly-ember{position:fixed;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fdba74,var(--orange) 55%,var(--red));box-shadow:0 0 10px 2px rgba(249,115,22,0.55);z-index:900;pointer-events:none;transition:transform 0.55s cubic-bezier(0.5,-0.1,0.7,0.4),opacity 0.55s ease;will-change:transform,opacity;}
+
+/* Staged entrance for the success / failure screens: icon pops, then the
+   text rises in. The confetti (already present) covers the celebration —
+   this just gives the screen a beginning instead of appearing all at once. */
+.success-screen.show .success-icon{animation:successPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both;}
+.success-screen.show .success-title{animation:riseIn 0.45s 0.1s ease both;}
+.success-screen.show .success-sub,.success-screen.show .success-order,.success-screen.show .of-order-num,.success-screen.show .of-items{animation:riseIn 0.45s 0.18s ease both;}
+.success-screen.show .new-order-btn,.success-screen.show .of-call-link{animation:riseIn 0.45s 0.28s ease both;}
+@keyframes successPop{0%{transform:scale(0.3);opacity:0;}60%{transform:scale(1.12);opacity:1;}100%{transform:scale(1);}}
+@keyframes riseIn{from{transform:translateY(14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* Pressed/hover feedback on the two primary actions. */
+.place-btn{transition:transform 0.15s ease,box-shadow 0.2s ease,opacity 0.2s;}
+.place-btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(249,115,22,0.35);}
+.place-btn:not(:disabled):active{transform:translateY(0) scale(0.98);box-shadow:none;}
+.cart-bar{transition:transform 0.15s ease;}
+.cart-bar:active{transform:scale(0.99);}
+.cart-bar.pop{animation:barPop 0.3s ease;}
+@keyframes barPop{0%{transform:scale(1);}45%{transform:scale(1.02);}100%{transform:scale(1);}}
+.new-order-btn:active,.of-call-link:active{transform:scale(0.97);}
+.new-order-btn,.of-call-link{transition:transform 0.15s ease;}
+
+/* Idle empty-cart illustration drifts gently instead of sitting frozen. */
+.empty-cart-icon{display:inline-block;animation:gentleFloat 3.2s ease-in-out infinite;}
+@keyframes gentleFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+/* Keyboard users get a clear flame-colored focus ring; mouse/touch don't. */
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:6px;}
+
+/* iOS Safari zooms the whole page when focusing an input whose font-size is
+   under 16px — every checkout field here was 14px, so typing a phone number
+   yanked the layout around. 16px on touch-size screens prevents the zoom. */
+@media (max-width:768px){
+  .form-group input,.form-group select,.form-group textarea,.search-input,.note-input{font-size:16px;}
+}
+
+/* Track My Order drawer */
+.track-lookup-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:8px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:700;padding:0.6rem 1rem;flex-shrink:0;transition:transform 0.12s ease,opacity 0.2s;}
+.track-lookup-btn:active{transform:scale(0.96);}
+.track-lookup-btn:disabled{opacity:0.5;}
+.track-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.8rem 0.9rem;margin-bottom:0.7rem;animation:riseIn 0.35s ease both;}
+.track-card-head{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.35rem;}
+.track-num{font-weight:800;color:var(--orange);font-size:0.9rem;}
+.track-status{font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:12px;white-space:nowrap;}
+.track-status.st-pending{background:rgba(249,115,22,0.15);color:var(--orange);}
+.track-status.st-confirmed{background:rgba(34,197,94,0.15);color:#4ade80;}
+.track-status.st-rejected,.track-status.st-cancelled{background:rgba(220,38,38,0.15);color:#f87171;}
+.track-meta{font-size:0.72rem;color:var(--muted);margin-bottom:0.4rem;}
+.track-items{font-size:0.76rem;color:var(--white);line-height:1.5;border-top:1px solid var(--border);padding-top:0.4rem;}
+.track-total{font-weight:700;color:var(--orange);text-align:right;margin-top:0.3rem;font-size:0.82rem;}
+.track-empty{text-align:center;color:var(--muted);font-size:0.82rem;padding:1.2rem 0.5rem;line-height:1.5;}
+.track-error{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#f87171;font-size:0.78rem;padding:0.55rem 0.75rem;line-height:1.4;}
+.track-ghost-btn{background:transparent !important;border:1px solid var(--border) !important;color:var(--muted) !important;}
+.track-ghost-btn:hover{border-color:var(--orange) !important;color:var(--orange) !important;}
+.track-refresh{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:0.75rem;font-weight:600;padding:0.4rem 0.8rem;width:100%;margin-top:0.2rem;transition:border-color 0.2s,color 0.2s;}
+.track-refresh:hover{border-color:var(--orange);color:var(--orange);}
+
+/* Anyone with "reduce motion" set at the OS level gets a still interface —
+   the JS checks this too before launching confetti or the cart ember. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}
+}
 
 /* Grid/List toggle first-visit hint */
 .view-toggle{border-radius:8px;}
@@ -297,7 +365,25 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
     Follow us on Instagram @grillinn.falkawn
   </a>
   <div class="footer-note">Grill Inn Falkawn &nbsp;•&nbsp; Fresh & Hot 🔥</div>
-  <a class="footer-contact" href="tel:+919612992023">📞 Contact: 9612992023</a>
+  <button class="footer-contact" onclick="openTrackOrder()" style="cursor:pointer;font-family:'Inter',sans-serif;">📦 Track My Order</button>
+  <a class="footer-contact" href="tel:+919612992023" style="margin-left:0.5rem;">📞 Contact: 9612992023</a>
+</div>
+
+<!-- Track My Order drawer -->
+<div class="overlay" id="trackOverlay" onclick="closeTrackOrder()"></div>
+<div class="drawer" id="trackDrawer" style="z-index:450;">
+  <div class="drawer-header">
+    <div class="drawer-title">📦 Track My Order</div>
+    <button class="close-btn" onclick="closeTrackOrder()">✕</button>
+  </div>
+  <div class="form-group">
+    <label>Phone number used on the order</label>
+    <div style="display:flex;gap:0.5rem;">
+      <input type="tel" id="trackPhone" inputmode="numeric" placeholder="e.g. 9876543210" style="flex:1;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;padding:0.6rem 0.75rem;outline:none;">
+      <button class="track-lookup-btn" id="trackLookupBtn" onclick="trackLookup()">Check</button>
+    </div>
+  </div>
+  <div id="trackResults"></div>
 </div>
 
 <div class="cart-bar" id="cartBar" onclick="openCart()">
@@ -337,6 +423,7 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
   <div class="success-sub" style="margin-top:0.5rem;">Payment: <span style="color:var(--orange);font-weight:700;">Payment on Delivery via Cash/UPI</span></div>
   <div class="success-sub" style="margin-top:0.5rem;">Questions? Call <span style="color:var(--orange);font-weight:700;">9612992023</span></div>
   <button class="new-order-btn" onclick="resetOrder()">Place Another Order</button>
+  <button class="new-order-btn track-ghost-btn" onclick="resetOrder(); openTrackOrder();">📦 Track This Order</button>
 </div>
 
 <div class="success-screen" id="orderFailedScreen">
@@ -758,6 +845,87 @@ const CAT_ICONS = {"Veg Burgers":"🍔","Non Veg Burgers":"🍔","Wraps":"🌯",
 const ALL_ITEMS = {};
 Object.values(MENU).flat().forEach(i => ALL_ITEMS[i.id] = i);
 
+// ── LIVE MENU ────────────────────────────────────────────────────────
+// The MENU above is a baked-in fallback. On every visit the site asks the
+// restaurant's server for the live menu (the one edited in the dashboard's
+// Menu tab), so price and item changes reach customers immediately without
+// re-uploading index.html. The last live copy is cached locally so repeat
+// visits (and offline PWA opens) start from the freshest menu seen. If the
+// server can't be reached and there's no cache, the baked-in menu is used —
+// the site never breaks. Server-side pricing still has the final say on
+// every order, so a stale menu can never cause a wrong charge.
+const MENU_CACHE_KEY = 'gi_menu_cache';
+const BAKED_ITEMS_BY_ID = {};
+Object.values(MENU).flat().forEach(i => BAKED_ITEMS_BY_ID[i.id] = i);
+let liveMenuVersion = null;
+
+function applyLiveMenu(liveMenu) {
+  if (!liveMenu || typeof liveMenu !== 'object' || Array.isArray(liveMenu)) return false;
+  const clean = {};
+  for (const cat of Object.keys(liveMenu)) {
+    if (!Array.isArray(liveMenu[cat])) return false;
+    const items = [];
+    for (const it of liveMenu[cat]) {
+      if (!it || typeof it.id !== 'string' || typeof it.title !== 'string' || typeof it.price !== 'number') continue;
+      // Server data wins, but frontend-only behavior flags (is_addon,
+      // addon_type, addon_size — these drive the "one Extra Cheese per
+      // burger" style rules) are kept from the baked-in copy when the
+      // server's menu doesn't carry them.
+      items.push({ ...(BAKED_ITEMS_BY_ID[it.id] || {}), ...it });
+    }
+    if (items.length) clean[cat] = items;
+  }
+  if (Object.keys(clean).length < 3) return false; // a real menu has many categories — reject anything suspiciously empty
+
+  Object.keys(MENU).forEach(k => delete MENU[k]);
+  Object.assign(MENU, clean);
+  Object.keys(ALL_ITEMS).forEach(k => delete ALL_ITEMS[k]);
+  Object.values(MENU).flat().forEach(i => ALL_ITEMS[i.id] = i);
+  return true;
+}
+
+// Applied synchronously before anything renders, so the first paint already
+// uses the freshest menu this device has seen.
+try {
+  const cachedMenu = JSON.parse(localStorage.getItem(MENU_CACHE_KEY) || 'null');
+  if (cachedMenu && cachedMenu.menu && applyLiveMenu(cachedMenu.menu)) liveMenuVersion = cachedMenu.version || null;
+} catch (e) {}
+
+function reconcileCartWithMenu() {
+  let changed = false;
+  Object.keys(cart).forEach(id => {
+    const live = ALL_ITEMS[id];
+    if (!live) { delete cart[id]; changed = true; return; } // item removed from the menu
+    if (cart[id].price !== live.price || cart[id].title !== live.title) {
+      cart[id] = { ...live, qty: cart[id].qty, note: cart[id].note || '' };
+      changed = true;
+    }
+  });
+  if (changed) { saveCartToStorage(); updateCartUI(); }
+  return changed;
+}
+
+async function loadLiveMenu() {
+  try {
+    const res = await fetch(SERVER_URL + '/api/public-menu', { cache: 'no-store' });
+    if (!res.ok) return;
+    const body = await res.json();
+    if (!body || !body.menu) return;
+    try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({ menu: body.menu, version: body.version })); } catch (e) {}
+    if (body.version && body.version === liveMenuVersion) return; // already showing this exact menu
+    if (!applyLiveMenu(body.menu)) return;
+    liveMenuVersion = body.version || null;
+    // Re-render whichever menu view is on screen, same pattern as search.
+    const textMenu = document.getElementById('textMenu');
+    if (textMenu) textMenu.dataset.built = '';
+    if (currentView === 'text') buildTextMenu(); else buildMenu();
+    reconcileCartWithMenu();
+    if (document.getElementById('drawer').classList.contains('open')) renderDrawer();
+  } catch (e) {
+    console.log('Live menu unavailable — using the built-in copy.', e);
+  }
+}
+
 const LONG_PREP_CATEGORIES = ['Grilled Chicken', 'Pastas'];
 
 function getItemCategory(id) {
@@ -771,6 +939,7 @@ function estimatePrepRange(cartItems) {
 }
 
 function launchConfetti() {
+  if (REDUCED_MOTION) return;
   const container = document.getElementById('confettiContainer');
   if (!container) return;
   container.textContent = '';
@@ -987,6 +1156,10 @@ function addToCart(id) {
   refreshTextRow(id);
   pulseCard(id);
   bounceCart();
+  // window.event is set when this runs from the inline onclick handlers on
+  // the + buttons; when addToCart is called programmatically (undo restore
+  // etc.) there's no tap position, so the ember simply doesn't fly.
+  flyToCart(window.event && window.event.target);
   saveCartToStorage();
   updateCartUI();
 }
@@ -995,6 +1168,36 @@ function bounceCart() {
   const btn = document.querySelector('.cart-btn');
   if (!btn) return;
   btn.classList.remove('bounce'); void btn.offsetWidth; btn.classList.add('bounce');
+}
+
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Sends a glowing ember from the tapped + button to the cart button in the
+// header. Purely decorative: every step is guarded, and if anything is
+// missing (no event, element gone, reduced motion) it silently does nothing.
+function flyToCart(sourceEl) {
+  if (REDUCED_MOTION || !sourceEl || !sourceEl.getBoundingClientRect) return;
+  const target = document.querySelector('.cart-btn');
+  if (!target) return;
+  const from = sourceEl.getBoundingClientRect();
+  const to = target.getBoundingClientRect();
+  if (!from.width || !to.width) return; // one of them isn't actually on screen
+
+  const ember = document.createElement('div');
+  ember.className = 'fly-ember';
+  ember.style.left = (from.left + from.width / 2 - 7) + 'px';
+  ember.style.top = (from.top + from.height / 2 - 7) + 'px';
+  document.body.appendChild(ember);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+      const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+      ember.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(0.35)';
+      ember.style.opacity = '0';
+    });
+  });
+  setTimeout(() => ember.remove(), 700); // cleanup even if transitionend never fires
 }
 
 function pulseCard(id) {
@@ -1014,7 +1217,7 @@ function updateQty(id, delta) {
   }
   refreshCard(id);
   refreshTextRow(id);
-  if (delta > 0 && cart[id]) { pulseCard(id); bounceCart(); }
+  if (delta > 0 && cart[id]) { pulseCard(id); bounceCart(); flyToCart(window.event && window.event.target); }
 
   // After any cart change, enforce cheese burst quantity caps
   ['pan','regular'].forEach(size => {
@@ -1142,6 +1345,7 @@ function calcTotals() {
   return { subtotal, packingCharge, count, discountPercent: discount.percent, discountAmount: discount.amount, offerLines };
 }
 
+let lastCartBarTotal = null;
 function updateCartUI() {
   const { subtotal, packingCharge, count, discountAmount } = calcTotals();
   const total = subtotal + packingCharge - discountAmount;
@@ -1152,9 +1356,15 @@ function updateCartUI() {
     bar.classList.add('visible');
     document.getElementById('cartBarLeft').textContent = count + ' Item' + (count > 1 ? 's' : '') + ' • ₹' + total;
     document.getElementById('cartBarRight').textContent = 'View Cart →';
+    // A quick pop when the amount actually changes — ties the ember landing
+    // to something happening down where the total lives.
+    if (lastCartBarTotal !== null && lastCartBarTotal !== total) {
+      bar.classList.remove('pop'); void bar.offsetWidth; bar.classList.add('pop');
+    }
   } else {
     bar.classList.remove('visible');
   }
+  lastCartBarTotal = total;
 }
 
 function openCart() { document.getElementById('overlay').classList.add('open'); document.getElementById('drawer').classList.add('open'); document.body.classList.add('no-scroll'); renderDrawer(); }
@@ -1260,7 +1470,31 @@ function addSuggestedItem(id) {
   renderDrawer();
 }
 
+// ── CHECKOUT DRAFT ───────────────────────────────────────────────────
+// Whatever the customer has typed into the checkout form so far. The drawer
+// is fully re-rendered on every change (switching order type, tapping +/− on
+// a cart item...), which used to wipe half-typed details. So: capture the
+// live field values right before each re-render, and prefer them over the
+// saved-from-last-order autofill when the form is rebuilt.
+let checkoutDraft = null;
+
+function captureCheckoutDraft() {
+  if (!document.getElementById('fName')) return; // form not on screen — keep the draft we have
+  const fieldVal = (id, fallback) => {
+    const el = document.getElementById(id);
+    return el ? el.value : fallback; // absent ≠ emptied: keep prior value for fields the current order type hides
+  };
+  checkoutDraft = {
+    name: fieldVal('fName', ''),
+    phone: fieldVal('fPhone', ''),
+    email: fieldVal('fEmail', ''),
+    address: fieldVal('fAddress', checkoutDraft ? checkoutDraft.address : ''),
+    notes: fieldVal('fNotes', '')
+  };
+}
+
 function renderDrawer() {
+  captureCheckoutDraft();
   const items = Object.entries(cart);
   const clearBtn = document.getElementById('clearCartBtn');
   if (clearBtn) { clearBtn.style.display = items.length ? 'inline-flex' : 'none'; resetClearBtn(clearBtn); }
@@ -1274,7 +1508,7 @@ function renderDrawer() {
     const reorderBtnHTML = (lastOrder && lastOrder.items && lastOrder.items.length)
       ? '<button class="reorder-btn-full" onclick="reorderLastOrder()">🔁 Reorder Last Order ('+lastOrder.items.length+' item'+(lastOrder.items.length>1?'s':'')+')</button>'
       : '';
-    content.innerHTML = '<div class="empty-cart"><div class="empty-cart-icon">🛒</div><div>Your cart is empty</div><div style="font-size:0.75rem;margin-top:0.3rem;color:var(--muted)">Browse the menu and add items!</div></div>' + reorderBtnHTML;
+    content.innerHTML = '<div class="empty-cart"><div class="empty-cart-icon">🛒</div><div>Your cart is empty</div><div style="font-size:0.75rem;margin-top:0.3rem;color:var(--muted)">Browse the menu and add items!</div></div>' + reorderBtnHTML + '<button class="reorder-btn-full track-ghost-btn" onclick="closeCart();openTrackOrder()">📦 Track My Order</button>';
     return;
   }
 
@@ -1355,6 +1589,7 @@ function getSavedCustomerDetails() {
 }
 function clearSavedCustomerDetails() {
   try { localStorage.removeItem(SAVED_DETAILS_KEY); } catch(e) {}
+  checkoutDraft = null; // "clear" should visibly empty the fields, not just forget the autofill
   renderCheckoutForm();
 }
 // Full HTML-escaping for any value (customer input, notes, backend-supplied
@@ -1376,19 +1611,27 @@ function renderCheckoutForm(status) {
   const status2 = status || getStatus();
   const { subtotal, packingCharge } = calcTotals();
   const saved = getSavedCustomerDetails();
+  // Live draft (typed this session) wins over saved autofill; the draft is
+  // used verbatim so a field the customer deliberately emptied stays empty.
+  const d = checkoutDraft;
+  const vName = d ? d.name : (saved?.name || '');
+  const vPhone = d ? d.phone : (saved?.phone || '');
+  const vEmail = d ? d.email : (saved?.email || '');
+  const vAddress = d ? d.address : (saved?.address || '');
+  const vNotes = d ? d.notes : '';
 
   const deliveryFields = orderType === 'Delivery' ? (
-    '<div class="form-group"><label>Full Address *</label><div class="input-wrap textarea-wrap"><textarea id="fAddress" rows="2" autocomplete="street-address" placeholder="House no., street, landmark..." oninput="validateField(this)">'+esc(saved?.address)+'</textarea><span class="valid-check">✓</span></div></div>'
+    '<div class="form-group"><label>Full Address *</label><div class="input-wrap textarea-wrap"><textarea id="fAddress" rows="2" autocomplete="street-address" placeholder="House no., street, landmark..." oninput="validateField(this)">'+esc(vAddress)+'</textarea><span class="valid-check">✓</span></div></div>'
   ) : '';
 
   form.innerHTML =
     (!status2.open ? '<div class="closed-box">⚠️ '+status2.msg+'<br>You can still browse, but orders are only accepted during opening hours.</div>' : '') +
     (saved ? '<div class="autofill-note">✓ Auto-filled from your last order — edit if needed, or <a href="#" onclick="clearSavedCustomerDetails();return false;">clear saved details</a>.</div>' : '') +
-    '<div class="form-group"><label>Your Name *</label><div class="input-wrap"><input type="text" id="fName" autocomplete="name" placeholder="e.g. Lalremruata" value="'+esc(saved?.name)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
-    '<div class="form-group"><label>Phone Number *</label><div class="input-wrap"><input type="tel" id="fPhone" autocomplete="tel" inputmode="numeric" placeholder="e.g. 9876543210" value="'+esc(saved?.phone)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
-    '<div class="form-group"><label>Email (optional)</label><div class="input-wrap"><input type="email" id="fEmail" autocomplete="email" placeholder="Enter your email to get confirmation/receipt" value="'+esc(saved?.email)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
+    '<div class="form-group"><label>Your Name *</label><div class="input-wrap"><input type="text" id="fName" autocomplete="name" placeholder="e.g. Lalremruata" value="'+esc(vName)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
+    '<div class="form-group"><label>Phone Number *</label><div class="input-wrap"><input type="tel" id="fPhone" autocomplete="tel" inputmode="numeric" placeholder="e.g. 9876543210" value="'+esc(vPhone)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
+    '<div class="form-group"><label>Email (optional)</label><div class="input-wrap"><input type="email" id="fEmail" autocomplete="email" placeholder="Enter your email to get confirmation/receipt" value="'+esc(vEmail)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
     deliveryFields +
-    '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" maxlength="120" placeholder="Any special requests for the whole order..." oninput="document.getElementById(\'fNotesCount\').textContent=this.value.length+\'/120\'"></textarea><div class="note-count" id="fNotesCount">0/120</div></div>' +
+    '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" maxlength="120" placeholder="Any special requests for the whole order..." oninput="document.getElementById(\'fNotesCount\').textContent=this.value.length+\'/120\'">'+esc(vNotes)+'</textarea><div class="note-count" id="fNotesCount">'+vNotes.length+'/120</div></div>' +
     '<div class="note-box">💵 Payment: <strong>Payment on Delivery via Cash/UPI</strong></div>' +
     '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!status2.open ? 'disabled' : '')+'>'+(!status2.open ? 'Shop Closed' : 'Place Order')+'</button>';
 
@@ -1442,6 +1685,21 @@ function autoFocusFirstEmpty() {
 //      went through server-side but the response got lost.
 const UNSENT_ORDER_KEY = 'gi_unsent_order';
 
+// A short reference code generated once per checkout attempt and reused
+// across every retry of that same attempt. The server uses it to recognise
+// "this exact order already arrived" — so if attempt #1 actually succeeded
+// but the response got lost in a network blip, attempt #2 returns the
+// already-saved order instead of printing a duplicate kitchen ticket.
+// (The server has supported this for a while; the site just never sent it.)
+// It's also shown to the customer on the order-failed screen, and staff can
+// find the order by searching this code on the dashboard.
+function makeClientRef() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easy to read out over the phone
+  let ref = '';
+  for (let i = 0; i < 8; i++) ref += chars[Math.floor(Math.random() * chars.length)];
+  return ref;
+}
+
 function saveUnsentOrder(payload) {
   try { localStorage.setItem(UNSENT_ORDER_KEY, JSON.stringify(payload)); } catch(e) {}
 }
@@ -1474,14 +1732,28 @@ async function trySubmitOrder(payload, attempts) {
       }
       if (res.status === 409) {
         // Item(s) went out of stock between adding to cart and checkout —
-        // retrying is pointless, the item won't come back in stock on its
-        // own, so surface this distinctly instead of treating it like a
-        // dropped connection.
+        // or the restaurant is closed right now (reason === 'closed').
+        // Either way, retrying is pointless until something changes, so
+        // surface it distinctly instead of treating it like a dropped
+        // connection.
         try {
           const body = await res.json();
-          return { stockConflict: true, message: body.message || 'Some items in your cart are no longer available.' };
+          return { stockConflict: true, reason: body.reason || '', message: body.message || 'Some items in your cart are no longer available.' };
         } catch(e) {
-          return { stockConflict: true, message: 'Some items in your cart are no longer available.' };
+          return { stockConflict: true, reason: '', message: 'Some items in your cart are no longer available.' };
+        }
+      }
+      if (res.status === 400) {
+        // Server-side validation rejected a field (name/phone/address/notes)
+        // — retrying won't help without the customer fixing the input, so
+        // surface the specific reason immediately instead of burning through
+        // retries and landing on the generic "order failed" screen.
+        try {
+          const body = await res.json();
+          const fieldMessages = body.errors ? Object.values(body.errors).join(' ') : '';
+          return { validationError: true, message: fieldMessages || body.message || 'Please check your order details and try again.' };
+        } catch(e) {
+          return { validationError: true, message: 'Please check your order details and try again.' };
         }
       }
     } catch(e) { /* network error — fall through to retry/backoff */ }
@@ -1493,7 +1765,11 @@ async function trySubmitOrder(payload, attempts) {
 function showOrderFailedScreen(payload) {
   const itemsList = payload.items.map(i => i.quantity + 'x ' + i.product_retailer_id).join(', ');
   const el = document.getElementById('orderFailedScreen');
-  el.querySelector('.of-order-num').textContent = 'Order #' + payload.order_number;
+  // Show the reference code, not the browser's local order-number guess —
+  // the real order number is assigned by the server, so if the order DID
+  // go through despite the failed response, staff can find it instantly by
+  // searching this code in the dashboard's History tab.
+  el.querySelector('.of-order-num').textContent = payload.client_ref ? 'Reference: ' + payload.client_ref : 'Order #' + payload.order_number;
   el.querySelector('.of-items').textContent = itemsList;
   el.querySelector('.of-total').textContent = '₹' + payload.grand_total;
   el.querySelector('.of-call-link').href = 'tel:' + RESTAURANT_PHONE;
@@ -1510,6 +1786,9 @@ function retryUnsentOrder() {
     if (result && result.order_number) {
       clearUnsentOrder();
       saveCustomerDetails(payload.customer_name, payload.customer_phone, payload.address, payload.customer_email);
+      checkoutDraft = null;
+      orderCounter++;
+      localStorage.setItem('gi_counter', orderCounter);
       const prepRange = estimatePrepRange(cart);
       const prepSuffix = payload.order_type === 'Delivery' ? ' (+ delivery time)' : '';
       const welcomeLine = orderCounter > 1
@@ -1528,7 +1807,7 @@ function retryUnsentOrder() {
     } else if (result && result.stockConflict) {
       clearUnsentOrder(); // retrying again won't fix it — stop nagging them to retry
       document.getElementById('orderFailedScreen').classList.remove('show');
-      alert(result.message + '\n\nPlease remove it from your cart and try again.');
+      alert(result.reason === 'closed' ? result.message : result.message + '\n\nPlease remove it from your cart and try again.');
     } else {
       btn.disabled = false;
       btn.textContent = 'Try Again';
@@ -1567,7 +1846,7 @@ async function placeOrder() {
   let address = '', deliveryCharge = 0, zoneName = '';
 
   if (!name) { alert('Please enter your name.'); return; }
-  if (!phone || phone.length < 10) { alert('Please enter a valid phone number.'); return; }
+  if (!/^[6-9]\d{9}$/.test(phone)) { alert('Please enter a valid 10-digit phone number.'); return; }
 
   const email = document.getElementById('fEmail')?.value.trim() || '';
 
@@ -1581,9 +1860,7 @@ async function placeOrder() {
   btn.disabled = true;
   btn.innerHTML = '<span class="burger-spinner">🍔</span> Placing order...';
 
-  orderCounter++;
-  localStorage.setItem('gi_counter', orderCounter);
-  const orderNumber = String(orderCounter).padStart(3, '0');
+  const orderNumber = String(orderCounter + 1).padStart(3, '0'); // local fallback only — the server assigns the real number
 
   const { subtotal, packingCharge, discountPercent, discountAmount } = calcTotals();
 
@@ -1597,6 +1874,7 @@ async function placeOrder() {
   const payload = {
     source: 'website', order_number: orderNumber, customer_name: name, customer_phone: phone,
     customer_email: email,
+    client_ref: makeClientRef(), // one per checkout attempt, reused across retries — lets the server dedupe
     order_type: orderType, address: orderType === 'Delivery' ? address : '',
     delivery_charge: 0, packing_charge: packingCharge, subtotal: subtotal,
     discount_percent: discountPercent, discount_amount: discountAmount,
@@ -1613,6 +1891,11 @@ async function placeOrder() {
   if (result && result.order_number) {
     clearUnsentOrder();
     saveCustomerDetails(name, phone, address, email);
+    checkoutDraft = null; // next order starts fresh from the saved autofill
+    // Count this order toward the "welcome back" counter only now that it
+    // actually succeeded — previously a failed attempt still counted.
+    orderCounter++;
+    localStorage.setItem('gi_counter', orderCounter);
     const prepRange = estimatePrepRange(cart);
     const prepSuffix = orderType === 'Delivery' ? ' (+ delivery time)' : '';
     const welcomeLine = orderCounter > 1
@@ -1646,7 +1929,15 @@ async function placeOrder() {
     clearUnsentOrder();
     btn.disabled = false;
     btn.textContent = 'Place Order';
-    alert(result.message + '\n\nPlease remove it from your cart and try again.');
+    alert(result.reason === 'closed' ? result.message : result.message + '\n\nPlease remove it from your cart and try again.');
+  } else if (result && result.validationError) {
+    // Same reasoning as stockConflict above — a rejected field won't fix
+    // itself on retry, so surface it immediately rather than cycling
+    // through retries and landing on the generic connectivity-failure screen.
+    clearUnsentOrder();
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+    alert(result.message);
   } else {
     // Order stays saved in localStorage (not cleared) so it's never lost —
     // customer sees full order details + a direct call link, and can also
@@ -2072,10 +2363,90 @@ function dismissInstallNudge() {
   localStorage.setItem('gi_install_nudge_dismissed', '1');
 }
 
+// ── TRACK MY ORDER ───────────────────────────────────────────────────
+// Customers look up today's orders by the phone number they ordered with.
+// Read-only, shows only their own orders from the last 48 hours, and the
+// server rate-limits lookups per IP.
+const TRACK_STATUS_LABELS = {
+  pending:      { cls: 'st-pending',   label: '⏳ Waiting for confirmation' },
+  printed:      { cls: 'st-confirmed', label: '✅ Confirmed — being prepared' },
+  print_failed: { cls: 'st-confirmed', label: '✅ Confirmed — being prepared' },
+  rejected:     { cls: 'st-rejected',  label: '✕ Could not be accepted' },
+  voided:       { cls: 'st-cancelled', label: '🚫 Cancelled' },
+  cancelled:    { cls: 'st-cancelled', label: '🚫 Cancelled' }
+};
+
+function openTrackOrder() {
+  const saved = getSavedCustomerDetails();
+  const input = document.getElementById('trackPhone');
+  if (saved && saved.phone && !input.value) input.value = saved.phone;
+  document.getElementById('trackOverlay').classList.add('open');
+  document.getElementById('trackDrawer').classList.add('open');
+  document.body.classList.add('no-scroll');
+  if (input.value.replace(/\D/g, '').length >= 10) trackLookup();
+  else document.getElementById('trackResults').innerHTML = '<div class="track-empty">Enter the phone number you used when ordering, and we\u2019ll show your recent orders and their status.</div>';
+}
+
+function closeTrackOrder() {
+  document.getElementById('trackOverlay').classList.remove('open');
+  document.getElementById('trackDrawer').classList.remove('open');
+  document.body.classList.remove('no-scroll');
+}
+
+async function trackLookup() {
+  const phone = document.getElementById('trackPhone').value.replace(/\D/g, '');
+  const results = document.getElementById('trackResults');
+  if (phone.length !== 10) {
+    results.innerHTML = '<div class="track-error">Please enter the full 10-digit phone number used on the order.</div>';
+    return;
+  }
+  const btn = document.getElementById('trackLookupBtn');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res = await fetch(SERVER_URL + '/api/track-order?phone=' + encodeURIComponent(phone), { cache: 'no-store' });
+    const body = await res.json().catch(() => null);
+    if (res.status === 429) {
+      results.innerHTML = '<div class="track-error">' + escapeHtml((body && body.message) || 'Too many lookups — please wait a few minutes.') + '</div>';
+      return;
+    }
+    if (!res.ok || !body || body.status !== 'ok') {
+      results.innerHTML = '<div class="track-error">' + escapeHtml((body && body.message) || 'Could not check right now — please try again, or call ' + RESTAURANT_PHONE + '.') + '</div>';
+      return;
+    }
+    if (!body.orders.length) {
+      results.innerHTML = '<div class="track-empty">No orders found for this number in the last 48 hours.<br>Just placed one? Give it a few seconds and check again.</div>';
+      return;
+    }
+    results.innerHTML = body.orders.map(o => {
+      const st = TRACK_STATUS_LABELS[o.status] || { cls: 'st-pending', label: escapeHtml(o.status || '') };
+      const itemsHtml = (o.items || []).map(i => escapeHtml(i.qty + 'x ' + i.title)).join('<br>');
+      const totalLine = o.order_type === 'Delivery' && !o.delivery_charge
+        ? '\u20B9' + o.grand_total + ' + delivery charges'
+        : '\u20B9' + o.grand_total;
+      return '<div class="track-card">' +
+        '<div class="track-card-head"><span class="track-num">#' + escapeHtml(o.order_number) + '</span><span class="track-status ' + st.cls + '">' + st.label + '</span></div>' +
+        '<div class="track-meta">' + escapeHtml(o.order_type) + ' \u2022 ' + escapeHtml(o.order_time) + '</div>' +
+        '<div class="track-items">' + itemsHtml + '</div>' +
+        '<div class="track-total">' + totalLine + '</div>' +
+        (o.status === 'rejected' && o.reject_reason ? '<div class="track-meta" style="margin-top:0.35rem;">Reason: ' + escapeHtml(o.reject_reason) + '</div>' : '') +
+      '</div>';
+    }).join('') +
+    '<button class="track-refresh" onclick="trackLookup()">\u21BB Refresh status</button>' +
+    '<div class="track-empty" style="padding-top:0.6rem;">Questions? Call <a href="tel:' + RESTAURANT_PHONE + '" style="color:var(--orange);">' + RESTAURANT_PHONE + '</a></div>';
+  } catch (e) {
+    results.innerHTML = '<div class="track-error">Could not reach the restaurant\u2019s server. Check your connection and try again.</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Check';
+  }
+}
+
+document.getElementById('trackPhone').addEventListener('keydown', e => { if (e.key === 'Enter') trackLookup(); });
+
 function init() {
   loadCartFromStorage();
   refreshStatusBanner();
   buildMenu();
+  loadLiveMenu();
   loadRemoteSettings();
   recoverUnsentOrderOnLoad();
   initViewToggleHint();

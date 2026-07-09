@@ -1,77 +1,52 @@
-// Grill Inn Falkawn — service worker
-// Purpose: make the site installable ("Add to Home Screen") and keep it
-// loading fast / working offline for the app shell. It deliberately does
-// NOT cache calls to the order/settings API, so menu, hours, and orders
-// are always fresh from your laptop dashboard.
+// Grill Inn Falkawn — service worker.
+// Strategy: NETWORK FIRST for everything, falling back to the last cached
+// copy only when offline. This deliberately avoids the classic PWA trap of
+// customers being stuck on a stale menu page: a live visit always shows the
+// freshest deployed site, and the cache only matters when there's no
+// connection at all.
+// The ordering API (orders.grillinnfalkawn.in) is never intercepted or
+// cached — placing an order must always hit the real server.
 
 const CACHE_NAME = 'grillinn-shell-v1';
-const SCOPE = self.registration.scope; // e.g. https://grillinnfalkawn.github.io/grillinn/
-
-const SHELL_FILES = [
-  SCOPE,                       // index.html (start_url)
-  SCOPE + 'manifest.json',
-  SCOPE + 'icons/icon-192.png',
-  SCOPE + 'icons/icon-512.png'
-];
-
-// Never touch these — always go straight to the network.
-const NEVER_CACHE_HOST = 'orders.grillinnfalkawn.in';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_FILES))
-  );
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(['./', './index.html', './manifest.json']).catch(() => {})
+    )
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(
-        names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))
-      )
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-
-  // Only handle GET requests.
-  if (req.method !== 'GET') return;
-
+  if (req.method !== 'GET') return; // never touch order submissions
   const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return; // never intercept the ordering API or other sites
 
-  // Always bypass the cache for the live backend (settings, orders, etc.)
-  if (url.hostname === NEVER_CACHE_HOST) return;
-
-  // Network-first for the page itself, so customers always see the latest
-  // menu/prices when online, with a cached fallback when offline.
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
+  event.respondWith(
+    fetch(req)
+      .then((res) => {
+        if (res && res.ok) {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(SCOPE, copy));
-          return res;
-        })
-        .catch(() => caches.match(SCOPE))
-    );
-    return;
-  }
-
-  // Cache-first for same-origin static assets (icons, manifest, fonts, etc.)
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-          return res;
-        });
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
+        }
+        return res;
       })
-    );
-  }
+      .catch(() =>
+        caches.match(req).then((cached) => {
+          if (cached) return cached;
+          if (req.mode === 'navigate') return caches.match('./index.html');
+          return Response.error();
+        })
+      )
+  );
 });

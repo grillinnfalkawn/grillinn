@@ -6,12 +6,13 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Grill Inn — Admin</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap');
   :root{--flame:#f97316;--charcoal:#1a1a1a;--panel:#242424;--border:#333;--white:#fff;--muted:#9ca3af;--green:#22c55e;--red:#ef4444;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--charcoal);color:var(--white);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;}
+  body{background:var(--charcoal);color:var(--white);font-family:'Inter','Segoe UI',Arial,sans-serif;min-height:100vh;}
   .login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;}
   .login-box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:2rem;width:100%;max-width:360px;}
-  .login-title{font-size:1.4rem;font-weight:800;color:var(--flame);text-align:center;margin-bottom:1.5rem;}
+  .login-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;font-weight:400;background:linear-gradient(135deg,var(--flame),#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:1.5rem;}
   .login-input{width:100%;background:var(--charcoal);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.95rem;padding:0.75rem 0.9rem;outline:none;margin-bottom:0.8rem;}
   .login-input:focus{border-color:var(--flame);}
   .login-btn{width:100%;background:linear-gradient(135deg,var(--flame),#dc2626);border:none;border-radius:8px;color:white;font-weight:700;padding:0.8rem;cursor:pointer;font-size:0.95rem;margin-top:0.4rem;}
@@ -19,7 +20,7 @@
   .app{display:none;}
   .app.visible{display:block;}
   header{background:var(--panel);border-bottom:2px solid var(--flame);padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:0.6rem;}
-  .logo{font-size:1.3rem;font-weight:800;color:var(--flame);}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1.5px;background:linear-gradient(135deg,var(--flame),#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
   .tabs{display:flex;gap:0.5rem;flex-wrap:wrap;}
   .tab-btn{background:var(--charcoal);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-weight:700;padding:0.5rem 1rem;font-size:0.82rem;}
   .tab-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
@@ -55,6 +56,37 @@
   .empty-state{text-align:center;color:var(--muted);padding:3rem 1rem;font-size:0.9rem;}
   .loading{text-align:center;color:var(--muted);padding:2rem;font-size:0.85rem;}
   .top-items-row{display:flex;justify-content:space-between;font-size:0.82rem;padding:0.4rem 0;border-bottom:1px solid var(--border);}
+
+  /* ── Polish pass ─────────────────────────────────────────────────── */
+  /* Skeleton placeholders shaped like the content they're waiting for —
+     less jarring than a bare "Loading..." line on a slow connection. */
+  .skeleton-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.9rem;margin-bottom:0.7rem;position:relative;overflow:hidden;min-height:72px;}
+  .skeleton-line{height:12px;border-radius:6px;background:#2e2e2e;margin-bottom:0.6rem;}
+  .skeleton-line.w40{width:40%;} .skeleton-line.w70{width:70%;} .skeleton-line.w55{width:55%;margin-bottom:0;}
+  .skeleton-card::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,0.05) 50%,transparent 70%);background-size:200% 100%;animation:skShimmer 1.3s ease-in-out infinite;}
+  @keyframes skShimmer{0%{background-position:150% 0;}100%{background-position:-50% 0;}}
+
+  /* Content rises in when a tab's data lands; cards stagger slightly. */
+  .rise-in{animation:riseIn 0.35s ease both;}
+  .order-card{animation:riseIn 0.35s ease both;}
+  .order-card:nth-child(2){animation-delay:0.04s;} .order-card:nth-child(3){animation-delay:0.08s;}
+  .order-card:nth-child(4){animation-delay:0.12s;} .order-card:nth-child(5){animation-delay:0.16s;}
+  .order-card:nth-child(n+6){animation-delay:0.2s;}
+  @keyframes riseIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  /* Buttons acknowledge the tap. */
+  .tab-btn,.btn-quick,.login-btn,.logout-btn{transition:transform 0.12s ease,background 0.2s,border-color 0.2s,color 0.2s;}
+  .tab-btn:active,.btn-quick:active,.login-btn:active,.logout-btn:active{transform:scale(0.96);}
+  .order-card,.breakdown-row,.stat-card{transition:border-color 0.2s;}
+  .order-card:hover,.stat-card:hover{border-color:#4a4a4a;}
+
+  /* Wrong password: the box shakes instead of only printing a line. */
+  .login-box.shake{animation:loginShake 0.4s ease;}
+  @keyframes loginShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+
+  button:focus-visible,input:focus-visible{outline:2px solid var(--flame);outline-offset:2px;}
+  @media (max-width:768px){.login-input,.search-input,.filters-row input[type="date"]{font-size:16px;}}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}}
 </style>
 </head>
 <body>
@@ -95,6 +127,53 @@ let historySearchQuery = '';
 let historySearchAllDates = false;
 let dashPassword = '';
 
+// Escapes text before it's inserted into HTML. Names, addresses, item
+// notes and reasons are typed by customers/staff — without this, an order
+// placed with markup in a field could inject script into this admin page
+// (and this page holds the dashboard password in the session).
+function escapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// All authenticated requests send the password as a header, not a
+// ?password= query parameter — query strings end up in Cloudflare/proxy
+// access logs and browser history; headers don't.
+function authFetch(url) {
+  return fetch(url, { headers: { 'X-Dash-Password': dashPassword } });
+}
+
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Placeholder cards shaped like the incoming content, shown while a fetch
+// is in flight.
+function skeletonCards(n) {
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    html += '<div class="skeleton-card"><div class="skeleton-line w40"></div><div class="skeleton-line w70"></div><div class="skeleton-line w55"></div></div>';
+  }
+  return html;
+}
+
+// Counts a stat up from 0 to its final value over ~0.5s. Values render
+// instantly for anyone with reduced motion enabled.
+function countUpStats() {
+  document.querySelectorAll('[data-countup]').forEach(el => {
+    const target = parseInt(el.getAttribute('data-countup'), 10);
+    const prefix = el.getAttribute('data-prefix') || '';
+    if (REDUCED_MOTION || isNaN(target) || target <= 0) { el.textContent = prefix + (isNaN(target) ? '0' : target); return; }
+    const start = performance.now(), dur = 500;
+    function tick(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + Math.round(target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
 function toDateStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
@@ -114,6 +193,8 @@ function attemptLogin() {
       showApp();
     } else {
       errEl.textContent = 'Incorrect password.';
+      const box = document.querySelector('.login-box');
+      if (box) { box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
     }
   }).catch(e => {
     errEl.textContent = 'Could not reach the server. Check your connection.';
@@ -166,9 +247,9 @@ function loadSales(quick) {
   else if (quick === 'month') { const m = new Date(today); m.setDate(m.getDate()-29); salesStart = toDateStr(m); salesEnd = toDateStr(today); activeQuick = 'month'; }
   else { activeQuick = 'custom'; }
 
-  main.innerHTML = renderSalesFilters() + '<div class="loading">Loading sales data...</div>';
+  main.innerHTML = renderSalesFilters() + skeletonCards(3);
 
-  fetch(SERVER_URL + '/api/sales-summary?start=' + salesStart + '&end=' + salesEnd + '&password=' + encodeURIComponent(dashPassword))
+  authFetch(SERVER_URL + '/api/sales-summary?start=' + salesStart + '&end=' + salesEnd)
     .then(r => { if (r.status === 401) { handleUnauthorized(); throw new Error('unauthorized'); } return r.json(); })
     .then(data => renderSales(data))
     .catch(e => {
@@ -193,36 +274,36 @@ function renderSales(data) {
   const main = document.getElementById('mainContent');
   const statsHtml =
     '<div class="stat-grid">' +
-      '<div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value">' + data.total_orders + '</div></div>' +
-      '<div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">₹' + data.total_revenue + '</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value" data-countup="' + (data.total_orders||0) + '">0</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" data-countup="' + (data.total_revenue||0) + '" data-prefix="₹">₹0</div></div>' +
     '</div>';
 
   const byTypeHtml = data.by_type.length ? '<div class="section-title">By Order Type</div>' +
-    data.by_type.map(t => '<div class="breakdown-row"><span class="label">' + t.type + ' (' + t.count + ' orders)</span><span class="value">₹' + t.revenue + '</span></div>').join('') : '';
+    data.by_type.map(t => '<div class="breakdown-row"><span class="label">' + escapeHtml(t.type) + ' (' + t.count + ' orders)</span><span class="value">₹' + t.revenue + '</span></div>').join('') : '';
 
   const bySourceHtml = data.by_source.length ? '<div class="section-title">By Source</div>' +
     data.by_source.map(s => '<div class="breakdown-row"><span class="label">' + (s.source === 'pos' ? '🧾 POS' : '🌐 Website') + ' (' + s.count + ' orders)</span><span class="value">₹' + s.revenue + '</span></div>').join('') : '';
 
   const topItemsHtml = data.top_items.length ? '<div class="section-title">Top Items</div>' +
     '<div class="order-card">' + data.top_items.map(it =>
-      '<div class="top-items-row"><span>' + it.qty + 'x ' + it.name + '</span><span style="color:var(--flame);font-weight:700;">₹' + it.revenue + '</span></div>'
+      '<div class="top-items-row"><span>' + it.qty + 'x ' + escapeHtml(it.name) + '</span><span style="color:var(--flame);font-weight:700;">₹' + it.revenue + '</span></div>'
     ).join('') + '</div>' : '';
 
-  main.innerHTML = renderSalesFilters() + statsHtml +
-    (data.total_orders === 0 ? '<div class="empty-state">No confirmed orders in this date range.</div>' : byTypeHtml + bySourceHtml + topItemsHtml);
+  main.innerHTML = renderSalesFilters() + '<div class="rise-in">' + statsHtml +
+    (data.total_orders === 0 ? '<div class="empty-state">No confirmed orders in this date range.</div>' : byTypeHtml + bySourceHtml + topItemsHtml) + '</div>';
+  countUpStats();
 }
 
 // ── ORDER HISTORY ─────────────────────────────────────────
 function loadHistory() {
   const main = document.getElementById('mainContent');
-  main.innerHTML = renderHistoryFilters() + '<div class="loading">Loading orders...</div>';
+  main.innerHTML = renderHistoryFilters() + skeletonCards(4);
 
-  const pwParam = '&password=' + encodeURIComponent(dashPassword);
   const url = historySearchQuery
-    ? SERVER_URL + '/api/search-orders?q=' + encodeURIComponent(historySearchQuery) + (historySearchAllDates ? '' : '&date=' + historyDate) + pwParam
-    : SERVER_URL + '/api/recent-orders?date=' + historyDate + pwParam;
+    ? SERVER_URL + '/api/search-orders?q=' + encodeURIComponent(historySearchQuery) + (historySearchAllDates ? '' : '&date=' + historyDate)
+    : SERVER_URL + '/api/recent-orders?date=' + historyDate;
 
-  fetch(url)
+  authFetch(url)
     .then(r => { if (r.status === 401) { handleUnauthorized(); throw new Error('unauthorized'); } return r.json(); })
     .then(orders => renderHistory(orders))
     .catch(e => {
@@ -269,26 +350,30 @@ function renderHistory(orders) {
   }
 }
 
+const KNOWN_STATUSES = { printed:'✅ Printed', pending:'⏳ Pending', rejected:'✕ Rejected', voided:'🚫 Voided', cancelled:'🚫 Cancelled', print_failed:'⚠️ Print Failed' };
+
 function renderOrderCard(order) {
   let items = [];
   try { items = JSON.parse(order.items_json || '[]'); } catch(e) {}
   const itemsHtml = items.map(i =>
-    '<div class="order-item-row"><span>' + i.quantity + 'x ' + i.product_retailer_id + '</span><span>₹' + (i.quantity * i.item_price) + '</span></div>'
+    '<div class="order-item-row"><span>' + (parseInt(i.quantity, 10) || 0) + 'x ' + escapeHtml(i.product_retailer_id) + '</span><span>₹' + ((i.quantity||0) * (i.item_price||0)) + '</span></div>'
   ).join('');
   const discountAmount = order.discount_amount || 0;
   const grandTotal = order.subtotal + (order.packing_charge||0) - discountAmount + (order.order_type === 'Delivery' ? (order.delivery_charge||0) : 0);
-  const statusLabel = ({printed:'✅ Printed', pending:'⏳ Pending', rejected:'✕ Rejected', voided:'🚫 Voided', cancelled:'🚫 Cancelled', print_failed:'⚠️ Print Failed'})[order.status] || order.status;
+  const statusLabel = KNOWN_STATUSES[order.status] || escapeHtml(order.status);
+  // Whitelisted class name — never inject a raw status string into an attribute.
+  const statusClass = Object.prototype.hasOwnProperty.call(KNOWN_STATUSES, order.status) ? order.status : '';
   const sourceTag = order.source === 'pos' ? ' 🧾 POS' : '';
 
   return '<div class="order-card">' +
-    '<div class="order-header"><span class="order-num">#' + order.order_number + sourceTag + '</span><span class="order-type-tag">' + order.order_type + '</span></div>' +
-    '<div class="order-meta">' + order.customer_name + ' • ' + order.customer_phone + (order.address ? '<br>📍 ' + order.address : '') + '<br>🕒 ' + order.order_time + '</div>' +
+    '<div class="order-header"><span class="order-num">#' + escapeHtml(order.order_number) + sourceTag + '</span><span class="order-type-tag">' + escapeHtml(order.order_type) + '</span></div>' +
+    '<div class="order-meta">' + escapeHtml(order.customer_name) + ' • ' + escapeHtml(order.customer_phone) + (order.address ? '<br>📍 ' + escapeHtml(order.address) : '') + '<br>🕒 ' + escapeHtml(order.order_time) + '</div>' +
     '<div class="order-items">' + itemsHtml +
       (discountAmount > 0 ? '<div class="order-item-row" style="color:var(--flame);"><span>Discount (' + (order.discount_percent||0) + '%)</span><span>−₹' + discountAmount + '</span></div>' : '') +
       '<div class="order-total">Total: ₹' + grandTotal + '</div></div>' +
-    '<span class="status-tag ' + order.status + '">' + statusLabel + '</span>' +
-    (order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + order.void_reason + '</div>' : '') +
-    (order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + order.reject_reason + '</div>' : '') +
+    '<span class="status-tag ' + statusClass + '">' + statusLabel + '</span>' +
+    (order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
+    (order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
   '</div>';
 }
 
