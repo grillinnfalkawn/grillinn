@@ -235,6 +235,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .track-meta{font-size:0.72rem;color:var(--muted);margin-bottom:0.4rem;}
 .track-items{font-size:0.76rem;color:var(--white);line-height:1.5;border-top:1px solid var(--border);padding-top:0.4rem;}
 .track-total{font-weight:700;color:var(--orange);text-align:right;margin-top:0.3rem;font-size:0.82rem;}
+.track-group-title{font-size:0.7rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:0.9rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border);}
+.track-group-title:first-child{margin-top:0.2rem;}
 .track-empty{text-align:center;color:var(--muted);font-size:0.82rem;padding:1.2rem 0.5rem;line-height:1.5;}
 .track-error{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;color:#f87171;font-size:0.78rem;padding:0.55rem 0.75rem;line-height:1.4;}
 .track-ghost-btn{background:transparent !important;border:1px solid var(--border) !important;color:var(--muted) !important;}
@@ -1161,16 +1163,17 @@ function addToCart(id) {
       return;
     }
   }
+  const tapRect = captureTapRect(); // before refreshCard detaches the tapped button
   if (cart[id]) cart[id].qty++;
   else cart[id] = { ...ALL_ITEMS[id], qty: 1, note: '' };
   refreshCard(id);
   refreshTextRow(id);
   pulseCard(id);
   bounceCart();
-  // window.event is set when this runs from the inline onclick handlers on
-  // the + buttons; when addToCart is called programmatically (undo restore
-  // etc.) there's no tap position, so the ember simply doesn't fly.
-  flyToCart(window.event && window.event.target);
+  // tapRect exists when this ran from an inline onclick; when addToCart is
+  // called programmatically (undo restore etc.) there's no tap position,
+  // so the ember simply doesn't fly.
+  flyToCart(tapRect);
   saveCartToStorage();
   updateCartUI();
 }
@@ -1186,11 +1189,21 @@ const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-
 // Sends a glowing ember from the tapped + button to the cart button in the
 // header. Purely decorative: every step is guarded, and if anything is
 // missing (no event, element gone, reduced motion) it silently does nothing.
-function flyToCart(sourceEl) {
-  if (REDUCED_MOTION || !sourceEl || !sourceEl.getBoundingClientRect) return;
+// Grabs the tapped element's position RIGHT NOW — must be called before
+// refreshCard() re-renders the card, which detaches the original button
+// (a detached element measures 0×0 and the ember silently never flew).
+function captureTapRect() {
+  const el = window.event && window.event.target;
+  if (!el || !el.getBoundingClientRect) return null;
+  const r = el.getBoundingClientRect();
+  return r.width ? r : null;
+}
+
+function flyToCart(source) {
+  if (REDUCED_MOTION || !source) return;
   const target = document.querySelector('.cart-btn');
   if (!target) return;
-  const from = sourceEl.getBoundingClientRect();
+  const from = source.getBoundingClientRect ? source.getBoundingClientRect() : source;
   const to = target.getBoundingClientRect();
   if (!from.width || !to.width) return; // one of them isn't actually on screen
 
@@ -1220,6 +1233,7 @@ function pulseCard(id) {
 
 function updateQty(id, delta) {
   if (!cart[id]) return;
+  const updateQtyTapRect = captureTapRect(); // before refreshCard detaches the tapped +/− button
   const removedSnapshot = { ...cart[id] };
   cart[id].qty += delta;
   if (cart[id].qty <= 0) {
@@ -1228,7 +1242,7 @@ function updateQty(id, delta) {
   }
   refreshCard(id);
   refreshTextRow(id);
-  if (delta > 0 && cart[id]) { pulseCard(id); bounceCart(); flyToCart(window.event && window.event.target); }
+  if (delta > 0 && cart[id]) { pulseCard(id); bounceCart(); flyToCart(updateQtyTapRect); }
 
   // After any cart change, enforce cheese burst quantity caps
   ['pan','regular'].forEach(size => {
@@ -2592,7 +2606,15 @@ async function trackLookup(silent) {
       results.innerHTML = '<div class="track-empty">No orders found for this number in the last 48 hours.<br>Just placed one? Give it a few seconds and check again.</div>';
       return;
     }
-    results.innerHTML = body.orders.map(o => {
+    // Group results: today's orders first under their own header, older
+    // ones (the endpoint reaches back 48h) under "Earlier".
+    const todayStr = new Date().toLocaleDateString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric'}).replace(/-/g,'/');
+    const isToday = o => (o.order_time || '').split(',')[0].trim() === todayStr;
+    const groups = [
+      { title: 'Today', list: body.orders.filter(isToday) },
+      { title: 'Earlier', list: body.orders.filter(o => !isToday(o)) }
+    ].filter(g => g.list.length);
+    const renderTrackCard = (o) => {
       let st = TRACK_STATUS_LABELS[o.status] || { cls: 'st-pending', label: escapeHtml(o.status || '') };
       if ((o.status === 'printed' || o.status === 'print_failed') && o.out_for_delivery) {
         st = { cls: 'st-confirmed', label: '\uD83D\uDEF5 Out for delivery!' };
@@ -2613,7 +2635,10 @@ async function trackLookup(silent) {
         (o.status === 'rejected' && o.reject_reason ? '<div class="track-meta" style="margin-top:0.35rem;">Reason: ' + escapeHtml(o.reject_reason) + '</div>' : '') +
         driverLine +
       '</div>';
-    }).join('') +
+    };
+    results.innerHTML = groups.map(g =>
+      '<div class="track-group-title">' + g.title + '</div>' + g.list.map(renderTrackCard).join('')
+    ).join('') +
     '<button class="track-refresh" onclick="trackLookup()">\u21BB Refresh status</button>' +
     '<div class="track-empty" style="padding-top:0.6rem;">Questions? Call <a href="tel:' + RESTAURANT_PHONE + '" style="color:var(--orange);">' + RESTAURANT_PHONE + '</a></div>';
   } catch (e) {
