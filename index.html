@@ -2261,15 +2261,49 @@ function refreshTextRow(id) {
   row.innerHTML = getTextRowHTML(item, isVegItem(item));
 }
 
-function applyBanner(banner) {
+// Human-readable names for the qty-offer groups, used to auto-announce
+// offers in the banner.
+const OFFER_GROUP_LABELS = {
+  pizza_pan: 'Pan Pizza', pizza_regular: 'Regular Pizza', burgers: 'Burgers',
+  sandwiches: 'Sandwiches', wraps: 'Wraps', garlic_bread: 'Garlic Bread',
+  fried_chicken: 'Fried Chicken', grilled_chicken: 'Grilled Chicken', pastas: 'Pasta'
+};
+
+// Any offer switched on in the dashboard announces itself here
+// automatically — no need to also type it into the banner settings.
+function buildOfferBannerText(settings) {
+  const parts = [];
+  const t = settings.threshold_offer;
+  if (t && t.active && (t.discount_percent || 0) > 0 && (t.threshold_amount || 0) > 0) {
+    parts.push('Spend \u20B9' + t.threshold_amount + ' & get ' + t.discount_percent + '% OFF');
+  }
+  (settings.qty_offers || []).forEach(rule => {
+    if (!rule || !rule.active || !(rule.buy_qty > 0) || !(rule.free_qty > 0) || !rule.buy_group) return;
+    const buyLabel = OFFER_GROUP_LABELS[rule.buy_group] || rule.buy_group;
+    let freeName = buyLabel;
+    if (rule.free_target_type === 'item' && ALL_ITEMS[rule.free_target]) freeName = ALL_ITEMS[rule.free_target].title;
+    else if (rule.free_target && OFFER_GROUP_LABELS[rule.free_target]) freeName = OFFER_GROUP_LABELS[rule.free_target];
+    parts.push('Buy ' + rule.buy_qty + ' pcs ' + buyLabel + ', get ' + rule.free_qty + ' pc ' + freeName + ' FREE');
+  });
+  return parts.join('  \u2022  ');
+}
+
+function applyBanner(settings) {
   const el = document.getElementById('announcementBanner');
-  if (banner && banner.active && banner.text) {
-    const text = (banner.emoji || '🎉') + ' ' + banner.text;
+  const banner = (settings && settings.banner) || {};
+  const manual = (banner.active && banner.text) ? banner.text : '';
+  const offers = buildOfferBannerText(settings || {});
+  let text = '';
+  if (manual && offers) text = (banner.emoji || '🎉') + ' ' + manual + '  \u2022  ' + offers;
+  else if (manual) text = (banner.emoji || '🎉') + ' ' + manual;
+  else if (offers) text = '\uD83C\uDF81 ' + offers;
+
+  if (text) {
     if (sessionStorage.getItem('gi_banner_dismissed') === text) {
       el.style.display = 'none';
       return;
     }
-    // banner text/emoji come from the backend settings feed → escape.
+    // banner/offer text comes from the backend settings feed → escape.
     el.innerHTML = '<span>' + escapeHtml(text) + '</span><button class="banner-close" onclick="dismissBanner()" aria-label="Dismiss announcement">✕</button>';
     el.style.display = 'block';
   } else {
@@ -2306,7 +2340,7 @@ async function loadRemoteSettings() {
     SPECIAL_DATES = settings.special_dates || {};
     THRESHOLD_OFFER = settings.threshold_offer || THRESHOLD_OFFER;
     QTY_OFFERS = settings.qty_offers || [];
-    applyBanner(settings.banner);
+    applyBanner(settings);
     refreshStatusBanner(); // re-check status now that special dates are loaded
     updateCartUI(); // reflect any offer change immediately if cart is already open/populated
   } catch (e) {
@@ -2390,7 +2424,7 @@ function dismissInstallNudge() {
 // the customer returns), and gives up after 30 minutes with a pointer to
 // Track My Order.
 const ORIGINAL_TITLE = document.title;
-let statusWatchTimer = null, statusWatchRef = null, statusWatchStart = 0;
+let statusWatchTimer = null, statusWatchRef = null, statusWatchStart = 0, acceptedShown = false;
 
 function startStatusWatch(clientRef) {
   const el = document.getElementById('liveStatus');
@@ -2398,6 +2432,7 @@ function startStatusWatch(clientRef) {
   stopStatusWatch();
   statusWatchRef = clientRef;
   statusWatchStart = Date.now();
+  acceptedShown = false;
   el.style.display = 'block';
   el.className = 'live-status st-waiting';
   el.innerHTML = '<span class="ls-dot"></span>Waiting for the restaurant to confirm...' +
@@ -2427,6 +2462,9 @@ async function checkOrderStatus() {
   if (!statusWatchRef) return;
   if (document.hidden) return; // no point polling a background tab — resumes on return
   if (Date.now() - statusWatchStart > 30 * 60 * 1000) {
+    if (statusWatchTimer) clearInterval(statusWatchTimer);
+    statusWatchTimer = null; statusWatchRef = null;
+    if (acceptedShown) return; // accepted strip stays; just stop polling quietly
     const el = document.getElementById('liveStatus');
     el.innerHTML = '<span class="ls-dot"></span>Still waiting...' +
       '<span class="ls-sub">Taking longer than usual — you can check anytime under \u201CTrack My Order\u201D at the bottom of the menu, or call ' + RESTAURANT_PHONE + '.</span>';
@@ -2441,10 +2479,34 @@ async function checkOrderStatus() {
     const o = body && body.orders && body.orders[0];
     if (!o) return;
     if (o.status === 'printed' || o.status === 'print_failed') {
-      settleStatus('st-accepted',
-        '\u2705 Order accepted \u2014 the kitchen is on it!' +
-        '<span class="ls-sub">' + (o.order_type === 'Delivery' ? 'It will be on its way to you soon.' : 'It will be ready for you soon.') + '</span>',
-        '\u2705 Order accepted! \u2014 Grill Inn');
+      if (o.out_for_delivery) {
+        // Final customer-relevant stage — includes the driver when one was
+        // assigned, with a tappable number.
+        const driverHtml = o.driver_name
+          ? '<span class="ls-reason">Your delivery: ' + escapeHtml(o.driver_name) +
+            (o.driver_phone ? ' \u2022 <a href="tel:' + escapeHtml(o.driver_phone) + '" style="color:var(--orange);font-weight:700;">' + escapeHtml(o.driver_phone) + '</a>' : '') + '</span>'
+          : '';
+        settleStatus('st-accepted',
+          '\uD83D\uDEF5 Out for delivery \u2014 get ready to receive your order!' + driverHtml,
+          '\uD83D\uDEF5 Out for delivery! \u2014 Grill Inn');
+      } else if (o.order_type === 'Delivery') {
+        // Accepted, but a Delivery order may still get an "out for
+        // delivery" update — show the good news and KEEP watching.
+        if (!acceptedShown) {
+          acceptedShown = true;
+          const el2 = document.getElementById('liveStatus');
+          el2.className = 'live-status st-accepted';
+          el2.innerHTML = '\u2705 We are on it! Your order is being prepared.' +
+            '<span class="ls-sub">Still watching \u2014 this will update again when it goes out for delivery.</span>';
+          document.title = '\u2705 Order accepted! \u2014 Grill Inn';
+          if (navigator.vibrate && !REDUCED_MOTION) navigator.vibrate(150);
+        }
+      } else {
+        settleStatus('st-accepted',
+          '\u2705 We are on it! Your order is being prepared.' +
+          '<span class="ls-sub">It will be ready for you soon.</span>',
+          '\u2705 Order accepted! \u2014 Grill Inn');
+      }
     } else if (o.status === 'rejected') {
       settleStatus('st-rejected',
         '\u2715 Sorry \u2014 we couldn\u2019t accept this order.' +
@@ -2489,38 +2551,56 @@ function openTrackOrder() {
   else document.getElementById('trackResults').innerHTML = '<div class="track-empty">Enter the phone number you used when ordering, and we\u2019ll show your recent orders and their status.</div>';
 }
 
+// While the drawer stays open with results showing, it refreshes itself
+// every 25s — so "waiting" flips to "accepted" or "out for delivery"
+// without the customer tapping anything. Paused while the tab is hidden.
+let trackRefreshTimer = null;
+
 function closeTrackOrder() {
   document.getElementById('trackOverlay').classList.remove('open');
   document.getElementById('trackDrawer').classList.remove('open');
   document.body.classList.remove('no-scroll');
+  if (trackRefreshTimer) clearInterval(trackRefreshTimer);
+  trackRefreshTimer = null;
 }
 
-async function trackLookup() {
+async function trackLookup(silent) {
   const phone = document.getElementById('trackPhone').value.replace(/\D/g, '');
   const results = document.getElementById('trackResults');
   if (phone.length !== 10) {
-    results.innerHTML = '<div class="track-error">Please enter the full 10-digit phone number used on the order.</div>';
+    if (!silent) results.innerHTML = '<div class="track-error">Please enter the full 10-digit phone number used on the order.</div>';
     return;
   }
+  if (silent && document.hidden) return; // no background polling
   const btn = document.getElementById('trackLookupBtn');
-  btn.disabled = true; btn.textContent = '...';
+  if (!silent) { btn.disabled = true; btn.textContent = '...'; }
   try {
     const res = await fetch(SERVER_URL + '/api/track-order?phone=' + encodeURIComponent(phone), { cache: 'no-store' });
     const body = await res.json().catch(() => null);
     if (res.status === 429) {
+      if (silent) return;
       results.innerHTML = '<div class="track-error">' + escapeHtml((body && body.message) || 'Too many lookups — please wait a few minutes.') + '</div>';
       return;
     }
     if (!res.ok || !body || body.status !== 'ok') {
+      if (silent) return;
       results.innerHTML = '<div class="track-error">' + escapeHtml((body && body.message) || 'Could not check right now — please try again, or call ' + RESTAURANT_PHONE + '.') + '</div>';
       return;
     }
+    armTrackAutoRefresh();
     if (!body.orders.length) {
       results.innerHTML = '<div class="track-empty">No orders found for this number in the last 48 hours.<br>Just placed one? Give it a few seconds and check again.</div>';
       return;
     }
     results.innerHTML = body.orders.map(o => {
-      const st = TRACK_STATUS_LABELS[o.status] || { cls: 'st-pending', label: escapeHtml(o.status || '') };
+      let st = TRACK_STATUS_LABELS[o.status] || { cls: 'st-pending', label: escapeHtml(o.status || '') };
+      if ((o.status === 'printed' || o.status === 'print_failed') && o.out_for_delivery) {
+        st = { cls: 'st-confirmed', label: '\uD83D\uDEF5 Out for delivery!' };
+      }
+      const driverLine = o.out_for_delivery && o.driver_name
+        ? '<div class="track-meta" style="margin-top:0.35rem;color:var(--white);">Delivery by ' + escapeHtml(o.driver_name) +
+          (o.driver_phone ? ' \u2022 <a href="tel:' + escapeHtml(o.driver_phone) + '" style="color:var(--orange);">' + escapeHtml(o.driver_phone) + '</a>' : '') + '</div>'
+        : '';
       const itemsHtml = (o.items || []).map(i => escapeHtml(i.qty + 'x ' + i.title)).join('<br>');
       const totalLine = o.order_type === 'Delivery' && !o.delivery_charge
         ? '\u20B9' + o.grand_total + ' + delivery charges'
@@ -2531,15 +2611,26 @@ async function trackLookup() {
         '<div class="track-items">' + itemsHtml + '</div>' +
         '<div class="track-total">' + totalLine + '</div>' +
         (o.status === 'rejected' && o.reject_reason ? '<div class="track-meta" style="margin-top:0.35rem;">Reason: ' + escapeHtml(o.reject_reason) + '</div>' : '') +
+        driverLine +
       '</div>';
     }).join('') +
     '<button class="track-refresh" onclick="trackLookup()">\u21BB Refresh status</button>' +
     '<div class="track-empty" style="padding-top:0.6rem;">Questions? Call <a href="tel:' + RESTAURANT_PHONE + '" style="color:var(--orange);">' + RESTAURANT_PHONE + '</a></div>';
   } catch (e) {
-    results.innerHTML = '<div class="track-error">Could not reach the restaurant\u2019s server. Check your connection and try again.</div>';
+    if (!silent) results.innerHTML = '<div class="track-error">Could not reach the restaurant\u2019s server. Check your connection and try again.</div>';
   } finally {
-    btn.disabled = false; btn.textContent = 'Check';
+    if (!silent) { btn.disabled = false; btn.textContent = 'Check'; }
   }
+}
+
+function armTrackAutoRefresh() {
+  if (trackRefreshTimer) return; // already running
+  trackRefreshTimer = setInterval(() => {
+    if (!document.getElementById('trackDrawer').classList.contains('open')) {
+      clearInterval(trackRefreshTimer); trackRefreshTimer = null; return;
+    }
+    trackLookup(true);
+  }, 25000);
 }
 
 document.getElementById('trackPhone').addEventListener('keydown', e => { if (e.key === 'Enter') trackLookup(); });

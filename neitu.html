@@ -372,6 +372,7 @@ function renderOrderCard(order) {
       (discountAmount > 0 ? '<div class="order-item-row" style="color:var(--flame);"><span>Discount (' + (order.discount_percent||0) + '%)</span><span>−₹' + discountAmount + '</span></div>' : '') +
       '<div class="order-total">Total: ₹' + grandTotal + '</div></div>' +
     '<span class="status-tag ' + statusClass + '">' + statusLabel + '</span>' +
+    (order.out_for_delivery_at ? '<span class="status-tag printed" style="margin-left:0.4rem;">🛵 Out ' + escapeHtml((order.out_for_delivery_at || '').split(', ')[1] || order.out_for_delivery_at) + (order.driver_name ? ' • ' + escapeHtml(order.driver_name) : '') + '</span>' : '') +
     (order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
     (order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
   '</div>';
