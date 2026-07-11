@@ -337,16 +337,32 @@ function onHistorySearch(value) {
 
 function renderHistory(orders) {
   const main = document.getElementById('mainContent');
+
+  // Capture focus + caret BEFORE we blow away the DOM, so a debounce-driven
+  // re-render (which replaces the whole search box) doesn't kick the cursor
+  // out of the field after the first character. Previously this restoration
+  // was an empty stub, so every keystroke past the debounce lost focus and
+  // the admin had to re-tap the box for each character.
+  const prev = document.querySelector('.search-input');
+  const wasFocused = !!prev && document.activeElement === prev;
+  const caretStart = wasFocused ? prev.selectionStart : null;
+  const caretEnd = wasFocused ? prev.selectionEnd : null;
+
   if (orders.length === 0) {
     main.innerHTML = renderHistoryFilters() + '<div class="empty-state">No orders found.</div>';
-    return;
+  } else {
+    main.innerHTML = renderHistoryFilters() + orders.map(renderOrderCard).join('');
   }
-  main.innerHTML = renderHistoryFilters() + orders.map(renderOrderCard).join('');
 
-  // Keep focus in the search box across re-renders (matches dashboard behavior)
-  const input = document.querySelector('.search-input');
-  if (input && document.activeElement !== input && historySearchQuery) {
-    // don't steal focus on initial paint from a debounce-triggered render
+  if (wasFocused) {
+    const input = document.querySelector('.search-input');
+    if (input) {
+      input.focus();
+      // Restore the caret where it was (default to end if unavailable).
+      const len = input.value.length;
+      try { input.setSelectionRange(caretStart == null ? len : caretStart, caretEnd == null ? len : caretEnd); }
+      catch (e) {}
+    }
   }
 }
 
@@ -373,8 +389,8 @@ function renderOrderCard(order) {
       '<div class="order-total">Total: ₹' + grandTotal + '</div></div>' +
     '<span class="status-tag ' + statusClass + '">' + statusLabel + '</span>' +
     (order.out_for_delivery_at ? '<span class="status-tag printed" style="margin-left:0.4rem;">🛵 Out ' + escapeHtml((order.out_for_delivery_at || '').split(', ')[1] || order.out_for_delivery_at) + (order.driver_name ? ' • ' + escapeHtml(order.driver_name) : '') + '</span>' : '') +
-    (order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
-    (order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
+    (order.status === 'voided' && order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
+    (order.status === 'rejected' && order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
   '</div>';
 }
 

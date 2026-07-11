@@ -470,26 +470,37 @@ const RESTAURANT_PHONE = '9612992023';
 
 // ── PACKAGING CHARGE LOGIC (Takeaway + Delivery only) ──────────────────
 // Step 2: per-item packaging cost by category.
-const LARGE_PIZZA_IDS = new Set(['PIZ002','PIZ004','PIZ006','PIZ008','PIZ010','PIZ012','PIZ014','PIZ016','PIZ018','PIZ020','PIZ022','PIZ024','PIZ026','PIZ028','PIZ030','PIZ032','PIZ034','PIZ036','PIZ038','PIZ040','PIZ042']); // 9" Regular Pizza — ₹10 each
-const SMALL_BOX_IDS = new Set([
-  // 6" Pan Pizza — ₹7 each
-  'PIZ001','PIZ003','PIZ005','PIZ007','PIZ009','PIZ011','PIZ013','PIZ015','PIZ017','PIZ019','PIZ021','PIZ023','PIZ025','PIZ027','PIZ029','PIZ031','PIZ033','PIZ035','PIZ037',
-  // Sandwiches — ₹7 each
-  'SAN001','SAN002','SAN003','SAN004','SAN005','SAN006',
-  // Garlic Breads — ₹7 each
-  'GRB001','GRB002','GRB003','GRB004',
-  // Footlongs — ₹7 each
-  'FTL001','FTL002','FTL003','FTL004','FTL005','FTL006','FTL007','FTL008','FTL009','FTL010','FTL011','FTL012','FTL013','FTL014'
-]);
-const WRAP_IDS = new Set(['WRP001','WRP002','WRP003','WRP004']); // ₹6 each
-const PASTA_IDS = new Set(['PAS001','PAS002','PAS003','PAS004','PAS005','PAS006','FRI007','FRI008','FRI009','FRI010']); // Pastas + Overloaded Fries (also use pasta boxes) — ₹10 each
-// Everything else (burgers, fried/grilled chicken, snacks, fries, drinks, desserts, add-ons, combos) = ₹0
+// ── PACKAGING CLASSIFICATION (mirrors item_packaging_cost / is_large_pizza
+//    / is_pan_pizza in orders.py) ───────────────────────────────────────
+// Previously this used hardcoded id lists (LARGE_PIZZA_IDS, SMALL_BOX_IDS,
+// WRAP_IDS, PASTA_IDS). Those only knew about items baked into this file, so
+// a pizza/sandwich/wrap/pasta ADDED through the dashboard Menu tab was
+// classified as ₹0 here while the server charged it correctly — the cart
+// preview then disagreed with the real (server) charge. Classifying by the
+// same title/category patterns the server uses keeps them in step, with
+// nothing to hand-maintain when the menu changes. Server-side pricing still
+// has the final say on every order regardless.
+function isLargePizza(id) {
+  const item = ITEM_BY_ID[id];
+  if (!item || item.is_addon) return false;
+  return id.indexOf('PIZ') === 0 && item.title.indexOf('- Regular') !== -1;
+}
+function isPanPizza(id) {
+  const item = ITEM_BY_ID[id];
+  if (!item || item.is_addon) return false;
+  return id.indexOf('PIZ') === 0 && item.title.indexOf('- Pan') !== -1;
+}
 
 function itemPackagingCost(id) {
-  if (LARGE_PIZZA_IDS.has(id)) return 10;
-  if (SMALL_BOX_IDS.has(id)) return 7;
-  if (WRAP_IDS.has(id)) return 6;
-  if (PASTA_IDS.has(id)) return 10;
+  const item = ITEM_BY_ID[id];
+  if (!item || item.is_addon) return 0; // add-ons ride along with their host item
+  const cat = ITEM_CATEGORY_BY_ID[id];
+  if (isLargePizza(id)) return 10;
+  if (cat === 'Pastas' || item.description === 'Loaded Fries') return 10;
+  if (isPanPizza(id)) return 7;
+  if (cat === 'Veg Sandwiches' || cat === 'Non Veg Sandwiches' ||
+      cat === 'Garlic Breads' || cat === 'Veg Footlongs' || cat === 'Non Veg Footlongs') return 7;
+  if (cat === 'Wraps') return 6;
   return 0;
 }
 
@@ -531,7 +542,7 @@ const BAG_CAPACITY = {
 // because they're handled by their own flat-stack rule; add-ons/combos also
 // return null (not separately bagged).
 function bagGroup(id) {
-  if (LARGE_PIZZA_IDS.has(id)) return null;
+  if (isLargePizza(id)) return null;
   switch (ITEM_CATEGORY_BY_ID[id]) {
     case 'Veg Burgers':
     case 'Non Veg Burgers':     return 'burger';
@@ -580,7 +591,7 @@ function calcPackagingCharge(items, orderType) {
   let nonPizzaBagFill = 0;
   items.forEach(i => {
     base += itemPackagingCost(i.id) * i.qty;
-    if (LARGE_PIZZA_IDS.has(i.id)) {
+    if (isLargePizza(i.id)) {
       largePizzaCount += i.qty;
     } else {
       const g = bagGroup(i.id);
@@ -674,6 +685,7 @@ function groupPieceCountInCart(cartItems, groupKey) {
   cartItems.forEach(it => {
     const item = ITEM_BY_ID[it.id];
     if (!item || !it.qty) return;
+    if (item.is_addon) return; // add-ons (e.g. Cheese Burst) never count as bought units toward offers
     if (matcher(it.id, item, ITEM_CATEGORY_BY_ID[it.id])) {
       total += itemPieceCount(it.id) * it.qty;
     }
@@ -906,6 +918,17 @@ function applyLiveMenu(liveMenu) {
   Object.assign(MENU, clean);
   Object.keys(ALL_ITEMS).forEach(k => delete ALL_ITEMS[k]);
   Object.values(MENU).flat().forEach(i => ALL_ITEMS[i.id] = i);
+  // Rebuild the derived index maps too. These drive packaging cost,
+  // carry-bag fill, qty-offer matching, piece counts and meal-role lookups.
+  // Previously they were built once from the baked-in menu and never
+  // refreshed here, so any item that wasn't in the baked-in copy was invisible
+  // to all of those calculations even after the live menu loaded.
+  Object.keys(ITEM_BY_ID).forEach(k => delete ITEM_BY_ID[k]);
+  Object.keys(ITEM_CATEGORY_BY_ID).forEach(k => delete ITEM_CATEGORY_BY_ID[k]);
+  Object.keys(MENU).forEach(cat => (MENU[cat] || []).forEach(it => {
+    ITEM_BY_ID[it.id] = it;
+    ITEM_CATEGORY_BY_ID[it.id] = cat;
+  }));
   return true;
 }
 
@@ -1019,6 +1042,21 @@ function saveLastOrder(cartSnapshot, type) {
   } catch (e) {}
 }
 
+// Same as saveLastOrder but sourced from a saved order payload (whose items
+// carry {id, quantity, note?}) rather than the live cart. Used by the
+// unsent-order recovery path, where the ambient cart may no longer match
+// the order being recovered.
+function saveLastOrderFromPayload(payload) {
+  try {
+    const items = (payload.items || []).map(it => ({
+      id: it.id,
+      qty: it.quantity != null ? it.quantity : (it.qty || 1),
+      note: it.note || ''
+    }));
+    localStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ items, orderType: payload.order_type }));
+  } catch (e) {}
+}
+
 function getLastOrder() {
   try {
     const raw = localStorage.getItem(LAST_ORDER_KEY);
@@ -1037,18 +1075,30 @@ function reorderLastOrder() {
   const data = getLastOrder();
   if (!data || !data.items || !data.items.length) return;
   let addedAny = false;
+  const skipped = [];
   data.items.forEach(it => {
-    if (!ALL_ITEMS[it.id]) return; // item may no longer be on the menu
-    cart[it.id] = { ...ALL_ITEMS[it.id], qty: it.qty, note: it.note || '' };
+    const menuItem = ALL_ITEMS[it.id];
+    if (!menuItem) return; // item may no longer be on the menu
+    if (OUT_OF_STOCK_IDS.has(it.id)) { skipped.push(menuItem.title); return; } // currently unavailable
+    cart[it.id] = { ...menuItem, qty: it.qty, note: it.note || '' };
     addedAny = true;
   });
-  if (!addedAny) { alert("Sorry, the items from your last order aren't available anymore."); return; }
+  if (!addedAny) {
+    alert(skipped.length
+      ? "Sorry, the items from your last order are currently out of stock."
+      : "Sorry, the items from your last order aren't available anymore.");
+    return;
+  }
   if (data.orderType) orderType = data.orderType;
   saveCartToStorage();
   buildMenu();
   buildTextMenu();
   updateCartUI();
   openCart();
+  if (skipped.length) {
+    alert((skipped.length === 1 ? '1 item is' : skipped.length + ' items are')
+      + ' currently out of stock and were left out:\n• ' + skipped.join('\n• '));
+  }
 }
 
 let dietFilter = 'all';
@@ -1373,8 +1423,12 @@ function computeThresholdDiscount(amount) {
 function calcTotals() {
   const items = Object.values(cart);
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  // Packing charge only for Takeaway and Delivery, not Dine In
-  const packingCharge = calcPackagingCharge(items, orderType);
+  // Packing charge only for Takeaway and Delivery, not Dine In. Until the
+  // customer has actually chosen an order type, don't guess a packing charge
+  // into the preview — otherwise the cart total shows a packing charge and
+  // then visibly DROPS the moment they pick Dine In. Once a type is selected
+  // the real charge appears. (The server always recomputes this regardless.)
+  const packingCharge = orderType ? calcPackagingCharge(items, orderType) : 0;
   const count = items.reduce((s, i) => s + i.qty, 0);
   const discount = computeThresholdDiscount(subtotal + packingCharge);
   const cartForMatching = Object.entries(cart).map(([id, item]) => ({ id, qty: item.qty }));
@@ -1685,8 +1739,12 @@ function validateField(el) {
   const id = el.id;
   const val = el.value.trim();
   let valid = false;
-  if (id === 'fName') valid = val.length >= 2;
-  else if (id === 'fPhone') valid = /^\d{10,}$/.test(val.replace(/\D/g, ''));
+  // These mirror the server's rules exactly (NAME_RE / PHONE_RE in orders.py),
+  // so a green ✓ means the server will actually accept the value — previously
+  // the checks were looser (any 10+ digits, any 2+ char name), so a name with
+  // digits or an 11-digit number showed ✓ and then bounced with a 400.
+  if (id === 'fName') valid = /^[A-Za-z .']{2,40}$/.test(val);
+  else if (id === 'fPhone') valid = /^[6-9]\d{9}$/.test(val.replace(/\D/g, ''));
   else if (id === 'fEmail') valid = val !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
   else if (id === 'fAddress') valid = val.length >= 8;
   el.classList.toggle('field-valid', valid);
@@ -1738,7 +1796,13 @@ function makeClientRef() {
 }
 
 function saveUnsentOrder(payload) {
-  try { localStorage.setItem(UNSENT_ORDER_KEY, JSON.stringify(payload)); } catch(e) {}
+  try {
+    // Stamp the moment it was first saved (once) so a stale order can be
+    // recognised on a later page load. Retries reuse the same payload object
+    // and must keep the ORIGINAL timestamp, so only set it if missing.
+    if (!payload.savedAt) payload.savedAt = Date.now();
+    localStorage.setItem(UNSENT_ORDER_KEY, JSON.stringify(payload));
+  } catch(e) {}
 }
 function clearUnsentOrder() {
   try { localStorage.removeItem(UNSENT_ORDER_KEY); } catch(e) {}
@@ -1749,6 +1813,18 @@ function getUnsentOrder() {
     return raw ? JSON.parse(raw) : null;
   } catch(e) { return null; }
 }
+// How old (ms) an unsent order is, or Infinity if it has no timestamp
+// (i.e. one saved by an older version of the site — treat as stale).
+function unsentOrderAgeMs(payload) {
+  return (payload && payload.savedAt) ? (Date.now() - payload.savedAt) : Infinity;
+}
+// Auto-resend only within the server's client_ref dedupe window (30 min):
+// inside it, a resend that had actually succeeded returns the same order
+// instead of duplicating. Past it, we must NOT silently resend — the
+// customer may have given up and phoned the order in. Well past it, the
+// leftover is just noise and gets discarded.
+const UNSENT_AUTO_RESEND_MS = 30 * 60 * 1000;   // 30 min — matches server dedupe
+const UNSENT_DISCARD_MS     = 6 * 60 * 60 * 1000; // 6 h — too old to even offer
 
 async function trySubmitOrder(payload, attempts) {
   for (let i = 0; i < attempts; i++) {
@@ -1842,6 +1918,11 @@ function retryUnsentOrder() {
       cart = {}; orderType = null; updateCartUI();
       clearCartStorage();
       refreshReorderButtonVisibility();
+      // Rebuild the menu cards so items no longer show −/qty/+ controls for a
+      // now-empty cart (placeOrder resets card footers on success; the retry
+      // path didn't, leaving stale quantity steppers until the next rebuild).
+      buildMenu();
+      buildTextMenu();
     } else if (result && result.stockConflict) {
       clearUnsentOrder(); // retrying again won't fix it — stop nagging them to retry
       document.getElementById('orderFailedScreen').classList.remove('show');
@@ -1854,15 +1935,50 @@ function retryUnsentOrder() {
 }
 
 // On page load: if there's a leftover order from a previous failed
-// attempt (tab closed, browser crashed, etc.) try to quietly resend it
-// once before the customer does anything else.
+// attempt (tab closed, browser crashed, etc.) decide what to do based on
+// how old it is — see UNSENT_AUTO_RESEND_MS / UNSENT_DISCARD_MS above.
 async function recoverUnsentOrderOnLoad() {
   const payload = getUnsentOrder();
   if (!payload) return;
+
+  const age = unsentOrderAgeMs(payload);
+
+  // Too old to be meaningful — the customer has almost certainly moved on
+  // (re-ordered, phoned in, or abandoned it). Discard silently; never
+  // resurrect a day-old order behind their back.
+  if (age >= UNSENT_DISCARD_MS) {
+    clearUnsentOrder();
+    return;
+  }
+
+  // Past the server's dedupe window: a silent resend could create a genuine
+  // duplicate (the dedupe no longer protects us) and the customer isn't
+  // expecting it. Don't auto-send — show the order-failed screen so THEY
+  // choose whether to retry or call. This preserves any current cart.
+  if (age >= UNSENT_AUTO_RESEND_MS) {
+    showOrderFailedScreen(payload);
+    return;
+  }
+
+  // Within the dedupe window: safe to quietly try once. If it had actually
+  // gone through last time, the server returns that same order rather than
+  // duplicating it.
   const result = await trySubmitOrder(payload, 1);
   if (result && result.order_number) {
     clearUnsentOrder();
-    saveLastOrder(cart, payload.order_type);
+    // Show the success screen so the customer KNOWS an order was just placed
+    // on their behalf — previously the cart just silently vanished, leaving
+    // them with no order number and no idea an order had been sent.
+    // Drive it from the payload, not the ambient restored cart (which may be
+    // empty or a different cart by now).
+    const recoveredOrderType = payload.order_type;
+    saveLastOrderFromPayload(payload);
+    document.getElementById('successOrder').textContent = 'Order #' + result.order_number;
+    document.getElementById('successPrepTime').textContent = '⏱ Estimated preparation time: 20–30 mins' + (recoveredOrderType === 'Delivery' ? ' (+ delivery time)' : '');
+    document.getElementById('successWelcome').textContent = '✅ An order you started earlier has now been sent to the kitchen.';
+    document.getElementById('orderFailedScreen').classList.remove('show');
+    document.getElementById('successScreen').classList.add('show');
+    startStatusWatch(payload.client_ref);
     cart = {}; orderType = null;
     clearCartStorage();
     buildMenu();
@@ -1884,6 +2000,7 @@ async function placeOrder() {
   let address = '', deliveryCharge = 0, zoneName = '';
 
   if (!name) { alert('Please enter your name.'); return; }
+  if (!/^[A-Za-z .']{2,40}$/.test(name)) { alert('Name must be 2–40 characters, using only letters, spaces, apostrophes, or periods.'); return; }
   if (!/^[6-9]\d{9}$/.test(phone)) { alert('Please enter a valid 10-digit phone number.'); return; }
 
   const email = document.getElementById('fEmail')?.value.trim() || '';
