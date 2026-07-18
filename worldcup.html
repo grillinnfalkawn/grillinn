@@ -57,6 +57,7 @@
     <div class="trophy">🏆</div>
     <h1>World Cup Final Prediction</h1>
     <p>Guess the exact final score and enter the lucky draw!</p>
+    <p style="color:var(--orange);font-weight:700;margin-top:0.5rem;">🕚 Entries open 11 AM – 11 PM on 19 July</p>
   </div>
 
   <!-- FORM -->
@@ -160,14 +161,34 @@ fetch(SERVER_URL + '/api/worldcup/config').then(r => r.json()).then(cfg => {
   });
 });
 
+// Entries are only accepted between 11:00 and 23:00 on 19 July 2026 (the
+// match day). This is a front-end convenience gate using the visitor's own
+// clock; the server side is managed separately. Returns true if we're inside
+// the window right now.
+function withinEntryWindow() {
+  const now = new Date();
+  // Must be 19 July 2026.
+  const onDay = (now.getFullYear() === 2026 && now.getMonth() === 6 && now.getDate() === 19); // month is 0-based: 6 = July
+  if (!onDay) return false;
+  const h = now.getHours();
+  return h >= 11 && h < 23; // 11:00 up to (but not including) 23:00
+}
+
 function review() {
+  const err = document.getElementById('formErr');
+  err.textContent = '';
+
+  // Time gate first — before any field validation.
+  if (!withinEntryWindow()) {
+    err.textContent = 'Entries are only open between 11 AM and 11 PM on 19 July. Please come back during that time.';
+    return;
+  }
+
   const name = document.getElementById('fName').value.trim();
   const phone = document.getElementById('fPhone').value.trim();
   const address = document.getElementById('fAddress').value.trim();
   const left = document.getElementById('predLeft').value.trim();
   const right = document.getElementById('predRight').value.trim();
-  const err = document.getElementById('formErr');
-  err.textContent = '';
 
   if (!/^[A-Za-z .']{2,40}$/.test(name)) { err.textContent = 'Please enter your name (letters only, 2–40 characters).'; return; }
   if (!/^[6-9]\d{9}$/.test(phone)) { err.textContent = 'Please enter a valid 10-digit phone number (starting 6–9).'; return; }
@@ -199,6 +220,14 @@ function submitPrediction() {
   const btn = document.getElementById('submitBtn');
   const err = document.getElementById('confirmErr');
   err.textContent = '';
+
+  // Re-check the window at the moment of submitting — someone could reach the
+  // confirmation screen just before 11 PM and try to submit after it closes.
+  if (!withinEntryWindow()) {
+    err.textContent = 'Entries have closed (11 AM – 11 PM on 19 July only).';
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 
