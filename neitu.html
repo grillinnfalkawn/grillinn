@@ -106,6 +106,7 @@
     <div class="tabs">
       <button class="tab-btn active" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">📋 History</button>
+      <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button>
     </div>
     <button class="logout-btn" onclick="logout()">Log Out</button>
   </header>
@@ -228,7 +229,9 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById('salesTab').classList.toggle('active', tab === 'sales');
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
+  document.getElementById('worldcupTab').classList.toggle('active', tab === 'worldcup');
   if (tab === 'sales') loadSales('today');
+  else if (tab === 'worldcup') loadWorldCup();
   else loadHistory();
 }
 
@@ -392,6 +395,152 @@ function renderOrderCard(order) {
     (order.status === 'voided' && order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
     (order.status === 'rejected' && order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
   '</div>';
+}
+
+// ── WORLD CUP PREDICTION DRAW (admin) ──────────────────────
+// This whole block is self-contained. If the feature is removed later
+// (by deleting the register_blueprint line in orders.py), this tab simply
+// shows an error — it won't affect Sales or History. To fully remove, also
+// delete this function block and the worldcup tab button above.
+let wcCorrectCache = [];
+
+function loadWorldCup() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">Loading…</div>';
+  authFetch(SERVER_URL + '/api/worldcup/admin/summary')
+    .then(r => r.json())
+    .then(renderWorldCup)
+    .catch(() => { main.innerHTML = '<div style="text-align:center;color:var(--red);padding:2rem;">Could not load the World Cup section. (Is the feature enabled on the server?)</div>'; });
+}
+
+function renderWorldCup(s) {
+  const main = document.getElementById('mainContent');
+  if (!s || s.status !== 'ok') {
+    main.innerHTML = '<div style="text-align:center;color:var(--red);padding:2rem;">' + escapeHtml((s && s.message) || 'Could not load.') + '</div>';
+    return;
+  }
+  const openBadge = s.open
+    ? '<span style="color:var(--green);font-weight:700;">🟢 OPEN</span>'
+    : '<span style="color:var(--muted);font-weight:700;">🔒 CLOSED</span>';
+
+  let winnerHtml = '';
+  if (s.winner) {
+    winnerHtml =
+      '<div style="background:rgba(63,174,106,0.12);border:1px solid #3fae6a;border-radius:12px;padding:1rem;margin-top:1rem;">' +
+        '<div style="font-weight:800;color:#3fae6a;font-size:1.05rem;">🏆 Winner drawn</div>' +
+        '<div style="margin-top:0.5rem;font-size:1.05rem;font-weight:700;">' + escapeHtml(s.winner.name) + '</div>' +
+        '<div style="color:var(--muted);">📞 ' + escapeHtml(s.winner.phone) + '</div>' +
+        (s.winner.address ? '<div style="color:var(--muted);">📍 ' + escapeHtml(s.winner.address) + '</div>' : '') +
+        '<button class="btn-quick" style="margin-top:0.75rem;" onclick="wcResetDraw()">↺ Clear winner &amp; redraw</button>' +
+      '</div>';
+  }
+
+  main.innerHTML =
+    '<div class="card" style="background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:1.25rem;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="font-weight:800;font-size:1.1rem;">🏆 ' + escapeHtml(s.team_left) + ' vs ' + escapeHtml(s.team_right) + '</div>' +
+        openBadge +
+      '</div>' +
+      '<div style="color:var(--muted);margin-top:0.5rem;">Total entries: <b style="color:var(--white);">' + s.total_entries + '</b></div>' +
+
+      '<div style="margin-top:1rem;display:flex;gap:0.5rem;">' +
+        (s.open
+          ? '<button class="btn-quick" onclick="wcToggleOpen(false)">🔒 Close predictions</button>'
+          : '<button class="btn-quick" onclick="wcToggleOpen(true)">🟢 Re-open predictions</button>') +
+      '</div>' +
+
+      '<hr style="border:none;border-top:1px solid var(--border);margin:1.25rem 0;">' +
+
+      '<div style="font-weight:700;margin-bottom:0.5rem;">Find the winners</div>' +
+      '<div style="color:var(--muted);font-size:0.85rem;margin-bottom:0.75rem;">Enter the real final score to see everyone who predicted it exactly.</div>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:0.6rem;background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem;">' +
+        '<div style="flex:1;text-align:center;font-weight:700;color:#e8503a;">' + escapeHtml(s.team_left) + '</div>' +
+        '<input id="wcFinalLeft" inputmode="numeric" maxlength="2" placeholder="0" style="width:52px;height:52px;text-align:center;font-size:1.4rem;font-weight:800;background:var(--panel);border:2px solid var(--border);border-radius:10px;color:var(--white);" value="' + (s.final_left != null ? s.final_left : '') + '">' +
+        '<div style="font-size:1.4rem;color:var(--muted);font-weight:800;">–</div>' +
+        '<input id="wcFinalRight" inputmode="numeric" maxlength="2" placeholder="0" style="width:52px;height:52px;text-align:center;font-size:1.4rem;font-weight:800;background:var(--panel);border:2px solid var(--border);border-radius:10px;color:var(--white);" value="' + (s.final_right != null ? s.final_right : '') + '">' +
+        '<div style="flex:1;text-align:center;font-weight:700;color:#6aa0ff;">' + escapeHtml(s.team_right) + '</div>' +
+      '</div>' +
+      '<button class="login-btn" style="width:100%;margin-top:1rem;" onclick="wcCheckCorrect()">🔍 Show correct predictions</button>' +
+      '<div id="wcResults"></div>' +
+      winnerHtml +
+    '</div>';
+
+  // digits-only
+  ['wcFinalLeft','wcFinalRight'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); });
+  });
+}
+
+function wcToggleOpen(open) {
+  authFetchPost(SERVER_URL + '/api/worldcup/admin/toggle-open', { open: open })
+    .then(r => r.json()).then(() => loadWorldCup())
+    .catch(() => alert('Could not update. Try again.'));
+}
+
+function wcCheckCorrect() {
+  const fl = document.getElementById('wcFinalLeft').value.trim();
+  const fr = document.getElementById('wcFinalRight').value.trim();
+  const box = document.getElementById('wcResults');
+  if (fl === '' || fr === '') { box.innerHTML = '<div style="color:var(--red);text-align:center;margin-top:0.75rem;">Enter both scores.</div>'; return; }
+  box.innerHTML = '<div style="text-align:center;color:var(--muted);margin-top:0.75rem;">Checking…</div>';
+  authFetchPost(SERVER_URL + '/api/worldcup/admin/correct', { final_left: parseInt(fl,10), final_right: parseInt(fr,10) })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status !== 'ok') { box.innerHTML = '<div style="color:var(--red);text-align:center;margin-top:0.75rem;">' + escapeHtml(res.message || 'Error') + '</div>'; return; }
+      wcCorrectCache = res.correct || [];
+      let html = '<div style="margin-top:1rem;font-weight:700;">Final: ' + escapeHtml(res.final) + '</div>';
+      if (res.correct_count === 0) {
+        html += '<div style="color:var(--muted);text-align:center;padding:1rem;">No one predicted this exact score.</div>';
+      } else {
+        html += '<div style="color:var(--muted);margin:0.5rem 0;">' + res.correct_count + ' correct ' + (res.correct_count === 1 ? 'entry' : 'entries') + ':</div>';
+        html += res.correct.map((c, i) =>
+          '<div style="background:var(--charcoal);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.75rem;margin-bottom:0.4rem;">' +
+            '<div style="font-weight:700;">' + (i+1) + '. ' + escapeHtml(c.name) + '</div>' +
+            '<div style="color:var(--muted);font-size:0.85rem;">📞 ' + escapeHtml(c.phone) +
+              (c.address ? ' &nbsp;·&nbsp; 📍 ' + escapeHtml(c.address) : '') + '</div>' +
+            '<div style="color:var(--muted);font-size:0.78rem;">🕒 ' + escapeHtml((c.created_at || '').replace('T',' ')) + '</div>' +
+          '</div>').join('');
+
+        if (res.needs_draw) {
+          html += '<button class="login-btn" style="width:100%;margin-top:0.75rem;" onclick="wcRunDraw()">🎲 Run Lucky Draw (' + res.correct_count + ' entries)</button>';
+        } else {
+          html += '<div style="background:rgba(63,174,106,0.12);border:1px solid #3fae6a;border-radius:10px;padding:0.75rem;margin-top:0.75rem;text-align:center;font-weight:700;color:#3fae6a;">🏆 Only one correct prediction — they are the winner! No draw needed.</div>';
+        }
+      }
+      box.innerHTML = html;
+    })
+    .catch(() => { box.innerHTML = '<div style="color:var(--red);text-align:center;margin-top:0.75rem;">Could not check. Try again.</div>'; });
+}
+
+function wcRunDraw() {
+  if (!confirm('Run the lucky draw now? One winner will be picked at random from the correct entries and locked in.')) return;
+  authFetchPost(SERVER_URL + '/api/worldcup/admin/draw', {})
+    .then(r => r.json())
+    .then(res => {
+      if (res.status !== 'ok') { alert(res.message || 'Could not run the draw.'); return; }
+      const w = res.winner;
+      alert('🏆 WINNER: ' + w.name + '\n📞 ' + w.phone + (w.address ? '\n📍 ' + w.address : '') +
+            (res.already_drawn ? '\n\n(A winner was already drawn earlier — showing that same winner.)' : ''));
+      loadWorldCup();
+    })
+    .catch(() => alert('Could not run the draw. Try again.'));
+}
+
+function wcResetDraw() {
+  if (!confirm('Clear the current winner so you can run the draw again? Entries are NOT deleted.')) return;
+  authFetchPost(SERVER_URL + '/api/worldcup/admin/reset-draw', {})
+    .then(r => r.json()).then(() => loadWorldCup())
+    .catch(() => alert('Could not reset. Try again.'));
+}
+
+// POST helper with the admin password header (authFetch is GET-only).
+function authFetchPost(url, body) {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Dash-Password': dashPassword },
+    body: JSON.stringify(body || {})
+  });
 }
 
 // ── INIT ───────────────────────────────────────────────────

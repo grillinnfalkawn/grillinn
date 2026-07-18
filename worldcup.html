@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup Final Prediction — Grill Inn</title>
+<style>
+  :root{--black:#17110a;--charcoal:#241a10;--panel:#2d2116;--border:#453423;--orange:#ff8a3d;--red:#d1382c;--flame:#f2632a;--white:#f8f1e4;--muted:#b8a68d;--card-bg:#2b2015;--green:#3fae6a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--black);color:var(--white);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;padding:1rem;line-height:1.5;}
+  .wrap{max-width:460px;margin:0 auto;}
+  .card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-top:1.5rem;box-shadow:0 8px 30px rgba(0,0,0,0.4);}
+  .hero{text-align:center;padding:1.5rem 1rem 0.5rem;}
+  .hero .trophy{font-size:2.75rem;}
+  .hero h1{font-size:1.4rem;margin-top:0.4rem;color:var(--white);}
+  .hero p{color:var(--muted);font-size:0.9rem;margin-top:0.4rem;}
+  label{display:block;font-size:0.82rem;font-weight:600;color:var(--muted);margin:0.9rem 0 0.35rem;}
+  .opt{font-weight:400;color:var(--muted);opacity:0.7;}
+  input[type=text],input[type=tel]{width:100%;background:var(--charcoal);border:1px solid var(--border);border-radius:10px;color:var(--white);padding:0.75rem;font-size:1rem;outline:none;transition:border-color 0.15s;}
+  input:focus{border-color:var(--flame);}
+  .pred{display:flex;align-items:center;justify-content:center;gap:0.6rem;background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem 0.75rem;margin-top:0.35rem;}
+  .pred .team{flex:1;text-align:center;font-weight:700;font-size:1rem;}
+  .pred .team.left{color:#e8503a;}
+  .pred .team.right{color:#6aa0ff;}
+  .pred .score{width:56px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;background:var(--panel);border:2px solid var(--border);border-radius:10px;color:var(--white);padding:0;}
+  .pred .score:focus{border-color:var(--flame);}
+  .pred .dash{font-size:1.5rem;color:var(--muted);font-weight:800;}
+  .btn{width:100%;border:none;border-radius:12px;padding:0.9rem;font-size:1rem;font-weight:800;cursor:pointer;margin-top:1.3rem;transition:transform 0.1s,opacity 0.2s;}
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:var(--flame);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .err{color:var(--red);font-size:0.82rem;margin-top:0.5rem;min-height:1.1rem;text-align:center;}
+  .note{font-size:0.78rem;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.5;}
+  .hidden{display:none;}
+  /* Confirmation panel */
+  .confirm-box{text-align:center;}
+  .confirm-box .big-score{font-size:1.8rem;font-weight:800;margin:0.75rem 0;}
+  .confirm-box .big-score .l{color:#e8503a;}
+  .confirm-box .big-score .r{color:#6aa0ff;}
+  .confirm-row{display:flex;justify-content:space-between;font-size:0.9rem;padding:0.4rem 0;border-bottom:1px solid var(--border);}
+  .confirm-row span:first-child{color:var(--muted);}
+  /* Result screens */
+  .result{text-align:center;padding:1rem 0;}
+  .result .icon{font-size:3rem;}
+  .result h2{margin:0.6rem 0;font-size:1.3rem;}
+  .result.ok h2{color:var(--green);}
+  .result.dup h2{color:var(--orange);}
+  .result.closed h2{color:var(--muted);}
+  .result p{color:var(--muted);font-size:0.92rem;}
+  .result .pred-line{font-size:1.1rem;font-weight:700;color:var(--white);margin:0.6rem 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="trophy">🏆</div>
+    <h1>World Cup Final Prediction</h1>
+    <p>Guess the exact final score and enter the lucky draw!</p>
+  </div>
+
+  <!-- FORM -->
+  <div class="card" id="formCard">
+    <label for="fName">Your Name</label>
+    <input type="text" id="fName" placeholder="Full name" autocomplete="name" maxlength="40">
+
+    <label for="fPhone">Phone Number</label>
+    <input type="tel" id="fPhone" placeholder="10-digit mobile number" autocomplete="tel" inputmode="numeric" maxlength="10">
+
+    <label for="fAddress">Address <span class="opt">(optional)</span></label>
+    <input type="text" id="fAddress" placeholder="Optional" autocomplete="street-address" maxlength="200">
+
+    <label>Your Predicted Final Score</label>
+    <div class="pred">
+      <div class="team left" id="teamLeft">Spain</div>
+      <input class="score" id="predLeft" inputmode="numeric" maxlength="2" placeholder="0">
+      <div class="dash">–</div>
+      <input class="score" id="predRight" inputmode="numeric" maxlength="2" placeholder="0">
+      <div class="team right" id="teamRight">Argentina</div>
+    </div>
+
+    <div class="err" id="formErr"></div>
+    <button class="btn btn-primary" id="reviewBtn" onclick="review()">Review my prediction →</button>
+    <div class="note">One entry per phone number. If more than one person guesses the exact score correctly, the winner is chosen by lucky draw.</div>
+  </div>
+
+  <!-- CONFIRMATION -->
+  <div class="card hidden" id="confirmCard">
+    <div class="confirm-box">
+      <div style="font-size:0.85rem;color:var(--muted);">Please confirm your prediction</div>
+      <div class="big-score"><span class="l" id="cLeftTeam">Spain</span> <span id="cLeft">0</span> – <span id="cRight">0</span> <span class="r" id="cRightTeam">Argentina</span></div>
+    </div>
+    <div class="confirm-row"><span>Name</span><span id="cName"></span></div>
+    <div class="confirm-row"><span>Phone</span><span id="cPhone"></span></div>
+    <div class="confirm-row" id="cAddrRow"><span>Address</span><span id="cAddr"></span></div>
+    <div class="err" id="confirmErr"></div>
+    <button class="btn btn-primary" id="submitBtn" onclick="submitPrediction()">✓ Confirm &amp; Submit</button>
+    <button class="btn btn-ghost" onclick="backToForm()">← Go back and edit</button>
+    <div class="note">Once submitted, your prediction cannot be changed.</div>
+  </div>
+
+  <!-- RESULT: success -->
+  <div class="card hidden" id="okCard">
+    <div class="result ok">
+      <div class="icon">🎉</div>
+      <h2>You're in!</h2>
+      <div class="pred-line" id="okPred"></div>
+      <p>Your prediction has been entered into the draw. Good luck!</p>
+    </div>
+  </div>
+
+  <!-- RESULT: duplicate phone -->
+  <div class="card hidden" id="dupCard">
+    <div class="result dup">
+      <div class="icon">⚠️</div>
+      <h2>Phone number already used</h2>
+      <p>This phone number has already been used to enter. Only one entry per phone number is allowed.</p>
+    </div>
+  </div>
+
+  <!-- RESULT: closed -->
+  <div class="card hidden" id="closedCard">
+    <div class="result closed">
+      <div class="icon">🔒</div>
+      <h2>Predictions are closed</h2>
+      <p>Entries are no longer being accepted. Thank you for your interest!</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Points at the same backend as the ordering site.
+const SERVER_URL = 'https://orders.grillinnfalkawn.in';
+
+let pending = null; // holds the reviewed prediction awaiting final submit
+
+function show(id) {
+  ['formCard','confirmCard','okCard','dupCard','closedCard'].forEach(c =>
+    document.getElementById(c).classList.toggle('hidden', c !== id));
+  window.scrollTo(0, 0);
+}
+
+// Load team names + open/closed state from the server on page load.
+fetch(SERVER_URL + '/api/worldcup/config').then(r => r.json()).then(cfg => {
+  if (cfg.team_left) {
+    document.getElementById('teamLeft').textContent = cfg.team_left;
+    document.getElementById('cLeftTeam').textContent = cfg.team_left;
+  }
+  if (cfg.team_right) {
+    document.getElementById('teamRight').textContent = cfg.team_right;
+    document.getElementById('cRightTeam').textContent = cfg.team_right;
+  }
+  if (cfg.open === false) show('closedCard');
+}).catch(() => { /* if config fails, still let them try; server re-checks on submit */ });
+
+// Digits-only on phone and score fields.
+['fPhone','predLeft','predRight'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e => {
+    e.target.value = e.target.value.replace(/\D/g, '');
+  });
+});
+
+function review() {
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const address = document.getElementById('fAddress').value.trim();
+  const left = document.getElementById('predLeft').value.trim();
+  const right = document.getElementById('predRight').value.trim();
+  const err = document.getElementById('formErr');
+  err.textContent = '';
+
+  if (!/^[A-Za-z .']{2,40}$/.test(name)) { err.textContent = 'Please enter your name (letters only, 2–40 characters).'; return; }
+  if (!/^[6-9]\d{9}$/.test(phone)) { err.textContent = 'Please enter a valid 10-digit phone number (starting 6–9).'; return; }
+  if (left === '' || right === '') { err.textContent = 'Please enter the predicted goals for both teams.'; return; }
+  const l = parseInt(left, 10), r = parseInt(right, 10);
+  if (isNaN(l) || isNaN(r) || l < 0 || l > 99 || r < 0 || r > 99) { err.textContent = 'Goals must be between 0 and 99.'; return; }
+
+  pending = { name, phone, address, pred_left: l, pred_right: r };
+
+  // Fill confirmation panel.
+  document.getElementById('cLeft').textContent = l;
+  document.getElementById('cRight').textContent = r;
+  document.getElementById('cName').textContent = name;
+  document.getElementById('cPhone').textContent = phone;
+  if (address) {
+    document.getElementById('cAddr').textContent = address;
+    document.getElementById('cAddrRow').style.display = '';
+  } else {
+    document.getElementById('cAddrRow').style.display = 'none';
+  }
+  document.getElementById('confirmErr').textContent = '';
+  show('confirmCard');
+}
+
+function backToForm() { show('formCard'); }
+
+function submitPrediction() {
+  if (!pending) { show('formCard'); return; }
+  const btn = document.getElementById('submitBtn');
+  const err = document.getElementById('confirmErr');
+  err.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  fetch(SERVER_URL + '/api/worldcup/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(pending)
+  }).then(r => r.json().then(body => ({ ok: r.ok, status: r.status, body })))
+    .then(({ body }) => {
+      if (body.status === 'ok') {
+        document.getElementById('okPred').textContent = body.prediction || '';
+        show('okCard');
+      } else if (body.status === 'duplicate') {
+        show('dupCard');
+      } else if (body.status === 'closed') {
+        show('closedCard');
+      } else {
+        err.textContent = body.message || 'Something went wrong. Please try again.';
+        btn.disabled = false;
+        btn.textContent = '✓ Confirm & Submit';
+      }
+    })
+    .catch(() => {
+      err.textContent = 'Could not reach the server. Please check your connection and try again.';
+      btn.disabled = false;
+      btn.textContent = '✓ Confirm & Submit';
+    });
+}
+</script>
+</body>
+</html>
