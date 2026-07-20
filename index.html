@@ -1126,6 +1126,9 @@ function setDietFilter(val) {
 
 let cart = {};
 let orderType = null;
+// Delivery availability, driven by the server (manual pause or daily cutoff).
+// Takeaway/Dine-In are never affected. Refreshed from /api/settings.
+let DELIVERY_STATUS = { available: true, message: '' };
 let orderCounter = parseInt(localStorage.getItem('gi_counter') || '0');
 let currentView = localStorage.getItem('gi_view') || 'grid';
 
@@ -1657,13 +1660,41 @@ function renderDrawer() {
 html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</span><span>₹'+subtotal+'</span></div>'+(packingCharge > 0 ? '<div class="summary-row"><span>Packing Charges</span><span>₹'+packingCharge+'</span></div>' : '')+(discountAmount > 0 ? '<div class="summary-row" style="color:var(--accent, #2e7d32);"><span>Discount ('+discountPercent+'%)</span><span>−₹'+discountAmount+'</span></div>' : '')+totalRow+(orderType === 'Delivery' ? '<div class="note-box" style="margin-top:0.6rem;">🛵 Delivery charges depend on your location and will be manually added after order confirmation. Displayed prices are not final for delivery orders.</div>' : '')+'</div>';
 
   const etaText = orderType ? estimatePrepRange(cart) + (orderType === 'Delivery' ? ' (+ delivery time)' : '') : '';
-  html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns"><button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button><button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div>'+(etaText ? '<div class="eta-hint">⏱ Estimated: <strong>'+etaText+'</strong></div>' : '')+'<div id="checkoutForm"></div></div>';
+  const deliveryOff = !DELIVERY_STATUS.available;
+  const deliveryBtn = deliveryOff
+    ? '<button class="otype-btn" style="opacity:0.4;cursor:not-allowed;" onclick="showDeliveryOff()"><span class="otype-icon">🚚</span>Delivery</button>'
+    : '<button class="otype-btn '+(orderType==='Delivery'?'selected':'')+'" onclick="selectType(\'Delivery\')"><span class="otype-icon">🚚</span>Delivery</button>';
+  html += '<div class="checkout-section"><div class="checkout-title">How would you like your order?</div><div class="order-type-btns">'+deliveryBtn+'<button class="otype-btn '+(orderType==='Takeaway'?'selected':'')+'" onclick="selectType(\'Takeaway\')"><span class="otype-icon">🥡</span>Takeaway</button><button class="otype-btn '+(orderType==='Dine In'?'selected':'')+'" onclick="selectType(\'Dine In\')"><span class="otype-icon">🍽️</span>Dine In</button></div>'+(deliveryOff ? '<div class="closed-box" style="margin-top:0.5rem;">🛵 '+(DELIVERY_STATUS.message || 'Delivery is not available right now. Takeaway and Dine-In are still available.')+'</div>' : '')+(etaText ? '<div class="eta-hint">⏱ Estimated: <strong>'+etaText+'</strong></div>' : '')+'<div id="checkoutForm"></div></div>';
 
   content.innerHTML = html;
   if (orderType) renderCheckoutForm(status);
 }
 
-function selectType(type) { if (type !== 'Delivery') destroyDeliveryMap(); orderType = type; renderDrawer(); updateCartUI(); }
+function selectType(type) {
+  if (type === 'Delivery' && !DELIVERY_STATUS.available) { showDeliveryOff(); return; }
+  if (type !== 'Delivery') destroyDeliveryMap();
+  orderType = type; renderDrawer(); updateCartUI();
+}
+
+function showDeliveryOff() {
+  alert(DELIVERY_STATUS.message || 'Delivery is not available right now. Takeaway and Dine-In are still available.');
+}
+
+// Re-check delivery availability periodically so a page left open across the
+// daily cutoff (or a manual pause) updates without a reload. Lightweight: only
+// touches DELIVERY_STATUS and re-renders if it actually changed.
+async function refreshDeliveryStatus() {
+  try {
+    const res = await fetch(SERVER_URL + '/api/settings');
+    if (!res.ok) return;
+    const s = await res.json();
+    const prev = DELIVERY_STATUS.available;
+    DELIVERY_STATUS = s.delivery_status || { available: true, message: '' };
+    if (!DELIVERY_STATUS.available && orderType === 'Delivery') { orderType = null; destroyDeliveryMap(); }
+    if (prev !== DELIVERY_STATUS.available) { renderDrawer(); updateCartUI(); }
+  } catch (e) {}
+}
+setInterval(refreshDeliveryStatus, 120000);
 
 // ── REMEMBER CUSTOMER DETAILS (name, phone, address) ─────────────────
 // Saved locally on this device after a successful order, and used to
@@ -2568,6 +2599,10 @@ async function loadRemoteSettings() {
     THRESHOLD_OFFER = settings.threshold_offer || THRESHOLD_OFFER;
     QTY_OFFERS = settings.qty_offers || [];
     PREORDER_TIME = settings.preorder_time || { active: false };
+    DELIVERY_STATUS = settings.delivery_status || { available: true, message: '' };
+    // If delivery just went off and the customer had it selected, drop it so
+    // they can't sit on an order type the server will reject.
+    if (!DELIVERY_STATUS.available && orderType === 'Delivery') { orderType = null; destroyDeliveryMap(); }
     applyBanner(settings);
     refreshStatusBanner(); // re-check status now that special dates are loaded
     updateCartUI(); // reflect any offer change immediately if cart is already open/populated
