@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Grill Inn — Driver</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap');
+  :root{--flame:#f97316;--charcoal:#1a1a1a;--panel:#242424;--border:#333;--white:#fff;--muted:#9ca3af;--green:#22c55e;--red:#ef4444;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--charcoal);color:var(--white);font-family:'Inter','Segoe UI',Arial,sans-serif;min-height:100vh;}
+  header{background:var(--panel);border-bottom:2px solid var(--flame);padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;gap:0.6rem;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1.5px;background:linear-gradient(135deg,var(--flame),#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+  .who{font-size:0.78rem;color:var(--muted);margin-top:0.15rem;}
+  .refresh-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:0.5rem 0.8rem;font-size:0.8rem;font-weight:700;}
+  .main{max-width:640px;margin:0 auto;padding:1rem;}
+  .section-title{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin:1.2rem 0 0.6rem;display:flex;justify-content:space-between;align-items:center;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:0.9rem;margin-bottom:0.75rem;}
+  .card.manual{border-left:3px solid var(--flame);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.5rem;}
+  .cust-name{font-weight:800;font-size:1.05rem;color:var(--white);}
+  .tag{font-size:0.66rem;font-weight:700;padding:0.2rem 0.55rem;border-radius:10px;background:var(--charcoal);color:var(--muted);white-space:nowrap;}
+  .tag.order{color:var(--flame);}
+  .tag.manual{background:rgba(249,115,22,0.15);color:var(--flame);}
+  .addr{font-size:0.86rem;color:var(--white);line-height:1.5;margin-bottom:0.3rem;}
+  .meta{font-size:0.76rem;color:var(--muted);line-height:1.5;margin-bottom:0.5rem;}
+  .items{font-size:0.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:0.45rem;margin-top:0.3rem;line-height:1.6;}
+  .collect{font-size:1.05rem;font-weight:800;color:var(--green);margin:0.55rem 0;}
+  .collect small{font-size:0.72rem;color:var(--muted);font-weight:600;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+  .actions{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;}
+  .btn{flex:1;min-width:120px;border:none;border-radius:9px;font-weight:700;padding:0.7rem 0.6rem;cursor:pointer;font-size:0.85rem;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;}
+  .btn-call{background:var(--charcoal);border:1px solid var(--border);color:var(--white);}
+  .btn-nav{background:#1d4ed8;color:#fff;}
+  .btn-done{background:linear-gradient(135deg,var(--flame),#dc2626);color:#fff;}
+  .btn-remove{background:none;border:1px solid var(--border);color:var(--muted);flex:0 0 auto;min-width:auto;padding:0.7rem 0.8rem;}
+  .empty{text-align:center;color:var(--muted);padding:2.5rem 1rem;font-size:0.9rem;line-height:1.6;}
+  .loading{text-align:center;color:var(--muted);padding:2.5rem;font-size:0.9rem;}
+  .add-wrap{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:0.9rem;margin-bottom:2rem;}
+  .add-wrap.collapsed .add-body{display:none;}
+  .add-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:700;font-size:0.92rem;}
+  .add-body{margin-top:0.8rem;}
+  .fld{margin-bottom:0.6rem;}
+  .fld label{display:block;font-size:0.76rem;color:var(--muted);margin-bottom:0.25rem;font-weight:600;}
+  .fld input{width:100%;background:var(--charcoal);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:16px;padding:0.65rem 0.8rem;outline:none;}
+  .fld input:focus{border-color:var(--flame);}
+  .add-submit{width:100%;background:linear-gradient(135deg,var(--flame),#dc2626);border:none;border-radius:9px;color:#fff;font-weight:700;padding:0.8rem;cursor:pointer;font-size:0.9rem;margin-top:0.3rem;}
+  .toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--flame);color:var(--white);padding:0.7rem 1.1rem;border-radius:10px;font-size:0.85rem;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .gate{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;text-align:center;}
+  .gate-box{max-width:360px;}
+  .gate-box .logo{font-size:2.2rem;margin-bottom:1rem;}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate" style="display:none;">
+  <div class="gate-box">
+    <div class="logo">GRILL INN</div>
+    <div id="gateMsg" style="color:var(--muted);font-size:0.95rem;line-height:1.6;"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <header>
+    <div>
+      <div class="logo">GRILL INN</div>
+      <div class="who" id="who"></div>
+    </div>
+    <button class="refresh-btn" onclick="loadDeliveries()">↻ Refresh</button>
+  </header>
+  <div class="main">
+    <div class="section-title"><span>My deliveries</span><span id="count"></span></div>
+    <div id="list"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SERVER_URL = "https://orders.grillinnfalkawn.in";
+
+// The token comes from the personal link the restaurant sends each driver:
+//   driver.html?t=<token>
+// It's held in memory only and sent as a header on every request.
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function gate(msg){
+  document.getElementById('app').style.display='none';
+  document.getElementById('gate').style.display='flex';
+  document.getElementById('gateMsg').innerHTML=msg;
+}
+
+function driverFetch(path, opts){
+  opts=opts||{};
+  opts.headers=Object.assign({'X-Driver-Token':TOKEN}, opts.headers||{});
+  return fetch(SERVER_URL+path, opts);
+}
+
+// Google Maps: exact pin -> turn-by-turn directions; otherwise search the
+// typed address. Both open the Maps app on a phone.
+function navUrl(d){
+  if(d.lat!=null && d.lng!=null){
+    return 'https://www.google.com/maps/dir/?api=1&destination='+d.lat+','+d.lng;
+  }
+  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d.address||'');
+}
+
+function telHref(phone){return 'tel:'+String(phone||'').replace(/[^0-9+]/g,'');}
+
+function money(n){return '₹'+Number(n||0).toLocaleString('en-IN');}
+
+function systemCard(o){
+  const items=(o.items||[]).map(i=>esc(i.qty+'× '+i.title)).join('<br>');
+  const hasPin = (o.lat!=null && o.lng!=null);
+  return '<div class="card">'+
+    '<div class="card-top"><div class="cust-name">'+esc(o.customer_name||'Customer')+'</div>'+
+      '<span class="tag order">#'+esc(o.order_number||'')+'</span></div>'+
+    (o.address?'<div class="addr">📍 '+esc(o.address)+'</div>':'')+
+    (o.out_for_delivery_at?'<div class="meta">Out since '+esc(o.out_for_delivery_at)+(hasPin?'':' · no map pin — using address')+'</div>':'')+
+    (o.notes?'<div class="meta">📝 '+esc(o.notes)+'</div>':'')+
+    (items?'<div class="items">'+items+'</div>':'')+
+    '<div class="collect"><small>Collect</small>'+money(o.amount_to_collect)+'</div>'+
+    '<div class="actions">'+
+      (o.customer_phone?'<a class="btn btn-call" href="'+esc(telHref(o.customer_phone))+'">📞 Call</a>':'')+
+      '<a class="btn btn-nav" href="'+esc(navUrl(o))+'" target="_blank" rel="noopener">🧭 Navigate</a>'+
+      '<button class="btn btn-done" onclick="markDelivered(\'system\','+o.id+',this)">✓ Delivered</button>'+
+    '</div></div>';
+}
+
+function manualCard(m){
+  return '<div class="card manual">'+
+    '<div class="card-top"><div class="cust-name">'+esc(m.customer_name||'Customer')+'</div>'+
+      '<span class="tag manual">'+(m.ref_number?('#'+esc(m.ref_number)):'From restaurant')+'</span></div>'+
+    (m.address?'<div class="addr">📍 '+esc(m.address)+'</div>':'')+
+    (m.note?'<div class="meta">📝 '+esc(m.note)+'</div>':'')+
+    (Number(m.amount_to_collect)>0?'<div class="collect"><small>Collect</small>'+money(m.amount_to_collect)+'</div>':'')+
+    '<div class="actions">'+
+      (m.customer_phone?'<a class="btn btn-call" href="'+esc(telHref(m.customer_phone))+'">📞 Call</a>':'')+
+      (m.address?'<a class="btn btn-nav" href="'+esc(navUrl(m))+'" target="_blank" rel="noopener">🧭 Navigate</a>':'')+
+      '<button class="btn btn-done" onclick="markDelivered(\'manual\','+m.id+',this)">✓ Delivered</button>'+
+    '</div></div>';
+}
+
+function loadDeliveries(){
+  if(!TOKEN){gate('No driver link detected.<br><br>Please open the personal link the restaurant sent you.');return;}
+  driverFetch('/api/driver/deliveries').then(r=>{
+    if(r.status===401){gate('This driver link is invalid or has been changed.<br><br>Please ask the restaurant for a fresh link.');return null;}
+    if(r.status===429){showToast('Too many requests — wait a moment.');return null;}
+    return r.json();
+  }).then(data=>{
+    if(!data)return;
+    document.getElementById('gate').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('who').textContent=data.driver_name?('Driver: '+data.driver_name):'';
+    const sys=data.system_orders||[], man=data.manual_orders||[];
+    const total=sys.length+man.length;
+    document.getElementById('count').textContent=total?(total+(total===1?' stop':' stops')):'';
+    const list=document.getElementById('list');
+    if(!total){
+      list.innerHTML='<div class="empty">No deliveries right now.<br>Orders assigned to you appear here automatically. You can also add your own below.</div>';
+      return;
+    }
+    list.innerHTML=sys.map(systemCard).join('')+man.map(manualCard).join('');
+  }).catch(()=>{showToast('Could not reach the server. Check your connection.');});
+}
+
+function markDelivered(type,id,btn){
+  if(!confirm('Mark this delivery as done?'))return;
+  btn.disabled=true;btn.textContent='…';
+  driverFetch('/api/driver/mark-delivered',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:type,id:id})
+  }).then(r=>r.json()).then(res=>{
+    if(res&&res.status==='ok'){showToast('Marked delivered ✓');loadDeliveries();}
+    else{showToast((res&&res.message)||'Could not update.');btn.disabled=false;btn.textContent='✓ Delivered';}
+  }).catch(()=>{showToast('Network error.');btn.disabled=false;btn.textContent='✓ Delivered';});
+}
+
+// Initial load + a gentle auto-refresh so newly-assigned orders show up
+// without the driver having to reload.
+loadDeliveries();
+setInterval(function(){ if(document.visibilityState==='visible' && document.getElementById('app').style.display!=='none') loadDeliveries(); }, 60000);
+</script>
+</body>
+</html>
