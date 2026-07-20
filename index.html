@@ -342,6 +342,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 @media(min-width:600px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));}.drawer{max-width:480px;left:50%;transform:translateX(-50%) translateY(100%);right:auto;width:100%;}.drawer.open{transform:translateX(-50%) translateY(0);}.cart-bar{max-width:480px;left:50%;transform:translateX(-50%);right:auto;border-radius:12px 12px 0 0;}}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
 
@@ -629,6 +631,7 @@ let SPECIAL_DATES = {};
 let OUT_OF_STOCK_IDS = new Set();
 let THRESHOLD_OFFER = { active: false, threshold_amount: 499, discount_percent: 10 };
 let QTY_OFFERS = [];
+let PREORDER_TIME = { active: false, label: '', options: [] };
 
 function getDateKey(d) {
   const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
@@ -1660,7 +1663,7 @@ html += '<div class="cart-summary"><div class="summary-row"><span>Sub Total</spa
   if (orderType) renderCheckoutForm(status);
 }
 
-function selectType(type) { orderType = type; renderDrawer(); updateCartUI(); }
+function selectType(type) { if (type !== 'Delivery') destroyDeliveryMap(); orderType = type; renderDrawer(); updateCartUI(); }
 
 // ── REMEMBER CUSTOMER DETAILS (name, phone, address) ─────────────────
 // Saved locally on this device after a successful order, and used to
@@ -1712,7 +1715,15 @@ function renderCheckoutForm(status) {
   const vNotes = d ? d.notes : '';
 
   const deliveryFields = orderType === 'Delivery' ? (
-    '<div class="form-group"><label>Full Address *</label><div class="input-wrap textarea-wrap"><textarea id="fAddress" rows="2" autocomplete="street-address" placeholder="House no., street, landmark..." oninput="validateField(this)">'+esc(vAddress)+'</textarea><span class="valid-check">✓</span></div></div>'
+    '<div class="form-group"><label>Full Address *</label><div class="input-wrap textarea-wrap"><textarea id="fAddress" rows="2" autocomplete="street-address" placeholder="House no., street, landmark..." oninput="validateField(this)">'+esc(vAddress)+'</textarea><span class="valid-check">✓</span></div></div>' +
+    '<div class="form-group"><label>📍 Drop a pin on the map <span style="font-weight:400;color:var(--muted);">(helps the driver find you)</span></label>' +
+    '<div id="deliveryMapWrap" style="height:220px;border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-top:0.3rem;position:relative;">' +
+      '<div id="deliveryMap" style="height:100%;width:100%;"></div>' +
+      '<div id="mapLocateBtn" onclick="mapLocateMe()" style="position:absolute;bottom:10px;right:10px;z-index:1000;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.6rem;cursor:pointer;font-size:0.82rem;color:var(--white);box-shadow:0 2px 6px rgba(0,0,0,0.3);">📍 My location</div>' +
+    '</div>' +
+    '<div id="mapPinStatus" style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem;"></div>' +
+    '<input type="hidden" id="fDeliveryLat"><input type="hidden" id="fDeliveryLng">' +
+    '</div>'
   ) : '';
 
   form.innerHTML =
@@ -1722,6 +1733,12 @@ function renderCheckoutForm(status) {
     '<div class="form-group"><label>Phone Number *</label><div class="input-wrap"><input type="tel" id="fPhone" autocomplete="tel" inputmode="numeric" placeholder="e.g. 9876543210" value="'+esc(vPhone)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
     '<div class="form-group"><label>Email (optional)</label><div class="input-wrap"><input type="email" id="fEmail" autocomplete="email" placeholder="Enter your email to get confirmation/receipt" value="'+esc(vEmail)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
     deliveryFields +
+    (PREORDER_TIME.active ? (
+      '<div class="form-group"><label>' + esc(PREORDER_TIME.label || 'When should your order be ready?') + '</label>' +
+      '<select id="fScheduledFor" style="width:100%;background:var(--charcoal);border:1px solid var(--border);border-radius:10px;color:var(--white);padding:0.75rem;font-size:1rem;outline:none;appearance:none;cursor:pointer;">' +
+      (PREORDER_TIME.options || []).map(function(opt) { return '<option value="' + esc(opt) + '">' + esc(opt) + '</option>'; }).join('') +
+      '</select></div>'
+    ) : '') +
     '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" maxlength="120" placeholder="Any special requests for the whole order..." oninput="document.getElementById(\'fNotesCount\').textContent=this.value.length+\'/120\'">'+esc(vNotes)+'</textarea><div class="note-count" id="fNotesCount">'+vNotes.length+'/120</div></div>' +
     '<div class="note-box">💵 Payment: <strong>Payment on Delivery via Cash/UPI</strong></div>' +
     '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!status2.open ? 'disabled' : '')+'>'+(!status2.open ? 'Shop Closed' : 'Place Order')+'</button>';
@@ -1732,6 +1749,7 @@ function renderCheckoutForm(status) {
       if (el) validateField(el);
     });
     autoFocusFirstEmpty();
+    if (orderType === 'Delivery') initDeliveryMap();
   }, 0);
 }
 
@@ -1760,6 +1778,69 @@ function autoFocusFirstEmpty() {
     const el = document.getElementById(id);
     if (el && !el.value.trim()) { el.focus(); return; }
   }
+}
+
+// ── Delivery map pin (Leaflet + OpenStreetMap, free, no API key) ─────
+let deliveryMap = null;
+let deliveryMarker = null;
+// Default center: Falkawn, Mizoram.
+const MAP_DEFAULT_LAT = 23.7241;
+const MAP_DEFAULT_LNG = 92.7176;
+const MAP_DEFAULT_ZOOM = 15;
+
+function initDeliveryMap() {
+  const container = document.getElementById('deliveryMap');
+  if (!container || deliveryMap) return; // already initialized or not on screen
+  try {
+    deliveryMap = L.map('deliveryMap', { attributionControl: false }).setView([MAP_DEFAULT_LAT, MAP_DEFAULT_LNG], MAP_DEFAULT_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(deliveryMap);
+    // Tap/click to place or move the pin.
+    deliveryMap.on('click', function(e) { setDeliveryPin(e.latlng.lat, e.latlng.lng); });
+    // If we had a previous pin (e.g. returning to the form), restore it.
+    const prevLat = document.getElementById('fDeliveryLat')?.value;
+    const prevLng = document.getElementById('fDeliveryLng')?.value;
+    if (prevLat && prevLng) setDeliveryPin(parseFloat(prevLat), parseFloat(prevLng));
+    // Force a re-render after the container becomes visible (Leaflet quirk).
+    setTimeout(() => { if (deliveryMap) deliveryMap.invalidateSize(); }, 200);
+  } catch (e) {
+    console.log('Map init failed', e);
+    const wrap = document.getElementById('deliveryMapWrap');
+    if (wrap) wrap.style.display = 'none';
+  }
+}
+
+function setDeliveryPin(lat, lng) {
+  if (!deliveryMap) return;
+  if (deliveryMarker) { deliveryMarker.setLatLng([lat, lng]); }
+  else { deliveryMarker = L.marker([lat, lng], { draggable: true }).addTo(deliveryMap); deliveryMarker.on('dragend', function() { const p = deliveryMarker.getLatLng(); updatePinFields(p.lat, p.lng); }); }
+  deliveryMap.setView([lat, lng], Math.max(deliveryMap.getZoom(), 16));
+  updatePinFields(lat, lng);
+}
+
+function updatePinFields(lat, lng) {
+  const latEl = document.getElementById('fDeliveryLat');
+  const lngEl = document.getElementById('fDeliveryLng');
+  if (latEl) latEl.value = lat.toFixed(6);
+  if (lngEl) lngEl.value = lng.toFixed(6);
+  const status = document.getElementById('mapPinStatus');
+  if (status) status.textContent = '✅ Pin placed — drag it to adjust if needed.';
+}
+
+function mapLocateMe() {
+  const status = document.getElementById('mapPinStatus');
+  if (!navigator.geolocation) { if (status) status.textContent = 'Location not supported on this device.'; return; }
+  if (status) status.textContent = 'Finding your location…';
+  navigator.geolocation.getCurrentPosition(
+    function(pos) { setDeliveryPin(pos.coords.latitude, pos.coords.longitude); },
+    function(err) {
+      if (status) status.textContent = 'Could not get location. You can tap the map to place a pin manually.';
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function destroyDeliveryMap() {
+  if (deliveryMap) { deliveryMap.remove(); deliveryMap = null; deliveryMarker = null; }
 }
 
 
@@ -2031,10 +2112,13 @@ async function placeOrder() {
     customer_email: email,
     client_ref: makeClientRef(), // one per checkout attempt, reused across retries — lets the server dedupe
     order_type: orderType, address: orderType === 'Delivery' ? address : '',
+    delivery_lat: parseFloat((document.getElementById('fDeliveryLat') || {}).value) || null,
+    delivery_lng: parseFloat((document.getElementById('fDeliveryLng') || {}).value) || null,
     delivery_charge: 0, packing_charge: packingCharge, subtotal: subtotal,
     discount_percent: discountPercent, discount_amount: discountAmount,
     grand_total: subtotal + packingCharge - discountAmount, notes: notes, items: items,
-    order_time: new Date().toLocaleString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})
+    order_time: new Date().toLocaleString('en-IN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}),
+    scheduled_for: (document.getElementById('fScheduledFor') || {}).value || ''
   };
 
   // Persist BEFORE attempting the network call — if the tab crashes or
@@ -2483,6 +2567,7 @@ async function loadRemoteSettings() {
     SPECIAL_DATES = settings.special_dates || {};
     THRESHOLD_OFFER = settings.threshold_offer || THRESHOLD_OFFER;
     QTY_OFFERS = settings.qty_offers || [];
+    PREORDER_TIME = settings.preorder_time || { active: false };
     applyBanner(settings);
     refreshStatusBanner(); // re-check status now that special dates are loaded
     updateCartUI(); // reflect any offer change immediately if cart is already open/populated
