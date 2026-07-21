@@ -67,7 +67,7 @@
       <div class="logo">GRILL INN</div>
       <div class="who" id="who"></div>
     </div>
-    <button class="refresh-btn" onclick="loadDeliveries()">↻ Refresh</button>
+    <button class="refresh-btn" onclick="loadDeliveries({manual:true})">↻ Refresh</button>
   </header>
   <div class="main">
     <div class="section-title"><span>My deliveries</span><span id="count"></span></div>
@@ -150,27 +150,50 @@ function manualCard(m){
     '</div></div>';
 }
 
-function loadDeliveries(){
+let lastSig = null;
+
+// A compact signature of what's on screen. If it's unchanged between polls,
+// we skip touching the DOM entirely — so a background refresh never rebuilds
+// cards under the driver's finger while they're tapping Delivered/Navigate,
+// and never jumps their scroll. The list only re-renders when a delivery is
+// actually added, removed, or re-sent.
+function deliveriesSig(data){
+  const sys=(data.system_orders||[]).map(o=>[o.id,o.amount_to_collect,o.out_for_delivery_at]);
+  const man=(data.manual_orders||[]).map(m=>[m.id,m.amount_to_collect,m.ref_number]);
+  return JSON.stringify([data.driver_name||'',sys,man]);
+}
+
+function renderDeliveries(data){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('who').textContent=data.driver_name?('Driver: '+data.driver_name):'';
+  const sys=data.system_orders||[], man=data.manual_orders||[];
+  const total=sys.length+man.length;
+  document.getElementById('count').textContent=total?(total+(total===1?' stop':' stops')):'';
+  const list=document.getElementById('list');
+  if(!total){
+    list.innerHTML='<div class="empty">No deliveries right now.<br>Orders assigned to you appear here automatically as the restaurant sends them.</div>';
+  }else{
+    list.innerHTML=sys.map(systemCard).join('')+man.map(manualCard).join('');
+  }
+}
+
+function loadDeliveries(opts){
+  opts=opts||{}; // {auto:true} background poll, {manual:true} tapped refresh, {} initial/after-action
   if(!TOKEN){gate('No driver link detected.<br><br>Please open the personal link the restaurant sent you.');return;}
   driverFetch('/api/driver/deliveries').then(r=>{
     if(r.status===401){gate('This driver link is invalid or has been changed.<br><br>Please ask the restaurant for a fresh link.');return null;}
-    if(r.status===429){showToast('Too many requests — wait a moment.');return null;}
+    if(r.status===429){if(!opts.auto)showToast('Too many requests — wait a moment.');return null;}
     return r.json();
   }).then(data=>{
     if(!data)return;
-    document.getElementById('gate').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('who').textContent=data.driver_name?('Driver: '+data.driver_name):'';
-    const sys=data.system_orders||[], man=data.manual_orders||[];
-    const total=sys.length+man.length;
-    document.getElementById('count').textContent=total?(total+(total===1?' stop':' stops')):'';
-    const list=document.getElementById('list');
-    if(!total){
-      list.innerHTML='<div class="empty">No deliveries right now.<br>Orders assigned to you appear here automatically. You can also add your own below.</div>';
-      return;
-    }
-    list.innerHTML=sys.map(systemCard).join('')+man.map(manualCard).join('');
-  }).catch(()=>{showToast('Could not reach the server. Check your connection.');});
+    const sig=deliveriesSig(data);
+    // Background poll with no change → leave the screen exactly as it is.
+    if(opts.auto && sig===lastSig)return;
+    lastSig=sig;
+    renderDeliveries(data);
+    if(opts.manual)showToast('Up to date ✓');
+  }).catch(()=>{if(!opts.auto)showToast('Could not reach the server. Check your connection.');});
 }
 
 function markDelivered(type,id,btn){
@@ -185,10 +208,12 @@ function markDelivered(type,id,btn){
   }).catch(()=>{showToast('Network error.');btn.disabled=false;btn.textContent='✓ Delivered';});
 }
 
-// Initial load + a gentle auto-refresh so newly-assigned orders show up
-// without the driver having to reload.
+// Initial load + a background refresh so newly-assigned orders appear on their
+// own. Only re-renders when something actually changed (see deliveriesSig), so
+// the 15s cadence never interrupts a tap or scroll. Pauses while the page is
+// hidden (screen off / app backgrounded) to save the driver's battery & data.
 loadDeliveries();
-setInterval(function(){ if(document.visibilityState==='visible' && document.getElementById('app').style.display!=='none') loadDeliveries(); }, 60000);
+setInterval(function(){ if(document.visibilityState==='visible' && document.getElementById('app').style.display!=='none') loadDeliveries({auto:true}); }, 15000);
 </script>
 </body>
 </html>
