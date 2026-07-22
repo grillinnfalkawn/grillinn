@@ -32,6 +32,8 @@
   .btn{flex:1;min-width:120px;border:none;border-radius:9px;font-weight:700;padding:0.7rem 0.6rem;cursor:pointer;font-size:0.85rem;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;}
   .btn-call{background:var(--charcoal);border:1px solid var(--border);color:var(--white);}
   .btn-nav{background:#1d4ed8;color:#fff;}
+  .btn-nav.approx{background:#b45309;}
+  .nav-warn{background:rgba(249,115,22,0.12);border:1px solid var(--flame);color:var(--flame);border-radius:8px;padding:0.45rem 0.6rem;font-size:0.76rem;line-height:1.5;margin:0.5rem 0 0.1rem;}
   .btn-done{background:linear-gradient(135deg,var(--flame),#dc2626);color:#fff;}
   .btn-remove{background:none;border:1px solid var(--border);color:var(--muted);flex:0 0 auto;min-width:auto;padding:0.7rem 0.8rem;}
   .empty{text-align:center;color:var(--muted);padding:2.5rem 1rem;font-size:0.9rem;line-height:1.6;}
@@ -114,24 +116,40 @@ function navUrl(d){
   return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d.address||'');
 }
 
+function hasPin(d){ return d.lat!=null && d.lng!=null; }
+
+// When a stop has no GPS pin, navigation falls back to searching the typed
+// address — which can land approximately. Warn the driver clearly and recolour
+// the button so exact vs approximate stops are obvious at a glance.
+function navWarn(d){
+  return (hasPin(d) || !d.address) ? '' :
+    '<div class="nav-warn">⚠️ No exact location pin for this stop. The map opens a search of the address, which may be approximate — call the customer if you\'re unsure.</div>';
+}
+
+function navBtn(d){
+  if(!hasPin(d) && !d.address) return ''; // nothing to navigate to
+  const approx = !hasPin(d);
+  return '<a class="btn btn-nav'+(approx?' approx':'')+'" href="'+esc(navUrl(d))+'" target="_blank" rel="noopener">🧭 Navigate'+(approx?' (approx.)':'')+'</a>';
+}
+
 function telHref(phone){return 'tel:'+String(phone||'').replace(/[^0-9+]/g,'');}
 
 function money(n){return '₹'+Number(n||0).toLocaleString('en-IN');}
 
 function systemCard(o){
   const items=(o.items||[]).map(i=>esc(i.qty+'× '+i.title)).join('<br>');
-  const hasPin = (o.lat!=null && o.lng!=null);
   return '<div class="card">'+
     '<div class="card-top"><div class="cust-name">'+esc(o.customer_name||'Customer')+'</div>'+
       '<span class="tag order">#'+esc(o.order_number||'')+'</span></div>'+
     (o.address?'<div class="addr">📍 '+esc(o.address)+'</div>':'')+
-    (o.out_for_delivery_at?'<div class="meta">Out since '+esc(o.out_for_delivery_at)+(hasPin?'':' · no map pin — using address')+'</div>':'')+
+    (o.out_for_delivery_at?'<div class="meta">Out since '+esc(o.out_for_delivery_at)+'</div>':'')+
     (o.notes?'<div class="meta">📝 '+esc(o.notes)+'</div>':'')+
     (items?'<div class="items">'+items+'</div>':'')+
     '<div class="collect"><small>Collect</small>'+money(o.amount_to_collect)+'</div>'+
+    navWarn(o)+
     '<div class="actions">'+
       (o.customer_phone?'<a class="btn btn-call" href="'+esc(telHref(o.customer_phone))+'">📞 Call</a>':'')+
-      '<a class="btn btn-nav" href="'+esc(navUrl(o))+'" target="_blank" rel="noopener">🧭 Navigate</a>'+
+      navBtn(o)+
       '<button class="btn btn-done" onclick="markDelivered(\'system\','+o.id+',this)">✓ Delivered</button>'+
     '</div></div>';
 }
@@ -143,9 +161,10 @@ function manualCard(m){
     (m.address?'<div class="addr">📍 '+esc(m.address)+'</div>':'')+
     (m.note?'<div class="meta">📝 '+esc(m.note)+'</div>':'')+
     (Number(m.amount_to_collect)>0?'<div class="collect"><small>Collect</small>'+money(m.amount_to_collect)+'</div>':'')+
+    navWarn(m)+
     '<div class="actions">'+
       (m.customer_phone?'<a class="btn btn-call" href="'+esc(telHref(m.customer_phone))+'">📞 Call</a>':'')+
-      (m.address?'<a class="btn btn-nav" href="'+esc(navUrl(m))+'" target="_blank" rel="noopener">🧭 Navigate</a>':'')+
+      navBtn(m)+
       '<button class="btn btn-done" onclick="markDelivered(\'manual\','+m.id+',this)">✓ Delivered</button>'+
     '</div></div>';
 }
