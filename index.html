@@ -1129,6 +1129,11 @@ let orderType = null;
 // Delivery availability, driven by the server (manual pause or daily cutoff).
 // Takeaway/Dine-In are never affected. Refreshed from /api/settings.
 let DELIVERY_STATUS = { available: true, message: '' };
+// Whether the restaurant's server (the laptop) is reachable. When it isn't,
+// nothing can be ordered — the menu still browses from cache, but we say so
+// plainly instead of letting someone fill a cart that can't be submitted.
+let SERVER_ONLINE = true;
+let _healthTimer = null;
 let orderCounter = parseInt(localStorage.getItem('gi_counter') || '0');
 let currentView = localStorage.getItem('gi_view') || 'grid';
 
@@ -1757,8 +1762,10 @@ function renderCheckoutForm(status) {
     '</div>'
   ) : '';
 
+  const canOrder = status2.open && SERVER_ONLINE;
   form.innerHTML =
-    (!status2.open ? '<div class="closed-box">⚠️ '+status2.msg+'<br>You can still browse, but orders are only accepted during opening hours.</div>' : '') +
+    (!SERVER_ONLINE ? '<div class="closed-box">⚠️ '+offlineMessage()+'<br>📞 Call us: <a href="tel:'+RESTAURANT_PHONE+'" style="color:inherit;font-weight:700;">'+RESTAURANT_PHONE+'</a></div>' : '') +
+    (SERVER_ONLINE && !status2.open ? '<div class="closed-box">⚠️ '+status2.msg+'<br>You can still browse, but orders are only accepted during opening hours.</div>' : '') +
     (saved ? '<div class="autofill-note">✓ Auto-filled from your last order — edit if needed, or <a href="#" onclick="clearSavedCustomerDetails();return false;">clear saved details</a>.</div>' : '') +
     '<div class="form-group"><label>Your Name *</label><div class="input-wrap"><input type="text" id="fName" autocomplete="name" placeholder="e.g. Lalremruata" value="'+esc(vName)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
     '<div class="form-group"><label>Phone Number *</label><div class="input-wrap"><input type="tel" id="fPhone" autocomplete="tel" inputmode="numeric" placeholder="e.g. 9876543210" value="'+esc(vPhone)+'" oninput="validateField(this)"><span class="valid-check">✓</span></div></div>' +
@@ -1772,7 +1779,7 @@ function renderCheckoutForm(status) {
     ) : '') +
     '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" maxlength="120" placeholder="Any special requests for the whole order..." oninput="document.getElementById(\'fNotesCount\').textContent=this.value.length+\'/120\'">'+esc(vNotes)+'</textarea><div class="note-count" id="fNotesCount">'+vNotes.length+'/120</div></div>' +
     '<div class="note-box">💵 Payment: <strong>Payment on Delivery via Cash/UPI</strong></div>' +
-    '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!status2.open ? 'disabled' : '')+'>'+(!status2.open ? 'Shop Closed' : 'Place Order')+'</button>';
+    '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!canOrder ? 'disabled' : '')+'>'+(!SERVER_ONLINE ? 'Ordering Unavailable' : (!status2.open ? 'Shop Closed' : 'Place Order'))+'</button>';
 
   setTimeout(() => {
     ['fName','fPhone','fEmail','fAddress'].forEach(id => {
@@ -2584,10 +2591,69 @@ function isPeakHour(now) {
 function refreshStatusBanner() {
   const status = getStatus();
   const banner = document.getElementById('statusBanner');
+  // Server unreachable outranks opening hours — if we can't take the order,
+  // saying "Open now" would be actively misleading.
+  if (!SERVER_ONLINE) {
+    banner.className = 'status-banner status-closed';
+    banner.textContent = '⚠️ ' + (navigator.onLine === false ? "You're offline — check your connection" : "Online ordering is temporarily unavailable");
+    const peakEl0 = document.getElementById('peakNote');
+    if (peakEl0) peakEl0.style.display = 'none';
+    return;
+  }
   banner.className = 'status-banner ' + (status.open ? 'status-open' : 'status-closed');
   banner.textContent = status.msg;
   const peakEl = document.getElementById('peakNote');
   if (peakEl) peakEl.style.display = (status.open && isPeakHour(new Date())) ? 'block' : 'none';
+}
+
+// ── SERVER REACHABILITY ──────────────────────────────────────────────
+// The backend runs on a laptop at the restaurant, so it can simply be off.
+// Ping the lightweight /api/health endpoint; if it doesn't answer, tell the
+// customer up front rather than letting them build a cart they can't submit.
+async function checkServerHealth() {
+  const was = SERVER_ONLINE;
+  let ok = false;
+  try {
+    // AbortController gives a hard timeout — without it a dead host can leave
+    // the request hanging for a minute before the browser gives up.
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 7000);
+    const res = await fetch(SERVER_URL + '/api/health', { cache: 'no-store', signal: ctrl.signal });
+    clearTimeout(t);
+    ok = res.ok;
+  } catch (e) {
+    ok = false;
+  }
+  SERVER_ONLINE = ok;
+  if (was !== SERVER_ONLINE) {
+    // State flipped — update the banner and any open checkout form.
+    refreshStatusBanner();
+    updateCartUI();
+    if (typeof renderDrawer === 'function' && document.getElementById('checkoutForm')) renderDrawer();
+    if (SERVER_ONLINE) loadRemoteSettings(); // came back — refresh offers/stock
+  }
+  scheduleHealthCheck();
+}
+
+function scheduleHealthCheck() {
+  clearTimeout(_healthTimer);
+  // Check often while we believe it's down (so the site recovers quickly when
+  // the laptop comes back), and rarely while it's up.
+  _healthTimer = setTimeout(checkServerHealth, SERVER_ONLINE ? 60000 : 20000);
+}
+
+// Re-check immediately when the device regains connectivity or the customer
+// returns to the tab, so a stale "offline" notice clears right away.
+window.addEventListener('online', checkServerHealth);
+window.addEventListener('offline', function () { SERVER_ONLINE = false; refreshStatusBanner(); updateCartUI(); });
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkServerHealth(); });
+
+function offlineMessage() {
+  // Distinguish "your internet is off" from "our shop's system is off" —
+  // otherwise customers blame the wrong thing.
+  return navigator.onLine === false
+    ? 'You appear to be offline — check your internet connection to place an order.'
+    : "We're currently unable to accept online orders. Our ordering system is offline right now — please call us to order, or try again shortly.";
 }
 
 async function loadRemoteSettings() {
@@ -2915,6 +2981,7 @@ function init() {
   buildMenu();
   loadLiveMenu();
   loadRemoteSettings();
+  checkServerHealth(); // detect a powered-off server and say so up front
   recoverUnsentOrderOnLoad();
   initViewToggleHint();
   refreshReorderButtonVisibility();
