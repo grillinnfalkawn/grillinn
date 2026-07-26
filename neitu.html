@@ -106,7 +106,8 @@
     <div class="tabs">
       <button class="tab-btn active" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">📋 History</button>
-      <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button>
+      <!-- Prediction/giveaway tab disabled — re-enable with the blueprint in orders.py.
+      <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button> -->
     </div>
     <button class="logout-btn" onclick="logout()">Log Out</button>
   </header>
@@ -229,9 +230,9 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById('salesTab').classList.toggle('active', tab === 'sales');
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
-  document.getElementById('worldcupTab').classList.toggle('active', tab === 'worldcup');
+  // document.getElementById('worldcupTab').classList.toggle('active', tab === 'worldcup');
   if (tab === 'sales') loadSales('today');
-  else if (tab === 'worldcup') loadWorldCup();
+  // else if (tab === 'worldcup') loadWorldCup();
   else loadHistory();
 }
 
@@ -397,6 +398,13 @@ function renderOrderCard(order) {
   '</div>';
 }
 
+// ── PREDICTION / GIVEAWAY ADMIN (disabled) ─────────────────────
+// The World Cup draw was a one-off event. This whole block is commented
+// out along with its tab button and switchTab wiring above. Nothing else
+// in this file depends on it — Sales and History are unaffected.
+// To run another event: uncomment this block, the tab button, and the two
+// switchTab lines, and re-enable the blueprint in orders.py.
+/*
 // ── WORLD CUP PREDICTION DRAW (admin) ──────────────────────
 // This whole block is self-contained. If the feature is removed later
 // (by deleting the register_blueprint line in orders.py), this tab simply
@@ -533,6 +541,7 @@ function wcResetDraw() {
     .then(r => r.json()).then(() => loadWorldCup())
     .catch(() => alert('Could not reset. Try again.'));
 }
+*/
 
 // POST helper with the admin password header (authFetch is GET-only).
 function authFetchPost(url, body) {
