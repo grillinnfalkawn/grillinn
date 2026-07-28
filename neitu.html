@@ -106,6 +106,7 @@
     <div class="tabs">
       <button class="tab-btn active" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">📋 History</button>
+      <button class="tab-btn" id="controlsTab" onclick="switchTab('controls')">⚡ Controls</button>
       <!-- Prediction/giveaway tab disabled — re-enable with the blueprint in orders.py.
       <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button> -->
     </div>
@@ -230,8 +231,10 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById('salesTab').classList.toggle('active', tab === 'sales');
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
+  document.getElementById('controlsTab').classList.toggle('active', tab === 'controls');
   // document.getElementById('worldcupTab').classList.toggle('active', tab === 'worldcup');
   if (tab === 'sales') loadSales('today');
+  else if (tab === 'controls') loadControls();
   // else if (tab === 'worldcup') loadWorldCup();
   else loadHistory();
 }
@@ -544,6 +547,159 @@ function wcResetDraw() {
 */
 
 // POST helper with the admin password header (authFetch is GET-only).
+// ── QUICK CONTROLS (remote) ───────────────────────────────
+// Reuses the SAME password-protected endpoints as the main dashboard —
+// GET/POST /api/settings, /api/send-daily-report, /api/driver-activity.
+// Nothing here is a new capability or a weaker door: it's the same
+// authenticated admin API, just reachable remotely from this page.
+let ctrlSettings = null;
+
+function loadControls() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '<div style="color:var(--muted);padding:2rem;text-align:center;">Loading controls…</div>';
+  authFetch(SERVER_URL + '/api/settings').then(r => {
+    if (r.status === 401) { handleUnauthorized(); return null; }
+    return r.json();
+  }).then(s => {
+    if (!s) return;
+    ctrlSettings = s;
+    renderControls();
+  }).catch(() => { main.innerHTML = '<div style="color:var(--red);padding:2rem;text-align:center;">Could not reach the server.</div>'; });
+}
+
+function ctrlToggleRow(label, on, onclick) {
+  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;padding:0.5rem 0;">' +
+    '<span style="font-size:0.9rem;">' + label + '</span>' +
+    '<button class="btn-quick ' + (on ? 'active' : '') + '" onclick="' + onclick + '">' + (on ? 'ON' : 'OFF') + '</button>' +
+  '</div>';
+}
+
+function renderControls() {
+  const s = ctrlSettings || {};
+  const banner = s.banner || {};
+  const offer = s.threshold_offer || {};
+  const dc = s.delivery_control || {};
+  const dstatus = s.delivery_status || { available: true };
+  const drivers = s.delivery_drivers || [];
+
+  const card = (title, inner) =>
+    '<div class="stat-card" style="margin-bottom:0.8rem;"><div style="font-weight:800;color:var(--flame);margin-bottom:0.6rem;">' + title + '</div>' + inner + '</div>';
+
+  // Banner
+  const bannerCard = card('📢 Announcement Banner',
+    '<input class="search-input" id="ctrlBannerText" placeholder="Banner text" value="' + escapeHtml(banner.text || '') + '" style="margin-bottom:0.5rem;">' +
+    '<input class="search-input" id="ctrlBannerEmoji" placeholder="Emoji" maxlength="8" value="' + escapeHtml(banner.emoji || '') + '" style="margin-bottom:0.5rem;">' +
+    ctrlToggleRow('Show banner on website', !!banner.active, 'ctrlToggleBanner()') +
+    '<button class="btn-quick" style="width:100%;margin-top:0.4rem;" onclick="ctrlSaveBanner()">💾 Save banner text</button>');
+
+  // Discount
+  const discountCard = card('🏷️ Spend & Save Discount',
+    '<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">' +
+      '<input class="search-input" id="ctrlThreshAmt" type="number" placeholder="Above ₹" value="' + (offer.threshold_amount || '') + '">' +
+      '<input class="search-input" id="ctrlThreshPct" type="number" placeholder="% off" value="' + (offer.discount_percent || '') + '">' +
+    '</div>' +
+    ctrlToggleRow('Discount active', !!offer.active, 'ctrlToggleDiscount()') +
+    '<button class="btn-quick" style="width:100%;margin-top:0.4rem;" onclick="ctrlSaveDiscount()">💾 Save discount amounts</button>');
+
+  // Delivery availability
+  const deliveryCard = card('🚦 Delivery Availability',
+    '<div style="font-size:0.82rem;margin-bottom:0.6rem;font-weight:700;color:' + (dstatus.available ? 'var(--green)' : 'var(--red)') + ';">' +
+      (dstatus.available ? '✅ Delivery is ON' : '⛔ Delivery is OFF') + '</div>' +
+    ctrlToggleRow('Pause deliveries now', !!dc.paused, 'ctrlTogglePause()'));
+
+  // Send report
+  const reportCard = card('📧 Sales Report',
+    '<div style="display:flex;gap:0.5rem;">' +
+      '<select class="search-input" id="ctrlReportPeriod"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="month">This Month</option><option value="lastmonth">Last Month</option></select>' +
+      '<button class="btn-quick" onclick="ctrlSendReport(this)">Send</button>' +
+    '</div>');
+
+  // Driver activity
+  const driverOpts = ['<option value="">Choose a driver…</option>']
+    .concat(drivers.map(d => '<option value="' + escapeHtml(d.phone || '') + '">' + escapeHtml(d.name || '') + '</option>')).join('');
+  const driverCard = card('🛵 Driver Activity',
+    (drivers.length
+      ? '<select class="search-input" id="ctrlDriverSel" onchange="ctrlLoadDriverActivity(this.value)" style="margin-bottom:0.6rem;">' + driverOpts + '</select><div id="ctrlDriverActivity"></div>'
+      : '<div style="color:var(--muted);font-size:0.85rem;">No drivers added yet.</div>'));
+
+  document.getElementById('mainContent').innerHTML = bannerCard + discountCard + deliveryCard + reportCard + driverCard;
+}
+
+// Toggles fetch-free: they flip the value in ctrlSettings and POST just that
+// key (the server does partial updates and re-stamps activation dates).
+function ctrlSaveKey(key, obj, okMsg) {
+  authFetchPost(SERVER_URL + '/api/settings', { [key]: obj }).then(r => {
+    if (r.status === 401) { handleUnauthorized(); return; }
+    if (okMsg) showControlToast(okMsg);
+    loadControls();
+  }).catch(() => alert('Could not save — check your connection.'));
+}
+
+function ctrlToggleBanner() {
+  const b = ctrlSettings.banner || {};
+  ctrlSaveKey('banner', { active: !b.active, text: (document.getElementById('ctrlBannerText') || {}).value || b.text || '', emoji: (document.getElementById('ctrlBannerEmoji') || {}).value || b.emoji || '' }, 'Banner updated');
+}
+function ctrlSaveBanner() {
+  const b = ctrlSettings.banner || {};
+  ctrlSaveKey('banner', { active: !!b.active, text: document.getElementById('ctrlBannerText').value, emoji: document.getElementById('ctrlBannerEmoji').value }, 'Banner saved');
+}
+function ctrlToggleDiscount() {
+  const o = ctrlSettings.threshold_offer || {};
+  ctrlSaveKey('threshold_offer', { active: !o.active, threshold_amount: parseInt((document.getElementById('ctrlThreshAmt') || {}).value) || o.threshold_amount || 0, discount_percent: parseInt((document.getElementById('ctrlThreshPct') || {}).value) || o.discount_percent || 0 }, 'Discount updated');
+}
+function ctrlSaveDiscount() {
+  const o = ctrlSettings.threshold_offer || {};
+  ctrlSaveKey('threshold_offer', { active: !!o.active, threshold_amount: parseInt(document.getElementById('ctrlThreshAmt').value) || 0, discount_percent: parseInt(document.getElementById('ctrlThreshPct').value) || 0 }, 'Discount saved');
+}
+function ctrlTogglePause() {
+  const dc = ctrlSettings.delivery_control || {};
+  ctrlSaveKey('delivery_control', { paused: !dc.paused, cutoff_enabled: !!dc.cutoff_enabled, cutoff_time: dc.cutoff_time || '21:00', message: dc.message || '' }, dc.paused ? 'Deliveries resumed' : 'Deliveries paused');
+}
+
+function ctrlSendReport(btn) {
+  const period = document.getElementById('ctrlReportPeriod').value;
+  const now = new Date();
+  let start, end, label;
+  if (period === 'yesterday') { const y = new Date(now); y.setDate(now.getDate() - 1); start = end = toDateStr(y); label = 'Yesterday'; }
+  else if (period === 'month') { start = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)); end = toDateStr(now); label = 'This Month'; }
+  else if (period === 'lastmonth') { start = toDateStr(new Date(now.getFullYear(), now.getMonth() - 1, 1)); end = toDateStr(new Date(now.getFullYear(), now.getMonth(), 0)); label = 'Last Month'; }
+  else { start = end = toDateStr(now); label = 'Today'; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  authFetchPost(SERVER_URL + '/api/send-daily-report', { start: start, end: end, label: label }).then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
+    btn.disabled = false; btn.textContent = 'Send';
+    alert(status === 200 && body.status === 'ok' ? 'Report sent for ' + label + '.' : (body.message || 'Could not send the report.'));
+  }).catch(() => { btn.disabled = false; btn.textContent = 'Send'; alert('Could not send — check your connection.'); });
+}
+
+function ctrlLoadDriverActivity(phone) {
+  const box = document.getElementById('ctrlDriverActivity');
+  if (!box) return;
+  if (!phone) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Loading…</div>';
+  authFetch(SERVER_URL + '/api/driver-activity?phone=' + encodeURIComponent(phone)).then(r => r.json()).then(data => {
+    if (!data || data.status !== 'ok') { box.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Could not load.</div>'; return; }
+    const line = (t, sub) => '<div class="breakdown-row"><span>' + t + '</span><span class="value">' + sub + '</span></div>';
+    const actSys = data.active.system || [], actMan = data.active.manual || [], doneSys = data.delivered.system || [], doneMan = data.delivered.manual || [];
+    let h = '<div style="font-size:0.8rem;font-weight:700;margin:0.5rem 0 0.4rem;">⏳ In progress (' + (actSys.length + actMan.length) + ')</div>';
+    if (!actSys.length && !actMan.length) h += '<div style="color:var(--muted);font-size:0.82rem;margin-bottom:0.4rem;">Nothing in progress.</div>';
+    actSys.forEach(o => h += line('#' + escapeHtml(o.order_number) + ' ' + escapeHtml(o.customer_name || ''), '₹' + (o.amount || 0)));
+    actMan.forEach(m => h += line(escapeHtml(m.customer_name || '') + (m.ref_number ? ' #' + escapeHtml(m.ref_number) : ''), '₹' + (m.amount || 0)));
+    h += '<div style="font-size:0.8rem;font-weight:700;margin:0.6rem 0 0.4rem;">✅ Recently delivered (' + (doneSys.length + doneMan.length) + ')</div>';
+    if (!doneSys.length && !doneMan.length) h += '<div style="color:var(--muted);font-size:0.82rem;">None yet.</div>';
+    doneSys.forEach(o => h += line('#' + escapeHtml(o.order_number) + ' ' + escapeHtml(o.customer_name || ''), escapeHtml(o.delivered_at || '✓')));
+    doneMan.forEach(m => h += line(escapeHtml(m.customer_name || ''), '✓'));
+    box.innerHTML = h;
+  }).catch(() => { box.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Network error.</div>'; });
+}
+
+let _ctrlToastTimer = null;
+function showControlToast(msg) {
+  let t = document.getElementById('ctrlToast');
+  if (!t) { t = document.createElement('div'); t.id = 'ctrlToast'; t.style.cssText = 'position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--flame);color:var(--white);padding:0.7rem 1.1rem;border-radius:10px;font-size:0.85rem;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.4);'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(_ctrlToastTimer); _ctrlToastTimer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
 function authFetchPost(url, body) {
   return fetch(url, {
     method: 'POST',
