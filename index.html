@@ -1684,6 +1684,14 @@ function selectType(type) {
   orderType = type; renderDrawer(); updateCartUI();
 }
 
+// Delivery payment preference (Cash/UPI) — a stated intent for pay-on-delivery,
+// defaulting to Cash so a driver always has change-readiness info.
+let payPref = 'Cash';
+function setPayPref(p) {
+  payPref = (p === 'UPI') ? 'UPI' : 'Cash';
+  renderDrawer();
+}
+
 function showDeliveryOff() {
   alert(DELIVERY_STATUS.message || 'Delivery is not available right now. Takeaway and Dine-In are still available.');
 }
@@ -1781,7 +1789,15 @@ function renderCheckoutForm(status) {
       '</select></div>'
     ) : '') +
     '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" maxlength="120" placeholder="Any special requests for the whole order..." oninput="document.getElementById(\'fNotesCount\').textContent=this.value.length+\'/120\'">'+esc(vNotes)+'</textarea><div class="note-count" id="fNotesCount">'+vNotes.length+'/120</div></div>' +
-    '<div class="note-box">💵 Payment: <strong>Payment on Delivery via Cash/UPI</strong></div>' +
+    (orderType === 'Delivery'
+      ? '<div class="form-group"><label>How would you like to pay when your food arrives?</label>' +
+          '<div class="order-type-btns" id="payPrefBtns">' +
+            '<button type="button" class="otype-btn' + (payPref === 'Cash' ? ' selected' : '') + '" onclick="setPayPref(\'Cash\')"><span class="otype-icon">💵</span>Cash</button>' +
+            '<button type="button" class="otype-btn' + (payPref === 'UPI' ? ' selected' : '') + '" onclick="setPayPref(\'UPI\')"><span class="otype-icon">📲</span>UPI</button>' +
+          '</div>' +
+          '<div class="note-box" style="margin-top:0.5rem;">💵 Pay on delivery — nothing is charged now.' + (payPref === 'Cash' ? ' Please keep cash ready; the driver will bring change.' : payPref === 'UPI' ? ' The driver will bring a UPI QR to scan.' : '') + '</div>' +
+        '</div>'
+      : '<div class="note-box">💵 Payment: <strong>Cash / UPI on pickup or arrival</strong></div>') +
     '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!canOrder ? 'disabled' : '')+'>'+(!SERVER_ONLINE ? 'Ordering Unavailable' : (!status2.open ? 'Shop Closed' : 'Place Order'))+'</button>';
 
   setTimeout(() => {
@@ -2153,6 +2169,7 @@ async function placeOrder() {
     customer_email: email,
     client_ref: makeClientRef(), // one per checkout attempt, reused across retries — lets the server dedupe
     order_type: orderType, address: orderType === 'Delivery' ? address : '',
+    payment_pref: orderType === 'Delivery' ? payPref : '',
     delivery_lat: parseFloat((document.getElementById('fDeliveryLat') || {}).value) || null,
     delivery_lng: parseFloat((document.getElementById('fDeliveryLng') || {}).value) || null,
     delivery_charge: 0, packing_charge: packingCharge, subtotal: subtotal,

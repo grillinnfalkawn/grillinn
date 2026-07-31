@@ -28,6 +28,10 @@
   .items{font-size:0.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:0.45rem;margin-top:0.3rem;line-height:1.6;}
   .collect{font-size:1.05rem;font-weight:800;color:var(--green);margin:0.55rem 0;}
   .collect small{font-size:0.72rem;color:var(--muted);font-weight:600;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+  .collect.pay-cash{color:#fbbf24;}
+  .collect.pay-cash small{color:#fbbf24;}
+  .collect.pay-upi{color:#60a5fa;}
+  .collect.pay-upi small{color:#60a5fa;}
   .actions{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;}
   .btn{flex:1;min-width:120px;border:none;border-radius:9px;font-weight:700;padding:0.7rem 0.6rem;cursor:pointer;font-size:0.85rem;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:0.35rem;}
   .btn-call{background:var(--charcoal);border:1px solid var(--border);color:var(--white);}
@@ -69,7 +73,10 @@
       <div class="logo">GRILL INN</div>
       <div class="who" id="who"></div>
     </div>
-    <button class="refresh-btn" onclick="loadDeliveries({manual:true})">↻ Refresh</button>
+    <div style="display:flex;gap:0.5rem;">
+      <button class="refresh-btn" id="soundBtn" onclick="toggleSound()">🔕 Sound</button>
+      <button class="refresh-btn" onclick="loadDeliveries({manual:true})">↻ Refresh</button>
+    </div>
   </header>
   <div class="main">
     <div class="section-title"><span>My deliveries</span><span id="count"></span></div>
@@ -136,6 +143,20 @@ function telHref(phone){return 'tel:'+String(phone||'').replace(/[^0-9+]/g,'');}
 
 function money(n){return '₹'+Number(n||0).toLocaleString('en-IN');}
 
+// Payment badge for the driver: Cash means bring change for the exact amount;
+// UPI means expect a scan (no change needed). Blank falls back to a neutral
+// "collect" line so older orders still read sensibly.
+function payBlock(o){
+  const amt = money(o.amount_to_collect);
+  if(o.payment_pref === 'Cash'){
+    return '<div class="collect pay-cash"><small>💵 Cash — bring change</small>Collect '+amt+'</div>';
+  }
+  if(o.payment_pref === 'UPI'){
+    return '<div class="collect pay-upi"><small>📲 UPI — customer will scan</small>'+amt+'</div>';
+  }
+  return '<div class="collect"><small>Collect</small>'+amt+'</div>';
+}
+
 function systemCard(o){
   const items=(o.items||[]).map(i=>esc(i.qty+'× '+i.title)).join('<br>');
   return '<div class="card">'+
@@ -145,7 +166,7 @@ function systemCard(o){
     (o.out_for_delivery_at?'<div class="meta">Out since '+esc(o.out_for_delivery_at)+'</div>':'')+
     (o.notes?'<div class="meta">📝 '+esc(o.notes)+'</div>':'')+
     (items?'<div class="items">'+items+'</div>':'')+
-    '<div class="collect"><small>Collect</small>'+money(o.amount_to_collect)+'</div>'+
+    payBlock(o)+
     navWarn(o)+
     '<div class="actions">'+
       (o.customer_phone?'<a class="btn btn-call" href="'+esc(telHref(o.customer_phone))+'">📞 Call</a>':'')+
@@ -171,13 +192,60 @@ function manualCard(m){
 
 let lastSig = null;
 
+// ── NEW-DELIVERY SOUND ───────────────────────────────────────────────
+// Mobile browsers block audio until the user interacts with the page, so the
+// driver taps "Sound" once to enable it (that tap also unlocks playback). No
+// app or audio file needed — a short beep is synthesised with the Web Audio
+// API. It can't ring when the browser is fully closed; for that you'd need a
+// native app with push. But for a driver watching their list, this is enough.
+let soundOn = false, audioCtx = null, knownIds = null;
+try { soundOn = localStorage.getItem('gi_driver_sound') === '1'; } catch (e) {}
+
+function updateSoundBtn(){
+  const b = document.getElementById('soundBtn');
+  if (b) b.textContent = soundOn ? '🔔 Sound on' : '🔕 Sound';
+}
+
+function toggleSound(){
+  soundOn = !soundOn;
+  try { localStorage.setItem('gi_driver_sound', soundOn ? '1' : '0'); } catch (e) {}
+  updateSoundBtn();
+  if (soundOn) { unlockAudio(); beep(); } // beep confirms it works AND satisfies the browser's unlock gesture
+}
+
+function unlockAudio(){
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (e) {}
+}
+
+function beep(){
+  if (!soundOn) return;
+  try {
+    unlockAudio();
+    // Two short rising tones — distinct enough to notice in a noisy street.
+    [[880, 0], [1320, 0.18]].forEach(function(pair){
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = pair[0];
+      o.connect(g); g.connect(audioCtx.destination);
+      const t = audioCtx.currentTime + pair[1];
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      o.start(t); o.stop(t + 0.18);
+    });
+    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+  } catch (e) {}
+}
+
 // A compact signature of what's on screen. If it's unchanged between polls,
 // we skip touching the DOM entirely — so a background refresh never rebuilds
 // cards under the driver's finger while they're tapping Delivered/Navigate,
 // and never jumps their scroll. The list only re-renders when a delivery is
 // actually added, removed, or re-sent.
 function deliveriesSig(data){
-  const sys=(data.system_orders||[]).map(o=>[o.id,o.amount_to_collect,o.out_for_delivery_at]);
+  const sys=(data.system_orders||[]).map(o=>[o.id,o.amount_to_collect,o.out_for_delivery_at,o.payment_pref]);
   const man=(data.manual_orders||[]).map(m=>[m.id,m.amount_to_collect,m.ref_number]);
   return JSON.stringify([data.driver_name||'',sys,man]);
 }
@@ -206,6 +274,19 @@ function loadDeliveries(opts){
     return r.json();
   }).then(data=>{
     if(!data)return;
+    // Detect genuinely NEW deliveries (ids not seen before) to sound the alert.
+    // Seeded silently on the first load so opening the page doesn't beep for
+    // deliveries already assigned.
+    const ids = []
+      .concat((data.system_orders||[]).map(o=>'s'+o.id))
+      .concat((data.manual_orders||[]).map(m=>'m'+m.id));
+    if(knownIds === null){
+      knownIds = new Set(ids); // first load — remember without alerting
+    }else{
+      const fresh = ids.some(id => !knownIds.has(id));
+      knownIds = new Set(ids);
+      if(fresh) beep();
+    }
     const sig=deliveriesSig(data);
     // Background poll with no change → leave the screen exactly as it is.
     if(opts.auto && sig===lastSig)return;
@@ -231,6 +312,7 @@ function markDelivered(type,id,btn){
 // own. Only re-renders when something actually changed (see deliveriesSig), so
 // the 15s cadence never interrupts a tap or scroll. Pauses while the page is
 // hidden (screen off / app backgrounded) to save the driver's battery & data.
+updateSoundBtn();
 loadDeliveries();
 setInterval(function(){ if(document.visibilityState==='visible' && document.getElementById('app').style.display!=='none') loadDeliveries({auto:true}); }, 15000);
 </script>

@@ -24,6 +24,12 @@
   .tabs{display:flex;gap:0.5rem;flex-wrap:wrap;}
   .tab-btn{background:var(--charcoal);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-weight:700;padding:0.5rem 1rem;font-size:0.82rem;}
   .tab-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
+  .switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .slider{position:absolute;inset:0;background:var(--border);border-radius:26px;cursor:pointer;transition:background 0.2s;}
+  .switch .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform 0.2s;}
+  .switch input:checked + .slider{background:var(--green);}
+  .switch input:checked + .slider:before{transform:translateX(20px);}
   .logout-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:0.5rem 0.9rem;font-size:0.78rem;font-weight:700;}
   .main{max-width:900px;margin:0 auto;padding:1rem;}
   .filters-row{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center;}
@@ -144,7 +150,9 @@ function escapeHtml(str) {
 // ?password= query parameter — query strings end up in Cloudflare/proxy
 // access logs and browser history; headers don't.
 function authFetch(url) {
-  return fetch(url, { headers: { 'X-Dash-Password': dashPassword } });
+  // neitu is the OWNER's remote console — always claims the owner role, so the
+  // server rejects a manager password here (this page is owner-only).
+  return fetch(url, { headers: { 'X-Dash-Password': dashPassword, 'X-Dash-Role': 'owner' } });
 }
 
 const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -188,12 +196,17 @@ function attemptLogin() {
   fetch(SERVER_URL + '/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: p })
-  }).then(r => r.json()).then(res => {
-    if (res.status === 'ok') {
+    body: JSON.stringify({ password: p, role: 'owner' })
+  }).then(r => r.json().then(res => ({ status: r.status, res }))).then(({ status, res }) => {
+    if (status === 200 && res.status === 'ok') {
       dashPassword = p;
       sessionStorage.setItem('gi_admin_auth_pw', p);
       showApp();
+    } else if (status === 403 && res.reason === 'role_mismatch') {
+      // A valid password, but not the OWNER's — neitu is owner-only.
+      errEl.textContent = 'This remote console is for the owner account only.';
+      const box = document.querySelector('.login-box');
+      if (box) { box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
     } else {
       errEl.textContent = 'Incorrect password.';
       const box = document.querySelector('.login-box');
@@ -229,6 +242,7 @@ function handleUnauthorized() {
 
 function switchTab(tab) {
   currentTab = tab;
+  if (tab !== 'controls' && typeof stopControlsSync === 'function') stopControlsSync();
   document.getElementById('salesTab').classList.toggle('active', tab === 'sales');
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
   document.getElementById('controlsTab').classList.toggle('active', tab === 'controls');
@@ -387,9 +401,18 @@ function renderOrderCard(order) {
   // Whitelisted class name — never inject a raw status string into an attribute.
   const statusClass = Object.prototype.hasOwnProperty.call(KNOWN_STATUSES, order.status) ? order.status : '';
   const sourceTag = order.source === 'pos' ? ' 🧾 POS' : '';
+  const handledTag = order.handled_by
+    ? '<span style="font-size:0.68rem;font-weight:700;margin-left:0.4rem;color:' + (order.handled_by === 'manager' ? '#f59e0b' : '#22c55e') + ';">👤 ' + (order.handled_by === 'manager' ? 'Manager' : 'Owner') + '</span>'
+    : '';
+  // Owner-only remote void: only offered on a live 'printed' order (not one
+  // already voided/rejected/delivered/expired). Enforced server-side too.
+  const canVoid = order.status === 'printed' && !order.delivered_at && !order.delivery_expired_at;
+  const voidBtn = canVoid
+    ? '<button class="btn-quick" style="margin-top:0.6rem;background:rgba(220,38,38,0.15);border-color:var(--red);color:var(--red);" onclick="voidOrderRemote(' + order.id + ', \'' + escapeHtml(String(order.order_number)).replace(/'/g, "\\'") + '\')">🚫 Void this order</button>'
+    : '';
 
   return '<div class="order-card">' +
-    '<div class="order-header"><span class="order-num">#' + escapeHtml(order.order_number) + sourceTag + '</span><span class="order-type-tag">' + escapeHtml(order.order_type) + '</span></div>' +
+    '<div class="order-header"><span class="order-num">#' + escapeHtml(order.order_number) + sourceTag + handledTag + '</span><span class="order-type-tag">' + escapeHtml(order.order_type) + '</span></div>' +
     '<div class="order-meta">' + escapeHtml(order.customer_name) + ' • ' + escapeHtml(order.customer_phone) + (order.address ? '<br>📍 ' + escapeHtml(order.address) : '') + '<br>🕒 ' + escapeHtml(order.order_time) + '</div>' +
     '<div class="order-items">' + itemsHtml +
       (discountAmount > 0 ? '<div class="order-item-row" style="color:var(--flame);"><span>Discount (' + (order.discount_percent||0) + '%)</span><span>−₹' + discountAmount + '</span></div>' : '') +
@@ -398,7 +421,27 @@ function renderOrderCard(order) {
     (order.out_for_delivery_at ? '<span class="status-tag printed" style="margin-left:0.4rem;">🛵 Out ' + escapeHtml((order.out_for_delivery_at || '').split(', ')[1] || order.out_for_delivery_at) + (order.driver_name ? ' • ' + escapeHtml(order.driver_name) : '') + '</span>' : '') +
     (order.status === 'voided' && order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
     (order.status === 'rejected' && order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
+    voidBtn +
   '</div>';
+}
+
+// Remote void from neitu (owner console). Asks for confirmation + an optional
+// reason, calls the same owner-only endpoint the dashboard uses, then reloads
+// the current History day so the change shows immediately.
+function voidOrderRemote(orderId, orderNumber) {
+  if (!confirm('Void order #' + orderNumber + '? This cannot be undone.')) return;
+  const reason = (prompt('Reason for voiding (optional):') || '').trim();
+  authFetchPost(SERVER_URL + '/api/void-order/' + orderId, { reason: reason })
+    .then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
+      if (status === 200 && body.status === 'ok') {
+        showControlToast('Order #' + orderNumber + ' voided.');
+        if (typeof loadHistory === 'function') loadHistory();
+      } else if (status === 403) {
+        alert('Voiding is restricted to the owner account.');
+      } else {
+        alert((body && body.message) || 'Could not void the order.');
+      }
+    }).catch(() => alert('Could not reach the server.'));
 }
 
 // ── PREDICTION / GIVEAWAY ADMIN (disabled) ─────────────────────
@@ -564,13 +607,49 @@ function loadControls() {
     if (!s) return;
     ctrlSettings = s;
     renderControls();
+    startControlsSync();
   }).catch(() => { main.innerHTML = '<div style="color:var(--red);padding:2rem;text-align:center;">Could not reach the server.</div>'; });
 }
 
-function ctrlToggleRow(label, on, onclick) {
+// Live sync: keeps this page's toggles in step with changes made on the main
+// dashboard (or the reverse). Both sides read/write the same settings.json, so
+// this just reflects the current truth. Done surgically — only switch states,
+// the delivery status line, and any NON-focused text field are updated — so it
+// never wipes what you're typing or the driver activity you've opened.
+let _ctrlSyncTimer = null;
+function startControlsSync() {
+  stopControlsSync();
+  _ctrlSyncTimer = setInterval(syncControls, 10000);
+}
+function stopControlsSync() {
+  if (_ctrlSyncTimer) { clearInterval(_ctrlSyncTimer); _ctrlSyncTimer = null; }
+}
+function syncControls() {
+  if (currentTab !== 'controls') { stopControlsSync(); return; }
+  authFetch(SERVER_URL + '/api/settings').then(r => (r.status === 401 ? null : r.json())).then(s => {
+    if (!s) return;
+    ctrlSettings = s;
+    const banner = s.banner || {}, offer = s.threshold_offer || {}, dc = s.delivery_control || {}, dstatus = s.delivery_status || { available: true };
+    const setSwitch = (id, on) => { const el = document.getElementById(id); if (el && el !== document.activeElement) el.checked = !!on; };
+    setSwitch('ctrlBannerSwitch', banner.active);
+    setSwitch('ctrlDiscountSwitch', offer.active);
+    setSwitch('ctrlPauseSwitch', dc.paused);
+    const st = document.getElementById('ctrlDeliveryStatus');
+    if (st) { st.textContent = dstatus.available ? '✅ Delivery is ON' : '⛔ Delivery is OFF'; st.style.color = dstatus.available ? 'var(--green)' : 'var(--red)'; }
+    // Reflect text changes from the dashboard, but never overwrite a field the
+    // user is actively editing here.
+    const setField = (id, val) => { const el = document.getElementById(id); if (el && el !== document.activeElement) el.value = (val == null ? '' : val); };
+    setField('ctrlBannerText', banner.text);
+    setField('ctrlBannerEmoji', banner.emoji);
+    setField('ctrlThreshAmt', offer.threshold_amount || '');
+    setField('ctrlThreshPct', offer.discount_percent || '');
+  }).catch(() => {});
+}
+
+function ctrlToggleRow(label, on, onclick, id) {
   return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;padding:0.5rem 0;">' +
     '<span style="font-size:0.9rem;">' + label + '</span>' +
-    '<button class="btn-quick ' + (on ? 'active' : '') + '" onclick="' + onclick + '">' + (on ? 'ON' : 'OFF') + '</button>' +
+    '<label class="switch"><input type="checkbox" ' + (on ? 'checked' : '') + (id ? ' id="' + id + '"' : '') + ' onchange="' + onclick + '"><span class="slider"></span></label>' +
   '</div>';
 }
 
@@ -589,23 +668,24 @@ function renderControls() {
   const bannerCard = card('📢 Announcement Banner',
     '<input class="search-input" id="ctrlBannerText" placeholder="Banner text" value="' + escapeHtml(banner.text || '') + '" style="margin-bottom:0.5rem;">' +
     '<input class="search-input" id="ctrlBannerEmoji" placeholder="Emoji" maxlength="8" value="' + escapeHtml(banner.emoji || '') + '" style="margin-bottom:0.5rem;">' +
-    ctrlToggleRow('Show banner on website', !!banner.active, 'ctrlToggleBanner()') +
+    ctrlToggleRow('Show banner on website', !!banner.active, 'ctrlToggleBanner()', 'ctrlBannerSwitch') +
     '<button class="btn-quick" style="width:100%;margin-top:0.4rem;" onclick="ctrlSaveBanner()">💾 Save banner text</button>');
 
   // Discount
   const discountCard = card('🏷️ Spend & Save Discount',
+    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.5rem;">Applies to both the website and the POS counter.</div>' +
     '<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">' +
       '<input class="search-input" id="ctrlThreshAmt" type="number" placeholder="Above ₹" value="' + (offer.threshold_amount || '') + '">' +
       '<input class="search-input" id="ctrlThreshPct" type="number" placeholder="% off" value="' + (offer.discount_percent || '') + '">' +
     '</div>' +
-    ctrlToggleRow('Discount active', !!offer.active, 'ctrlToggleDiscount()') +
+    ctrlToggleRow('Discount active', !!offer.active, 'ctrlToggleDiscount()', 'ctrlDiscountSwitch') +
     '<button class="btn-quick" style="width:100%;margin-top:0.4rem;" onclick="ctrlSaveDiscount()">💾 Save discount amounts</button>');
 
   // Delivery availability
   const deliveryCard = card('🚦 Delivery Availability',
-    '<div style="font-size:0.82rem;margin-bottom:0.6rem;font-weight:700;color:' + (dstatus.available ? 'var(--green)' : 'var(--red)') + ';">' +
+    '<div id="ctrlDeliveryStatus" style="font-size:0.82rem;margin-bottom:0.6rem;font-weight:700;color:' + (dstatus.available ? 'var(--green)' : 'var(--red)') + ';">' +
       (dstatus.available ? '✅ Delivery is ON' : '⛔ Delivery is OFF') + '</div>' +
-    ctrlToggleRow('Pause deliveries now', !!dc.paused, 'ctrlTogglePause()'));
+    ctrlToggleRow('Pause deliveries now', !!dc.paused, 'ctrlTogglePause()', 'ctrlPauseSwitch'));
 
   // Send report
   const reportCard = card('📧 Sales Report',
@@ -682,11 +762,11 @@ function ctrlLoadDriverActivity(phone) {
     const actSys = data.active.system || [], actMan = data.active.manual || [], doneSys = data.delivered.system || [], doneMan = data.delivered.manual || [];
     let h = '<div style="font-size:0.8rem;font-weight:700;margin:0.5rem 0 0.4rem;">⏳ In progress (' + (actSys.length + actMan.length) + ')</div>';
     if (!actSys.length && !actMan.length) h += '<div style="color:var(--muted);font-size:0.82rem;margin-bottom:0.4rem;">Nothing in progress.</div>';
-    actSys.forEach(o => h += line('#' + escapeHtml(o.order_number) + ' ' + escapeHtml(o.customer_name || ''), '₹' + (o.amount || 0)));
-    actMan.forEach(m => h += line(escapeHtml(m.customer_name || '') + (m.ref_number ? ' #' + escapeHtml(m.ref_number) : ''), '₹' + (m.amount || 0)));
+    actSys.forEach(o => h += line('#' + escapeHtml(o.order_number) + ' ' + escapeHtml(o.customer_name || '') + ' <span style="color:var(--muted);">· ' + (o.item_count || 0) + ' item' + (o.item_count === 1 ? '' : 's') + '</span>', '₹' + (o.amount || 0)));
+    actMan.forEach(m => h += line(escapeHtml(m.customer_name || '') + (m.ref_number ? ' #' + escapeHtml(m.ref_number) : '') + ' <span style="color:var(--muted);">· manual</span>', '₹' + (m.amount || 0)));
     h += '<div style="font-size:0.8rem;font-weight:700;margin:0.6rem 0 0.4rem;">✅ Recently delivered (' + (doneSys.length + doneMan.length) + ')</div>';
     if (!doneSys.length && !doneMan.length) h += '<div style="color:var(--muted);font-size:0.82rem;">None yet.</div>';
-    doneSys.forEach(o => h += line('#' + escapeHtml(o.order_number) + ' ' + escapeHtml(o.customer_name || ''), escapeHtml(o.delivered_at || '✓')));
+    doneSys.forEach(o => h += line('#' + escapeHtml(o.order_number) + ' ' + escapeHtml(o.customer_name || '') + ' <span style="color:var(--muted);">· ' + (o.item_count || 0) + ' item' + (o.item_count === 1 ? '' : 's') + '</span>', escapeHtml(o.delivered_at || '✓')));
     doneMan.forEach(m => h += line(escapeHtml(m.customer_name || ''), '✓'));
     box.innerHTML = h;
   }).catch(() => { box.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Network error.</div>'; });
@@ -703,7 +783,7 @@ function showControlToast(msg) {
 function authFetchPost(url, body) {
   return fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Dash-Password': dashPassword },
+    headers: { 'Content-Type': 'application/json', 'X-Dash-Password': dashPassword, 'X-Dash-Role': 'owner' },
     body: JSON.stringify(body || {})
   });
 }
