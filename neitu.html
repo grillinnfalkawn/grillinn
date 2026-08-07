@@ -643,6 +643,13 @@ function syncControls() {
     setField('ctrlBannerEmoji', banner.emoji);
     setField('ctrlThreshAmt', offer.threshold_amount || '');
     setField('ctrlThreshPct', offer.discount_percent || '');
+    // Keep the manager-account status line accurate if it's toggled elsewhere.
+    const mst = document.getElementById('ctrlMgrStatus');
+    if (mst) {
+      const on = !!s.manager_enabled;
+      mst.textContent = on ? '✅ Manager account is set up' : '⚪ No manager account yet';
+      mst.style.color = on ? 'var(--green)' : 'var(--muted)';
+    }
   }).catch(() => {});
 }
 
@@ -702,7 +709,110 @@ function renderControls() {
       ? '<select class="search-input" id="ctrlDriverSel" onchange="ctrlLoadDriverActivity(this.value)" style="margin-bottom:0.6rem;">' + driverOpts + '</select><div id="ctrlDriverActivity"></div>'
       : '<div style="color:var(--muted);font-size:0.85rem;">No drivers added yet.</div>'));
 
-  document.getElementById('mainContent').innerHTML = bannerCard + discountCard + deliveryCard + reportCard + driverCard;
+  // Manager account — set / change / remove the limited-access manager login.
+  // Uses the owner-only /api/set-manager-password endpoint (neitu always
+  // authenticates as owner). The hash is never sent back; the server only tells
+  // us whether an account currently exists (settings.manager_enabled).
+  const mgrOn = !!s.manager_enabled;
+  const managerCard = card('👤 Manager Account',
+    '<div id="ctrlMgrStatus" style="font-size:0.82rem;font-weight:700;margin-bottom:0.6rem;color:' + (mgrOn ? 'var(--green)' : 'var(--muted)') + ';">' +
+      (mgrOn ? '✅ Manager account is set up' : '⚪ No manager account yet') + '</div>' +
+    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.5rem;">Limited login: no voiding, no Sales, can\'t edit Menu/Prices or Backups. Must differ from the owner password.</div>' +
+    '<input class="search-input" id="ctrlMgrPw" type="password" autocomplete="new-password" placeholder="New manager password (min 4 chars)" style="margin-bottom:0.5rem;">' +
+    '<button class="btn-quick" style="width:100%;margin-bottom:0.4rem;" onclick="ctrlSetManagerPw(this)">💾 ' + (mgrOn ? 'Change' : 'Set') + ' manager password</button>' +
+    (mgrOn ? '<button class="btn-quick" style="width:100%;background:rgba(220,38,38,0.15);border-color:var(--red);color:var(--red);" onclick="ctrlClearManagerPw(this)">🗑️ Remove manager account</button>' : ''));
+
+  // Opening hours editor (Sun..Sat). Mirrors the dashboard Settings editor.
+  const DAY_LABELS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const wh = Array.isArray(s.weekly_hours) && s.weekly_hours.length === 7
+    ? s.weekly_hours
+    : [ {open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},
+        {open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},{open:'11:00',close:'16:30'}, null ];
+  const hoursRows = DAY_LABELS.map((label, i) => {
+    const e = wh[i]; const closed = !e;
+    const o = e ? (e.open || '11:00') : '11:00';
+    const c = e ? (e.close || '21:30') : '21:30';
+    return '<div class="ctrl-hours-row" data-day="' + i + '" style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
+        '<span style="width:80px;font-weight:700;font-size:0.85rem;">' + label + '</span>' +
+        '<label style="display:flex;align-items:center;gap:0.25rem;font-size:0.78rem;color:var(--muted);"><input type="checkbox" id="chrClosed' + i + '" ' + (closed ? 'checked' : '') + ' onchange="ctrlToggleHoursClosed(' + i + ')">Closed</label>' +
+        '<span id="chrWrap' + i + '" style="display:' + (closed ? 'none' : 'flex') + ';align-items:center;gap:0.3rem;">' +
+          '<input class="search-input" type="time" id="chrOpen' + i + '" value="' + o + '" style="width:auto;">' +
+          '<span style="color:var(--muted);">to</span>' +
+          '<input class="search-input" type="time" id="chrClose' + i + '" value="' + c + '" style="width:auto;">' +
+        '</span>' +
+      '</div>';
+  }).join('');
+  const hoursCard = card('🕒 Opening Hours',
+    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.5rem;">Regular weekly hours the website uses for open/closed status. Tick Closed for a day off.</div>' +
+    hoursRows +
+    '<button class="btn-quick" style="width:100%;margin-top:0.6rem;" onclick="ctrlSaveHours(this)">💾 Save opening hours</button>');
+
+  document.getElementById('mainContent').innerHTML = bannerCard + discountCard + deliveryCard + reportCard + hoursCard + managerCard + driverCard;
+}
+
+function ctrlToggleHoursClosed(i) {
+  const cb = document.getElementById('chrClosed' + i);
+  const wrap = document.getElementById('chrWrap' + i);
+  if (wrap) wrap.style.display = (cb && cb.checked) ? 'none' : 'flex';
+}
+
+function ctrlSaveHours(btn) {
+  const weekly_hours = [];
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const toMin = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+  for (let i = 0; i < 7; i++) {
+    const cb = document.getElementById('chrClosed' + i);
+    if (cb && cb.checked) { weekly_hours.push(null); continue; }
+    const o = (document.getElementById('chrOpen' + i) || {}).value || '';
+    const c = (document.getElementById('chrClose' + i) || {}).value || '';
+    const om = toMin(o), cm = toMin(c);
+    if (om == null || cm == null || cm <= om) {
+      alert('Hours for ' + days[i] + ' are invalid — set both times (close after open), or tick Closed.');
+      return;
+    }
+    weekly_hours.push({ open: o, close: c });
+  }
+  btn.disabled = true;
+  authFetchPost(SERVER_URL + '/api/settings', { weekly_hours: weekly_hours })
+    .then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
+      btn.disabled = false;
+      if (status === 401) { handleUnauthorized(); return; }
+      if (status === 200 && body.status === 'ok') { showControlToast('Opening hours saved.'); loadControls(); }
+      else { alert((body && body.message) || 'Could not save opening hours.'); }
+    }).catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
+}
+
+// Owner sets/changes the manager password remotely.
+function ctrlSetManagerPw(btn) {
+  const inp = document.getElementById('ctrlMgrPw');
+  const pw = (inp ? inp.value : '').trim();
+  if (pw.length < 4) { alert('Manager password must be at least 4 characters.'); return; }
+  btn.disabled = true;
+  authFetchPost(SERVER_URL + '/api/set-manager-password', { new_password: pw })
+    .then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
+      btn.disabled = false;
+      if (status === 401) { handleUnauthorized(); return; }
+      if (status === 200 && body.status === 'ok') {
+        if (inp) inp.value = '';
+        showControlToast('Manager password saved.');
+        loadControls();
+      } else {
+        alert((body && body.message) || 'Could not save the manager password.');
+      }
+    }).catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
+}
+
+// Owner removes the manager account remotely.
+function ctrlClearManagerPw(btn) {
+  if (!confirm('Remove the manager account? That login will stop working immediately.')) return;
+  btn.disabled = true;
+  authFetchPost(SERVER_URL + '/api/set-manager-password', { clear: true })
+    .then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
+      btn.disabled = false;
+      if (status === 401) { handleUnauthorized(); return; }
+      if (status === 200 && body.status === 'ok') { showControlToast('Manager account removed.'); loadControls(); }
+      else { alert((body && body.message) || 'Could not remove the manager account.'); }
+    }).catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
 }
 
 // Toggles fetch-free: they flip the value in ctrlSettings and POST just that
