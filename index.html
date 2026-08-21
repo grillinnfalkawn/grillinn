@@ -496,7 +496,7 @@ function isPanPizza(id) {
   return id.indexOf('PIZ') === 0 && item.title.indexOf('- Pan') !== -1;
 }
 
-let PACKING_RATES = { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5 };
+let PACKING_RATES = { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5, bowls: 8 };
 // Applied from /api/settings by loadRemoteSettings() — falls back to these
 // defaults until the server is reached (or if the owner never customised them).
 function applyPackingRates(rates) {
@@ -513,7 +513,10 @@ function itemPackagingCost(id) {
   if (cat === 'Veg Footlongs' || cat === 'Non Veg Footlongs' ||
       cat === 'Veg Sandwiches' || cat === 'Non Veg Sandwiches' ||
       cat === 'Garlic Breads') return PACKING_RATES.footlong_sandwich;
-  if (cat === 'Fried Chicken' || cat === 'Grilled Chicken') return PACKING_RATES.chicken;
+  const title = item.title || '';
+  const isBoxedChickenSnack = title.startsWith('Chicken Nuggets') || title.startsWith('Chicken Popcorn');
+  if (cat === 'Fried Chicken' || cat === 'Grilled Chicken' || isBoxedChickenSnack) return PACKING_RATES.chicken;
+  if (cat === 'Pastas' || item.description === 'Loaded Fries') return PACKING_RATES.bowls;
   return 0;
 }
 
