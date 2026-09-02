@@ -406,7 +406,7 @@ function renderOrderCard(order) {
     : '';
   // Owner-only remote void: only offered on a live 'printed' order (not one
   // already voided/rejected/delivered/expired). Enforced server-side too.
-  const canVoid = order.status === 'printed' && !order.delivered_at && !order.delivery_expired_at;
+  const canVoid = (order.status === 'printed' || order.status === 'print_failed') && !order.delivered_at && !order.delivery_expired_at;
   const voidBtn = canVoid
     ? '<button class="btn-quick" style="margin-top:0.6rem;background:rgba(220,38,38,0.15);border-color:var(--red);color:var(--red);" onclick="voidOrderRemote(' + order.id + ', \'' + escapeHtml(String(order.order_number)).replace(/'/g, "\\'") + '\')">🚫 Void this order</button>'
     : '';
