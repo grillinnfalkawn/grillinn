@@ -496,7 +496,7 @@ function isPanPizza(id) {
   return id.indexOf('PIZ') === 0 && item.title.indexOf('- Pan') !== -1;
 }
 
-let PACKING_RATES = { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5, bowls: 8, snack_box: 3 };
+let PACKING_RATES = { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5, bowls: 8, snack_box: 3, wraps: 4 };
 // Applied from /api/settings by loadRemoteSettings() — falls back to these
 // defaults until the server is reached (or if the owner never customised them).
 function applyPackingRates(rates) {
@@ -522,6 +522,7 @@ function itemPackagingCost(id) {
   const isSnackBoxItem = ['Chicken Nuggets', 'Chicken Popcorn', 'Chicken Strips', 'French Fries', 'Peri Peri Fries', 'Hot & Spicy Fries', 'Paneer Pops', 'Paneer Strips'].some(p => title.startsWith(p));
   if (isSnackBoxItem) return PACKING_RATES.snack_box;
   if (cat === 'Pastas' || item.description === 'Loaded Fries') return PACKING_RATES.bowls;
+  if (cat === 'Wraps') return PACKING_RATES.wraps;
   return 0;
 }
 
@@ -1081,7 +1082,7 @@ let DELIVERY_STATUS = { available: true, message: '' };
 let SERVER_ONLINE = true;
 let _healthTimer = null;
 let orderCounter = parseInt(localStorage.getItem('gi_counter') || '0');
-let currentView = localStorage.getItem('gi_view') || 'grid';
+let currentView = localStorage.getItem('gi_view') || 'text'; // 'text' = List view — the default for a first-time visitor
 
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
@@ -2298,12 +2299,39 @@ function itemMatchesQuery(item, category, q) {
 
 function handleSearch(query) {
   const q = query.toLowerCase().trim();
-  const main = document.getElementById('menuMain');
-  if (!q) { buildMenu(); return; }
+  if (!q) {
+    // Rebuild whichever view is actually showing — previously this always
+    // rebuilt the grid, so clearing the search box while in List view would
+    // silently repopulate the (hidden) grid underneath instead of the list.
+    if (currentView === 'text') buildTextMenu(); else buildMenu();
+    return;
+  }
   const results = Object.entries(MENU)
     .flatMap(([category, items]) => items.map(item => ({ item, category })))
     .filter(({ item, category }) => matchesDiet(item) && itemMatchesQuery(item, category, q))
     .map(({ item }) => item);
+
+  if (currentView === 'text') {
+    // List view has its own separate container/row style (#textMenu +
+    // makeTextRow) — search results need to render there, not into the
+    // grid's #menuMain, which is hidden while List view is active.
+    const textMenu = document.getElementById('textMenu');
+    const textCatNav = document.getElementById('textCatNav');
+    if (textCatNav) textCatNav.textContent = ''; // no category pills while showing search results
+    textMenu.textContent = '';
+    if (results.length === 0) {
+      textMenu.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+escapeHtml(query)+'"'+(dietFilter !== 'all' ? ' with the current filter' : '')+'</div></div>';
+      return;
+    }
+    const sec = document.createElement('div');
+    sec.className = 'text-cat-section';
+    sec.innerHTML = '<div class="text-cat-title">🔍 Search Results ('+results.length+')</div>';
+    results.forEach(item => sec.appendChild(makeTextRow(item)));
+    textMenu.appendChild(sec);
+    return;
+  }
+
+  const main = document.getElementById('menuMain');
   main.textContent = '';
   if (results.length === 0) {
     // `query` is exactly what the customer typed, so escape it before echoing
@@ -2463,6 +2491,10 @@ function setView(view) {
     textBtn.classList.add('active'); gridBtn.classList.remove('active');
     if (!textMenu.dataset.built) buildTextMenu();
   }
+  // If there's an active search, keep showing filtered results in the view
+  // just switched to, rather than silently reverting to the full menu.
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput && searchInput.value.trim()) handleSearch(searchInput.value);
 }
 
 function buildTextMenu() {
