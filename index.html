@@ -26,8 +26,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap');
 :root{--black:#17110a;--charcoal:#241a10;--panel:#2d2116;--border:#453423;--orange:#ff8a3d;--red:#d1382c;--flame:#f2632a;--white:#f8f1e4;--muted:#b8a68d;--card-bg:#2b2015;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{background:radial-gradient(circle at 50% 0%,rgba(255,138,61,0.055),transparent 60%),var(--black);color:var(--white);font-family:'Inter',sans-serif;min-height:100vh;position:relative;}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+body{background:#17110a;color:var(--white);font-family:'Inter',sans-serif;min-height:100vh;position:relative;}
 body.no-scroll{overflow:hidden;}
 header{background:radial-gradient(circle at 15% -20%,rgba(255,138,61,0.18),transparent 55%),linear-gradient(160deg,#2f1f10 0%,var(--charcoal) 55%,var(--charcoal) 100%);border-bottom:2px solid var(--flame);box-shadow:0 2px 14px rgba(0,0,0,0.35);padding:0 1rem;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:68px;overflow:hidden;transition:box-shadow 0.3s ease;}
 header.scrolled{box-shadow:0 6px 22px rgba(0,0,0,0.5);}
@@ -40,22 +39,25 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .cart-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:11px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:700;padding:0.62rem 1.15rem;display:flex;align-items:center;gap:0.4rem;}
 .cart-count{background:white;color:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;}
 .status-banner{padding:0.5rem 1rem;text-align:center;font-size:0.8rem;font-weight:600;}
-.announcement-banner{padding:0.65rem 1rem;text-align:center;font-size:0.85rem;font-weight:700;background:linear-gradient(135deg,#ff8a3d,#d1382c);color:white;letter-spacing:0.2px;}
+.info-strip{position:relative;padding:0.5rem 2.4rem;text-align:center;font-size:0.78rem;font-weight:600;transition:opacity 0.25s ease;}
+.info-strip.fade{opacity:0;}
+.info-strip--announce{background:linear-gradient(135deg,#ff8a3d,#d1382c);color:white;letter-spacing:0.2px;font-size:0.85rem;font-weight:700;}
+.info-strip--peak{color:#fbbf24;background:rgba(251,191,36,0.08);border-bottom:1px solid rgba(251,191,36,0.15);font-size:0.72rem;}
+.info-strip--disclaimer{color:var(--muted);background:rgba(255,138,61,0.08);border-bottom:1px solid rgba(255,138,61,0.15);font-size:0.68rem;font-weight:400;line-height:1.4;}
 .status-open{background:rgba(34,197,94,0.15);color:#4ade80;border-bottom:1px solid rgba(34,197,94,0.2);}
 .status-closed{background:rgba(209,56,44,0.15);color:#f87171;border-bottom:1px solid rgba(209,56,44,0.2);}
-.disclaimer-banner{background:rgba(255,138,61,0.08);border-bottom:1px solid rgba(255,138,61,0.15);padding:0.4rem 1rem;text-align:center;font-size:0.68rem;color:var(--muted);line-height:1.4;}
 .search-wrap{padding:1rem 1.15rem;background:var(--charcoal);border-bottom:1px solid var(--border);position:sticky;top:68px;z-index:95;}
 .search-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.9rem;padding:0.6rem 0.8rem 0.6rem 2.4rem;outline:none;transition:border-color 0.2s;}
 .search-input:focus{border-color:var(--orange);}
 .search-icon{position:absolute;left:1.8rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none;}
-.cat-nav{overflow-x:auto;background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.6rem 1rem;display:flex;gap:0.5rem;scrollbar-width:none;position:sticky;top:180px;z-index:90;}
+.cat-nav{overflow-x:auto;background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.6rem 1rem;display:flex;gap:0.5rem;scrollbar-width:none;position:sticky;top:139px;z-index:90;}
 .cat-nav::-webkit-scrollbar{display:none;}
 .cat-pill{background:var(--panel);border:1px solid var(--border);border-radius:20px;color:var(--muted);cursor:pointer;font-size:0.75rem;font-weight:600;padding:0.3rem 0.8rem;white-space:nowrap;transition:all 0.2s;flex-shrink:0;}
 .cat-pill:hover,.cat-pill.active{background:var(--flame);border-color:var(--flame);color:white;}
 .main{max-width:1180px;margin:0 auto;padding:2.1rem 1.3rem 6rem;animation:viewFadeIn 0.25s ease;}
 .main.hidden{display:none;}
 @keyframes viewFadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
-.cat-section{margin-bottom:2.9rem;scroll-margin-top:236px;}
+.cat-section{margin-bottom:2.9rem;scroll-margin-top:195px;}
 .cat-title{font-family:'Anton',sans-serif;font-size:1.75rem;letter-spacing:1px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.9rem;margin-bottom:1.05rem;display:flex;align-items:center;gap:0.5rem;text-shadow:0 0 16px rgba(255,138,61,0.22);text-transform:uppercase;}
 .veg-badge{font-size:0.65rem;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
 .nonveg-badge{font-size:0.65rem;background:rgba(209,56,44,0.15);color:#f87171;border:1px solid rgba(209,56,44,0.3);border-radius:10px;padding:0.15rem 0.5rem;font-weight:700;letter-spacing:0.5px;}
@@ -87,14 +89,16 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .item-desc{font-size:0.8rem;color:var(--muted);}
 .item-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:0.35rem;}
 .item-price{font-size:0.94rem;font-weight:700;color:var(--orange);background:rgba(255,138,61,0.14);padding:0.3rem 0.7rem;border-radius:8px;}
-.oos-tag{font-size:0.75rem;font-weight:700;color:#ef4444;background:rgba(239,68,68,0.1);padding:0.3rem 0.6rem;border-radius:6px;}
+.oos-tag{font-size:0.72rem;font-weight:700;color:#fff;background:#ef4444;padding:0.3rem 0.65rem;border-radius:6px;letter-spacing:0.3px;text-transform:uppercase;}
 .item-body.item-oos{opacity:0.55;}
+.item-body.item-oos .item-name{text-decoration:line-through;}
 .text-item-name.item-oos{opacity:0.55;text-decoration:line-through;}
+.item-img.oos-overlay::after{content:'Out of Stock';position:absolute;inset:0;background:rgba(20,15,10,0.72);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;text-align:center;padding:0.5rem;z-index:2;}
 .add-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:9px;color:white;cursor:pointer;font-size:1.2rem;font-weight:700;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.12s ease;}
 .add-btn:active{transform:scale(0.85);}
 .qty-ctrl button:active{transform:scale(0.85);}
-.cat-pill:active,.diet-pill:active,.vtoggle-btn:active,.cart-btn:active{transform:scale(0.95);}
-.cat-pill,.diet-pill,.vtoggle-btn,.cart-btn{transition:transform 0.12s ease,background 0.2s,border-color 0.2s,color 0.2s;}
+.cat-pill:active,.vtoggle-btn:active,.cart-btn:active{transform:scale(0.95);}
+.cat-pill,.vtoggle-btn,.cart-btn{transition:transform 0.12s ease,background 0.2s,border-color 0.2s,color 0.2s;}
 .cart-btn.bounce{animation:cartBounce 0.4s ease;}
 @keyframes cartBounce{0%{transform:scale(1);}30%{transform:scale(1.15) rotate(-4deg);}55%{transform:scale(0.96) rotate(3deg);}100%{transform:scale(1) rotate(0);}}
 .qty-ctrl{display:flex;align-items:center;gap:0.25rem;}
@@ -103,12 +107,12 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .qty-num{font-size:0.82rem;font-weight:700;min-width:14px;text-align:center;color:var(--orange);}
 .note-input{margin-top:0.3rem;width:100%;background:var(--panel);border:1px solid var(--border);border-radius:5px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.7rem;padding:0.3rem 0.5rem;outline:none;resize:none;}
 .note-input:focus{border-color:var(--orange);}
-.text-cat-nav{overflow-x:auto;background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.5rem 1rem;display:flex;gap:0.4rem;scrollbar-width:none;position:sticky;top:180px;z-index:90;}
+.text-cat-nav{overflow-x:auto;background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.5rem 1rem;display:flex;gap:0.4rem;scrollbar-width:none;position:sticky;top:139px;z-index:90;}
 .text-cat-nav::-webkit-scrollbar{display:none;}
 .text-cat-nav.hidden{display:none;}
 .text-menu{display:none;max-width:700px;margin:0 auto;padding:1rem 1rem 6rem;}
 .text-menu.visible{display:block;animation:viewFadeIn 0.25s ease;}
-.text-cat-section{margin-bottom:1.5rem;scroll-margin-top:228px;}
+.text-cat-section{margin-bottom:1.5rem;scroll-margin-top:187px;}
 .text-cat-title{font-family:'Anton',sans-serif;font-size:1.55rem;letter-spacing:1px;color:var(--orange);border-left:4px solid var(--red);padding-left:0.9rem;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.5rem;text-transform:uppercase;}
 .text-item{display:flex;align-items:center;padding:0.7rem 0.65rem;border-bottom:1px solid rgba(46,46,46,0.6);gap:0.6rem;border-radius:7px;}
 .text-item:hover{background:var(--panel);}
@@ -133,7 +137,6 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .clear-cart-btn{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:0.72rem;font-weight:600;padding:0.4rem 0.65rem;display:none;align-items:center;gap:0.3rem;white-space:nowrap;transition:border-color 0.2s,color 0.2s,background 0.2s;}
 .clear-cart-btn:hover{border-color:#f87171;color:#f87171;}
 .clear-cart-btn:active{transform:scale(0.95);}
-.clear-cart-btn.confirming{border-color:#f87171;color:#f87171;background:rgba(248,113,113,0.12);}
 .cart-item{display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);gap:0.5rem;}
 .cart-item-name{font-size:0.82rem;font-weight:600;flex:1;line-height:1.3;}
 .cart-item-note{font-size:0.68rem;color:var(--muted);margin-top:0.15rem;}
@@ -142,7 +145,7 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .summary-row{display:flex;justify-content:space-between;font-size:0.85rem;padding:0.2rem 0;color:var(--muted);}
 .summary-row.total{color:var(--white);font-weight:700;font-size:1rem;border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.25rem;}
 .summary-row span:last-child{color:var(--orange);}
-.checkout-section{margin-top:0.75rem;}
+.checkout-section{margin-top:1.1rem;padding-top:1.1rem;border-top:2px dashed var(--border);}
 .checkout-title{font-family:'Anton',sans-serif;font-size:1.1rem;letter-spacing:1px;color:var(--orange);margin-bottom:0.6rem;}
 .order-type-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin-bottom:0.75rem;}
 .otype-btn{background:var(--panel);border:2px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:0.73rem;font-weight:700;padding:0.5rem 0.2rem;text-align:center;transition:all 0.2s;}
@@ -173,9 +176,9 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .success-sub{color:var(--muted);font-size:0.85rem;margin-bottom:0.25rem;}
 .success-order{color:var(--orange);font-weight:700;font-size:1rem;margin-bottom:1.5rem;}
 .new-order-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700;padding:0.75rem 2rem;margin-top:1rem;}
-.wa-float{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));right:1rem;background:#25d366;border-radius:50%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,0.4);z-index:150;transition:transform 0.2s;}
+.wa-float{position:fixed;bottom:calc(66px + env(safe-area-inset-bottom));right:0.8rem;background:#25d366;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,0.4);z-index:150;transition:transform 0.2s;}
 .wa-float:hover{transform:scale(1.1);}
-.call-float{position:fixed;bottom:calc(140px + env(safe-area-inset-bottom));right:1rem;background:linear-gradient(135deg,#ff8a3d,#d1382c);border-radius:50%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;text-decoration:none;box-shadow:0 4px 12px rgba(209,56,44,0.45);z-index:150;transition:transform 0.2s;}
+.call-float{position:fixed;bottom:calc(114px + env(safe-area-inset-bottom));right:0.8rem;background:linear-gradient(135deg,#ff8a3d,#d1382c);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;text-decoration:none;box-shadow:0 4px 12px rgba(209,56,44,0.45);z-index:150;transition:transform 0.2s;}
 .call-float:hover{transform:scale(1.1);}
 .site-footer{padding:2rem 1rem calc(6.5rem + env(safe-area-inset-bottom));text-align:center;border-top:1px solid var(--border);margin-top:1rem;}
 .ig-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--panel);border:1px solid var(--border);border-radius:30px;padding:0.55rem 1.1rem;text-decoration:none;color:var(--white);font-size:0.85rem;font-weight:600;transition:all 0.2s;}
@@ -190,7 +193,6 @@ header::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:2px
 .no-results-icon{font-size:2.5rem;margin-bottom:0.5rem;}
 
 /* Dismissible announcement banner */
-.announcement-banner{position:relative;padding:0.65rem 2.4rem;}
 .banner-close{position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.25);border:none;border-radius:50%;color:#fff;width:20px;height:20px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
 .banner-close:hover{background:rgba(255,255,255,0.4);}
 
@@ -316,11 +318,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .reorder-btn-full{width:100%;margin-top:1rem;background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:700;padding:0.75rem;}
 
 /* Veg/Non-veg quick filter pills */
-.diet-filter-row{display:flex;gap:0.5rem;margin-top:0.55rem;}
-.diet-pill{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;padding:0.4rem 0.5rem;cursor:pointer;transition:all 0.2s;text-align:center;}
-.diet-pill:hover{border-color:var(--flame);color:var(--white);}
-.diet-pill.active.veg-active{background:#16a34a;border-color:#16a34a;color:#fff;}
-.diet-pill.active.nonveg-active{background:#d1382c;border-color:#d1382c;color:#fff;}
 
 /* Undo toast for removed items */
 .undo-toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.7rem 0.6rem 0.9rem;display:flex;align-items:center;gap:0.75rem;font-size:0.78rem;color:var(--white);box-shadow:0 4px 16px rgba(0,0,0,0.45);z-index:350;opacity:0;pointer-events:none;transition:opacity 0.25s,transform 0.25s;max-width:90vw;}
@@ -328,7 +325,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .undo-toast button{background:var(--flame);border:none;border-radius:6px;color:#fff;font-weight:700;font-size:0.74rem;padding:0.32rem 0.65rem;cursor:pointer;flex-shrink:0;}
 
 /* Peak-hour note */
-.peak-note{padding:0.4rem 1rem;text-align:center;font-size:0.72rem;color:#fbbf24;background:rgba(251,191,36,0.08);border-bottom:1px solid rgba(251,191,36,0.15);display:none;}
 
 /* Add-to-home-screen nudge */
 .install-nudge{display:none;align-items:center;justify-content:center;gap:0.6rem;padding:0.5rem 2.2rem;background:rgba(255,138,61,0.1);border-bottom:1px solid rgba(255,138,61,0.25);font-size:0.72rem;color:var(--white);position:relative;text-align:center;}
@@ -368,18 +364,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 <button class="reorder-bar" id="reorderBtn" onclick="reorderLastOrder()" style="display:none;">🔁 Reorder your last order</button>
 
-<div id="announcementBanner" class="announcement-banner" style="display:none;"></div>
 <div id="statusBanner" class="status-banner"></div>
-<div class="peak-note" id="peakNote">⏳ We're a bit busier than usual right now — orders may take slightly longer than the estimated time.</div>
-<div class="disclaimer-banner">Inclusive of taxes 5% GST. Pictures are for representation only and may differ from actual product.</div>
+<div class="info-strip" id="infoStrip" style="display:none;">
+  <span class="info-strip-text" id="infoStripText"></span>
+  <button class="banner-close" id="infoStripClose" onclick="dismissInfoMessage()" aria-label="Dismiss" style="display:none;">✕</button>
+</div>
 
 <div class="search-wrap">
   <span class="search-icon">🔍</span>
   <input class="search-input" id="searchInput" type="text" placeholder="Search menu items..." oninput="handleSearch(this.value)">
-  <div class="diet-filter-row">
-    <button class="diet-pill" id="dietPillVeg" onclick="setDietFilter('veg')">🟢 Veg Only</button>
-    <button class="diet-pill" id="dietPillNonveg" onclick="setDietFilter('nonveg')">🔴 Non-Veg Only</button>
-  </div>
 </div>
 
 <div class="cat-nav" id="catNav"></div>
@@ -395,7 +388,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   </a>
   <div class="footer-note">Grill Inn Falkawn &nbsp;•&nbsp; Fresh & Hot 🔥</div>
   <button class="footer-contact" onclick="openTrackOrder()" style="cursor:pointer;font-family:'Inter',sans-serif;">📦 Track My Order</button>
-  <a class="footer-contact" href="tel:+919612992023" style="margin-left:0.5rem;">📞 Contact: 9612992023</a>
 </div>
 
 <!-- Track My Order drawer -->
@@ -457,15 +449,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </div>
 
 <div class="success-screen" id="orderFailedScreen">
-  <div class="success-icon">⚠️</div>
-  <div class="success-title" style="background:linear-gradient(135deg,#ff8a3d,#d1382c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Order Not Sent Yet</div>
-  <div class="success-sub">We couldn't reach the restaurant's ordering system.</div>
-  <div class="success-sub" style="color:var(--white);font-weight:700;">Your order details are saved on this device — nothing is lost.</div>
+  <div class="success-icon">🔄</div>
+  <div class="success-title" style="background:linear-gradient(135deg,#ff8a3d,#d1382c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Oops, Small Snag!</div>
+  <div class="success-sub">We had trouble reaching the kitchen just now — but don't worry.</div>
+  <div class="success-sub" style="color:var(--white);font-weight:700;">Your order is saved right here and ready to try again.</div>
   <div class="of-order-num" style="color:var(--orange);font-weight:700;font-size:1rem;margin:1rem 0 0.4rem;"></div>
   <div class="of-items" style="color:var(--muted);font-size:0.82rem;max-width:320px;margin-bottom:0.4rem;"></div>
   <div class="success-sub">Total: <span class="of-total" style="color:var(--white);font-weight:700;"></span></div>
-  <a class="of-call-link new-order-btn" href="tel:9612992023" style="text-decoration:none;display:inline-block;margin-top:1.2rem;">📞 Call Us to Place This Order</a>
-  <button class="new-order-btn" id="ofRetryBtn" style="background:var(--panel,#262626);" onclick="retryUnsentOrder()">Try Again</button>
+  <button class="new-order-btn" id="ofRetryBtn" style="margin-top:1.2rem;" onclick="retryUnsentOrder()">🔄 Try Again</button>
+  <a class="of-call-link new-order-btn" href="tel:9612992023" style="text-decoration:none;display:inline-block;background:var(--panel,#262626);">📞 Call Us Instead</a>
 </div>
 
 <script>
@@ -496,7 +488,7 @@ function isPanPizza(id) {
   return id.indexOf('PIZ') === 0 && item.title.indexOf('- Pan') !== -1;
 }
 
-let PACKING_RATES = { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5, bowls: 8, snack_box: 3, wraps: 4 };
+let PACKING_RATES = { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5, bowls: 8, snack_box: 3, wraps: 4, burgers: 0 };
 // Applied from /api/settings by loadRemoteSettings() — falls back to these
 // defaults until the server is reached (or if the owner never customised them).
 function applyPackingRates(rates) {
@@ -523,6 +515,7 @@ function itemPackagingCost(id) {
   if (isSnackBoxItem) return PACKING_RATES.snack_box;
   if (cat === 'Pastas' || item.description === 'Loaded Fries') return PACKING_RATES.bowls;
   if (cat === 'Wraps') return PACKING_RATES.wraps;
+  if (cat === 'Veg Burgers' || cat === 'Non Veg Burgers') return PACKING_RATES.burgers;
   return 0;
 }
 
@@ -1051,24 +1044,8 @@ function reorderLastOrder() {
   }
 }
 
-let dietFilter = 'all';
-
 function matchesDiet(item) {
-  if (dietFilter === 'veg') return isVegItem(item);
-  if (dietFilter === 'nonveg') return !isVegItem(item);
   return true;
-}
-
-function setDietFilter(val) {
-  dietFilter = (dietFilter === val) ? 'all' : val;
-  document.getElementById('dietPillVeg').classList.remove('active', 'veg-active');
-  document.getElementById('dietPillNonveg').classList.remove('active', 'nonveg-active');
-  if (dietFilter === 'veg') document.getElementById('dietPillVeg').classList.add('active', 'veg-active');
-  if (dietFilter === 'nonveg') document.getElementById('dietPillNonveg').classList.add('active', 'nonveg-active');
-  const searchVal = document.getElementById('searchInput').value;
-  if (searchVal.trim()) { handleSearch(searchVal); }
-  else if (currentView === 'grid') { buildMenu(); }
-  else { buildTextMenu(); }
 }
 
 let cart = {};
@@ -1473,30 +1450,10 @@ function updateCartUI() {
 function openCart() { document.getElementById('overlay').classList.add('open'); document.getElementById('drawer').classList.add('open'); document.body.classList.add('no-scroll'); renderDrawer(); }
 function closeCart() { document.getElementById('overlay').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); document.body.classList.remove('no-scroll'); }
 
-let clearConfirmTimeout = null;
-
 function confirmClearCart() {
   const btn = document.getElementById('clearCartBtn');
   if (!btn || !Object.keys(cart).length) return;
-
-  if (btn.dataset.confirming === '1') {
-    clearTimeout(clearConfirmTimeout);
-    resetClearBtn(btn);
-    doClearCart();
-    return;
-  }
-
-  btn.dataset.confirming = '1';
-  btn.textContent = '⚠️ Tap to confirm';
-  btn.classList.add('confirming');
-  clearConfirmTimeout = setTimeout(() => resetClearBtn(btn), 3500);
-}
-
-function resetClearBtn(btn) {
-  if (!btn) return;
-  btn.dataset.confirming = '0';
-  btn.textContent = '🗑️ Clear';
-  btn.classList.remove('confirming');
+  if (window.confirm('Clear your entire cart?')) doClearCart();
 }
 
 function doClearCart() {
@@ -1600,7 +1557,7 @@ function renderDrawer() {
   captureCheckoutDraft();
   const items = Object.entries(cart);
   const clearBtn = document.getElementById('clearCartBtn');
-  if (clearBtn) { clearBtn.style.display = items.length ? 'inline-flex' : 'none'; resetClearBtn(clearBtn); }
+  if (clearBtn) { clearBtn.style.display = items.length ? 'inline-flex' : 'none'; }
   const { subtotal, packingCharge, count, discountPercent, discountAmount, offerLines } = calcTotals();
   const total = subtotal + packingCharge - discountAmount;
   const content = document.getElementById('cartContent');
@@ -1789,7 +1746,6 @@ function renderCheckoutForm(status) {
       const el = document.getElementById(id);
       if (el) validateField(el);
     });
-    autoFocusFirstEmpty();
     if (orderType === 'Delivery') initDeliveryMap();
   }, 0);
 }
@@ -1810,15 +1766,6 @@ function validateField(el) {
   const wrap = el.parentElement;
   const check = wrap ? wrap.querySelector('.valid-check') : null;
   if (check) check.classList.toggle('show', valid);
-}
-
-function autoFocusFirstEmpty() {
-  const ids = ['fName', 'fPhone'];
-  if (orderType === 'Delivery') ids.push('fAddress');
-  for (const id of ids) {
-    const el = document.getElementById(id);
-    if (el && !el.value.trim()) { el.focus(); return; }
-  }
 }
 
 // ── Delivery map pin (Leaflet + OpenStreetMap, free, no API key) ─────
@@ -2004,7 +1951,7 @@ function showOrderFailedScreen(payload) {
   // the real order number is assigned by the server, so if the order DID
   // go through despite the failed response, staff can find it instantly by
   // searching this code in the dashboard's History tab.
-  el.querySelector('.of-order-num').textContent = payload.client_ref ? 'Reference: ' + payload.client_ref : 'Order #' + payload.order_number;
+  el.querySelector('.of-order-num').textContent = payload.client_ref ? 'Save this code: ' + payload.client_ref : 'Order #' + payload.order_number;
   el.querySelector('.of-items').textContent = itemsList;
   el.querySelector('.of-total').textContent = '₹' + payload.grand_total;
   el.querySelector('.of-call-link').href = 'tel:' + RESTAURANT_PHONE;
@@ -2320,7 +2267,7 @@ function handleSearch(query) {
     if (textCatNav) textCatNav.textContent = ''; // no category pills while showing search results
     textMenu.textContent = '';
     if (results.length === 0) {
-      textMenu.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+escapeHtml(query)+'"'+(dietFilter !== 'all' ? ' with the current filter' : '')+'</div></div>';
+      textMenu.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+escapeHtml(query)+'"</div></div>';
       return;
     }
     const sec = document.createElement('div');
@@ -2336,7 +2283,7 @@ function handleSearch(query) {
   if (results.length === 0) {
     // `query` is exactly what the customer typed, so escape it before echoing
     // it back into the page.
-    main.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+escapeHtml(query)+'"'+(dietFilter !== 'all' ? ' with the current filter' : '')+'</div></div>';
+    main.innerHTML = '<div class="no-results"><div class="no-results-icon">🔍</div><div>No items found for "'+escapeHtml(query)+'"</div></div>';
     return;
   }
   const sec = document.createElement('div');
@@ -2365,7 +2312,7 @@ function makeCard(item) {
   const imgUrl = IMAGE_MAP[item.id];
   const imgInner = imgUrl ? ('<img src="'+encodeURI(imgUrl)+'" alt="'+escapeHtml(item.title)+'" loading="lazy" onload="this.classList.add(\'loaded\');this.parentElement.classList.remove(\'shimmer\');" onerror="this.parentElement.classList.remove(\'shimmer\');this.parentElement.textContent=\''+(CAT_ICONS[catKey]||'🍽️')+'\';">') : (CAT_ICONS[catKey] || '🍽️');
   card.innerHTML =
-    '<div class="item-img'+(imgUrl ? ' shimmer' : '')+'">'+imgInner+'</div>'+
+    '<div class="item-img'+(imgUrl ? ' shimmer' : '')+(oos ? ' oos-overlay' : '')+'">'+imgInner+'</div>'+
     '<div class="item-body'+(oos ? ' item-oos' : '')+'"><div class="item-name-row"><div class="veg-dot '+(veg?'veg':'nonveg')+'"></div><div class="item-name">'+escapeHtml(item.title)+'</div></div><div class="item-desc">'+escapeHtml(item.description)+(item.is_addon ? ' <span style="color:var(--orange);font-weight:700;">⚡ Add-on</span>' : '')+'</div><div class="item-footer">'+footerHTML+'</div>'+(inCart && inCart.note ? '<div class="note-wrap">'+buildNoteWrapInner(item.id, inCart.note)+'</div>' : '')+'</div>';
   return card;
 }
@@ -2588,8 +2535,20 @@ function buildOfferBannerText(settings) {
   return parts.join('  \u2022  ');
 }
 
+// ── INFO STRIP ───────────────────────────────────────────────────────
+// A single slim strip beneath the status banner replaces what used to be
+// three stacked bars (announcement, peak-hour note, disclaimer). Only one
+// message shows at a time; if more than one is active they cycle.
+const INFO_SOURCES = {
+  announce: null, // { text } — dismissible, set by applyBanner()
+  peak: null,     // string — set by refreshStatusBanner()
+  disclaimer: 'Inclusive of taxes 5% GST. Pictures are for representation only and may differ from actual product.'
+};
+let infoMsgs = [];
+let infoMsgIdx = 0;
+let infoMsgTimer = null;
+
 function applyBanner(settings) {
-  const el = document.getElementById('announcementBanner');
   const banner = (settings && settings.banner) || {};
   const manual = (banner.active && banner.text) ? banner.text : '';
   const offers = buildOfferBannerText(settings || {});
@@ -2598,24 +2557,58 @@ function applyBanner(settings) {
   else if (manual) text = (banner.emoji || '🎉') + ' ' + manual;
   else if (offers) text = '\uD83C\uDF81 ' + offers;
 
-  if (text) {
-    if (sessionStorage.getItem('gi_banner_dismissed') === text) {
-      el.style.display = 'none';
-      return;
-    }
-    // banner/offer text comes from the backend settings feed → escape.
-    el.innerHTML = '<span>' + escapeHtml(text) + '</span><button class="banner-close" onclick="dismissBanner()" aria-label="Dismiss announcement">✕</button>';
-    el.style.display = 'block';
+  if (text && sessionStorage.getItem('gi_banner_dismissed') !== text) {
+    INFO_SOURCES.announce = { text };
   } else {
-    el.style.display = 'none';
+    INFO_SOURCES.announce = null;
+  }
+  renderInfoStrip();
+}
+
+function dismissInfoMessage() {
+  if (!infoMsgs.length) return;
+  const cur = infoMsgs[infoMsgIdx % infoMsgs.length];
+  if (cur.key === 'announce' && INFO_SOURCES.announce) {
+    sessionStorage.setItem('gi_banner_dismissed', INFO_SOURCES.announce.text);
+    INFO_SOURCES.announce = null;
+  }
+  renderInfoStrip();
+}
+
+function renderInfoStrip() {
+  const wrap = document.getElementById('infoStrip');
+  if (!wrap) return;
+  const list = [];
+  if (INFO_SOURCES.announce) list.push({ key: 'announce', text: INFO_SOURCES.announce.text, cls: 'info-strip--announce', dismissible: true });
+  if (INFO_SOURCES.peak) list.push({ key: 'peak', text: INFO_SOURCES.peak, cls: 'info-strip--peak', dismissible: false });
+  if (INFO_SOURCES.disclaimer) list.push({ key: 'disclaimer', text: INFO_SOURCES.disclaimer, cls: 'info-strip--disclaimer', dismissible: false });
+  infoMsgs = list;
+  if (infoMsgTimer) { clearInterval(infoMsgTimer); infoMsgTimer = null; }
+  if (!list.length) { wrap.style.display = 'none'; return; }
+  if (infoMsgIdx >= list.length) infoMsgIdx = 0;
+  showInfoMsg(infoMsgIdx);
+  if (list.length > 1) {
+    infoMsgTimer = setInterval(() => {
+      wrap.classList.add('fade');
+      setTimeout(() => {
+        infoMsgIdx = (infoMsgIdx + 1) % infoMsgs.length;
+        showInfoMsg(infoMsgIdx);
+        wrap.classList.remove('fade');
+      }, 250);
+    }, 5000);
   }
 }
 
-function dismissBanner() {
-  const el = document.getElementById('announcementBanner');
-  const text = el.querySelector('span') ? el.querySelector('span').textContent : '';
-  sessionStorage.setItem('gi_banner_dismissed', text);
-  el.style.display = 'none';
+function showInfoMsg(i) {
+  const wrap = document.getElementById('infoStrip');
+  const textEl = document.getElementById('infoStripText');
+  const closeBtn = document.getElementById('infoStripClose');
+  const msg = infoMsgs[i];
+  if (!wrap || !textEl || !closeBtn || !msg) { if (wrap) wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  wrap.className = 'info-strip ' + msg.cls;
+  textEl.textContent = msg.text;
+  closeBtn.style.display = msg.dismissible ? 'flex' : 'none';
 }
 
 function isPeakHour(now) {
@@ -2628,9 +2621,11 @@ function refreshStatusBanner() {
   const banner = document.getElementById('statusBanner');
   banner.className = 'status-banner ' + eff.cls;
   banner.textContent = eff.banner;
-  const peakEl = document.getElementById('peakNote');
   // Peak-hour note only makes sense when we're genuinely open and taking orders.
-  if (peakEl) peakEl.style.display = (eff.canOrder && isPeakHour(new Date())) ? 'block' : 'none';
+  INFO_SOURCES.peak = (eff.canOrder && isPeakHour(new Date()))
+    ? "⏳ We're a bit busier than usual right now — orders may take slightly longer than the estimated time."
+    : null;
+  renderInfoStrip();
 }
 
 // ── SERVER REACHABILITY ──────────────────────────────────────────────
