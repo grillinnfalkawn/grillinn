@@ -2,77 +2,132 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f0f">
 <meta name="robots" content="noindex, nofollow">
 <title>Grill Inn — Admin</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&display=swap');
-  :root{--flame:#f97316;--charcoal:#1a1a1a;--panel:#242424;--border:#333;--white:#fff;--muted:#9ca3af;--green:#22c55e;--red:#ef4444;}
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
+  /* Same palette, type, and component language as the Grill Inn dashboard
+     (orders.py) — this page is that dashboard's pocket-sized remote twin,
+     so it should feel like the same product, not a separate tool. */
+  :root{--black:#0f0f0f;--charcoal:#1a1a1a;--panel:#222;--border:#2e2e2e;--orange:#f97316;--red:#dc2626;--flame:#ea580c;--white:#f5f5f5;--muted:#888;--green:#4ade80;
+    --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--charcoal);color:var(--white);font-family:'Inter','Segoe UI',Arial,sans-serif;min-height:100vh;}
-  .login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;}
-  .login-box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:2rem;width:100%;max-width:360px;}
-  .login-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;font-weight:400;background:linear-gradient(135deg,var(--flame),#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:1.5rem;}
-  .login-input{width:100%;background:var(--charcoal);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.95rem;padding:0.75rem 0.9rem;outline:none;margin-bottom:0.8rem;}
-  .login-input:focus{border-color:var(--flame);}
-  .login-btn{width:100%;background:linear-gradient(135deg,var(--flame),#dc2626);border:none;border-radius:8px;color:white;font-weight:700;padding:0.8rem;cursor:pointer;font-size:0.95rem;margin-top:0.4rem;}
-  .login-error{color:var(--red);font-size:0.8rem;text-align:center;margin-top:0.6rem;min-height:1.1em;}
+  html{scroll-padding-top:var(--safe-top);}
+  body{background:var(--black);color:var(--white);font-family:'Inter','Segoe UI',Arial,sans-serif;min-height:100%;
+    padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);-webkit-tap-highlight-color:transparent;}
+
+  /* ── Login ──────────────────────────────────────────────────────── */
+  .login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.2rem;}
+  .login-box{background:var(--charcoal);border:1px solid var(--border);border-radius:16px;padding:2rem 1.6rem;width:100%;max-width:360px;}
+  .login-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;font-weight:400;background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:1.6rem;}
+  .login-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:16px;padding:0.85rem 1rem;outline:none;margin-bottom:0.8rem;font-family:'Inter',sans-serif;}
+  .login-input:focus{border-color:var(--orange);}
+  .login-btn{width:100%;background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:10px;color:white;font-weight:700;padding:0.9rem;cursor:pointer;font-size:0.98rem;margin-top:0.4rem;}
+  .login-error{color:var(--red);font-size:0.8rem;text-align:center;margin-top:0.7rem;min-height:1.1em;}
+
+  /* ── Shell ──────────────────────────────────────────────────────── */
   .app{display:none;}
   .app.visible{display:block;}
-  header{background:var(--panel);border-bottom:2px solid var(--flame);padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:0.6rem;}
-  .logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1.5px;background:linear-gradient(135deg,var(--flame),#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-  .tabs{display:flex;gap:0.5rem;flex-wrap:wrap;}
-  .tab-btn{background:var(--charcoal);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-weight:700;padding:0.5rem 1rem;font-size:0.82rem;}
+  header{background:var(--charcoal);border-bottom:1px solid var(--border);padding:0.7rem 1rem 0.6rem;
+    padding-top:calc(0.7rem + var(--safe-top));position:sticky;top:0;z-index:50;}
+  .header-top{display:flex;align-items:center;justify-content:space-between;gap:0.6rem;margin-bottom:0.55rem;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1.5px;
+    background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  /* Horizontally-scrolling single-row strip — used for the tab bar and every
+     quick-filter chip row, so a narrow phone screen never has to stack pills
+     into extra rows: it swipes sideways instead. Scrollbar hidden since the
+     chips themselves (and a slightly cut-off last one) are the affordance. */
+  .scroll-strip{display:flex;flex-wrap:nowrap;gap:0.4rem;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+    -webkit-overflow-scrolling:touch;}
+  .scroll-strip::-webkit-scrollbar{display:none;}
+  .tabs{margin:0 -1rem;padding:0 1rem;}
+  .tab-btn{background:var(--panel);border:1px solid var(--border);border-radius:999px;color:var(--muted);cursor:pointer;
+    font-weight:700;padding:0.48rem 0.85rem;font-size:0.8rem;min-height:36px;flex-shrink:0;white-space:nowrap;}
   .tab-btn.active{background:var(--flame);border-color:var(--flame);color:white;}
-  .switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;}
-  .switch input{opacity:0;width:0;height:0;}
-  .switch .slider{position:absolute;inset:0;background:var(--border);border-radius:26px;cursor:pointer;transition:background 0.2s;}
-  .switch .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform 0.2s;}
-  .switch input:checked + .slider{background:var(--green);}
-  .switch input:checked + .slider:before{transform:translateX(20px);}
-  .logout-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:0.5rem 0.9rem;font-size:0.78rem;font-weight:700;}
-  .main{max-width:900px;margin:0 auto;padding:1rem;}
-  .filters-row{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center;}
-  .filters-row input[type="date"]{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:0.5rem 0.7rem;font-size:0.85rem;}
-  .btn-quick{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.5rem 0.9rem;cursor:pointer;font-size:0.8rem;}
+  .logout-btn{background:none;border:1px solid var(--border);border-radius:999px;color:var(--muted);cursor:pointer;
+    padding:0.4rem 0.75rem;font-size:0.74rem;font-weight:700;min-height:32px;flex-shrink:0;}
+  .main{max-width:640px;margin:0 auto;padding:1rem;padding-bottom:calc(1.5rem + var(--safe-bottom));}
+
+  /* ── Pill toggle switch — same shape as the dashboard's, not the round
+     iOS-style switch this page used before. ── */
+  .toggle-switch{position:relative;width:46px;height:26px;background:var(--panel);border:1px solid var(--border);
+    border-radius:13px;cursor:pointer;flex-shrink:0;transition:background 0.15s,border-color 0.15s;}
+  .toggle-switch.on{background:var(--flame);border-color:var(--flame);}
+  .toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;
+    border-radius:50%;transition:left 0.15s;}
+  .toggle-switch.on::after{left:22px;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:0.6rem;padding:0.5rem 0;}
+
+  /* ── Filters / search / quick buttons ──────────────────────────────── */
+  .chip-row{margin-bottom:0.55rem;}
+  .date-range-row{display:flex;gap:0.4rem;align-items:center;margin-bottom:0.9rem;flex-wrap:nowrap;}
+  .date-range-row input[type="date"]{background:var(--panel);border:1px solid var(--border);border-radius:9px;
+    color:var(--white);padding:0.5rem 0.5rem;font-size:14px;min-height:38px;width:132px;flex-shrink:0;}
+  .date-range-row .to-label{color:var(--muted);font-size:0.8rem;flex-shrink:0;}
+  .btn-quick{background:var(--panel);border:1px solid var(--border);border-radius:999px;color:var(--muted);
+    font-weight:700;padding:0.5rem 0.85rem;cursor:pointer;font-size:0.79rem;min-height:36px;flex-shrink:0;white-space:nowrap;}
   .btn-quick.active{background:var(--flame);border-color:var(--flame);color:white;}
   .search-row{display:flex;gap:0.5rem;margin-bottom:1rem;}
-  .search-input{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.9rem;padding:0.65rem 0.8rem;outline:none;}
-  .search-input:focus{border-color:var(--flame);}
-  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-bottom:1.2rem;}
-  .stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.9rem;}
-  .stat-label{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;}
-  .stat-value{font-size:1.3rem;font-weight:800;color:var(--white);margin-top:0.3rem;}
-  .section-title{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin:1.2rem 0 0.6rem;}
-  .breakdown-row{display:flex;justify-content:space-between;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.9rem;margin-bottom:0.5rem;font-size:0.85rem;}
-  .breakdown-row .label{color:var(--white);font-weight:600;}
-  .breakdown-row .value{color:var(--flame);font-weight:700;}
-  .order-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.9rem;margin-bottom:0.7rem;}
-  .order-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4rem;}
-  .order-num{font-weight:800;color:var(--flame);}
-  .order-type-tag{font-size:0.68rem;font-weight:700;padding:0.2rem 0.55rem;border-radius:10px;background:var(--charcoal);color:var(--muted);}
-  .order-meta{font-size:0.78rem;color:var(--muted);line-height:1.5;margin-bottom:0.5rem;}
-  .order-items{font-size:0.8rem;color:var(--white);border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.3rem;}
-  .order-item-row{display:flex;justify-content:space-between;padding:0.15rem 0;}
-  .order-total{font-weight:700;color:var(--flame);border-top:1px solid var(--border);margin-top:0.4rem;padding-top:0.4rem;text-align:right;}
-  .status-tag{font-size:0.68rem;font-weight:700;padding:0.2rem 0.55rem;border-radius:10px;margin-top:0.4rem;display:inline-block;}
-  .status-tag.printed{background:rgba(74,222,128,0.15);color:var(--green);}
-  .status-tag.pending{background:rgba(249,115,22,0.15);color:var(--flame);}
-  .status-tag.rejected,.status-tag.voided,.status-tag.cancelled,.status-tag.print_failed{background:rgba(220,38,38,0.15);color:var(--red);}
-  .empty-state{text-align:center;color:var(--muted);padding:3rem 1rem;font-size:0.9rem;}
-  .loading{text-align:center;color:var(--muted);padding:2rem;font-size:0.85rem;}
-  .top-items-row{display:flex;justify-content:space-between;font-size:0.82rem;padding:0.4rem 0;border-bottom:1px solid var(--border);}
+  .search-input{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:9px;color:var(--white);
+    font-size:16px;padding:0.7rem 0.85rem;outline:none;min-height:44px;font-family:'Inter',sans-serif;}
+  .search-input:focus{border-color:var(--orange);}
 
-  /* ── Polish pass ─────────────────────────────────────────────────── */
-  /* Skeleton placeholders shaped like the content they're waiting for —
-     less jarring than a bare "Loading..." line on a slow connection. */
-  .skeleton-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.9rem;margin-bottom:0.7rem;position:relative;overflow:hidden;min-height:72px;}
-  .skeleton-line{height:12px;border-radius:6px;background:#2e2e2e;margin-bottom:0.6rem;}
+  /* ── Sales tab: gradient hero total + section/row breakdowns, matching
+     the dashboard's Sales tab exactly. ── */
+  .sales-summary-card{background:linear-gradient(135deg,var(--orange),var(--red));border-radius:14px;
+    padding:1.3rem 1.1rem;margin-bottom:1.1rem;text-align:center;}
+  .sales-total-label{font-size:0.78rem;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;}
+  .sales-total-value{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;color:white;letter-spacing:1px;line-height:1.15;}
+  .sales-total-sub{font-size:0.8rem;color:rgba(255,255,255,0.85);margin-top:0.15rem;}
+  .sales-section{background:var(--charcoal);border:1px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:0.9rem;}
+  .sales-section-title{font-size:0.74rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.6rem;}
+  .sales-row{display:flex;justify-content:space-between;gap:0.6rem;padding:0.42rem 0;border-bottom:1px solid var(--border);font-size:0.87rem;}
+  .sales-row:last-child{border-bottom:none;}
+  .sales-row span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+  .sales-row span:last-child{font-weight:700;color:var(--orange);flex-shrink:0;}
+  .sales-empty,.empty-state{text-align:center;color:var(--muted);padding:3rem 1rem;font-size:0.9rem;}
+  .loading{text-align:center;color:var(--muted);padding:2rem;font-size:0.85rem;}
+
+  /* ── Order cards (History) — Bebas Neue order numbers, per-type and
+     per-status colour coding, same as the dashboard. ── */
+  .order-card{background:var(--charcoal);border:1px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:0.8rem;}
+  .order-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.5rem;}
+  .order-num{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--orange);letter-spacing:1px;}
+  .order-type-tag{font-size:0.68rem;font-weight:700;padding:0.22rem 0.6rem;border-radius:10px;background:var(--panel);color:var(--muted);white-space:nowrap;}
+  .order-type-tag.Delivery{background:rgba(249,115,22,0.15);color:var(--orange);}
+  .order-type-tag.Takeaway{background:rgba(74,222,128,0.15);color:var(--green);}
+  .order-type-tag.Dine-In{background:rgba(96,165,250,0.15);color:#60a5fa;}
+  .order-meta{font-size:0.78rem;color:var(--muted);line-height:1.55;margin-bottom:0.55rem;}
+  .order-items{background:var(--panel);border-radius:9px;padding:0.6rem 0.75rem;margin-bottom:0.55rem;font-size:0.85rem;}
+  .order-item-row{display:flex;justify-content:space-between;gap:0.5rem;padding:0.18rem 0;}
+  .order-total{font-weight:700;color:var(--orange);border-top:1px solid var(--border);margin-top:0.4rem;padding-top:0.4rem;text-align:right;}
+  .status-tag{font-size:0.68rem;font-weight:700;padding:0.22rem 0.6rem;border-radius:10px;margin-top:0.15rem;display:inline-block;}
+  .status-tag.printed{background:rgba(74,222,128,0.15);color:var(--green);}
+  .status-tag.pending{background:rgba(249,115,22,0.15);color:var(--orange);}
+  .status-tag.rejected,.status-tag.cancelled,.status-tag.print_failed{background:rgba(220,38,38,0.15);color:var(--red);}
+  .status-tag.voided{background:rgba(148,163,184,0.15);color:var(--muted);}
+  .top-items-row{display:flex;justify-content:space-between;font-size:0.85rem;padding:0.4rem 0;border-bottom:1px solid var(--border);}
+  .top-items-row:last-child{border-bottom:none;}
+
+  /* Order-card action buttons get comfortable phone-sized tap targets. */
+  .order-card .btn-quick{min-height:40px;}
+
+  /* ── Controls tab: same "settings-section" card as the dashboard's
+     Settings screen, instead of the borrowed stat-card this page used
+     before. ── */
+  .settings-section{background:var(--charcoal);border:1px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:0.9rem;}
+  .settings-section-title{font-size:0.95rem;font-weight:800;color:var(--white);margin-bottom:0.7rem;display:flex;align-items:center;gap:0.4rem;}
+  .settings-section-note{font-size:0.78rem;color:var(--muted);margin-bottom:0.6rem;line-height:1.5;}
+
+  /* ── Empty-state, skeletons, motion (unchanged in spirit, recoloured) ── */
+  .skeleton-card{background:var(--charcoal);border:1px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:0.8rem;position:relative;overflow:hidden;min-height:76px;}
+  .skeleton-line{height:12px;border-radius:6px;background:var(--panel);margin-bottom:0.6rem;}
   .skeleton-line.w40{width:40%;} .skeleton-line.w70{width:70%;} .skeleton-line.w55{width:55%;margin-bottom:0;}
   .skeleton-card::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,0.05) 50%,transparent 70%);background-size:200% 100%;animation:skShimmer 1.3s ease-in-out infinite;}
   @keyframes skShimmer{0%{background-position:150% 0;}100%{background-position:-50% 0;}}
 
-  /* Content rises in when a tab's data lands; cards stagger slightly. */
   .rise-in{animation:riseIn 0.35s ease both;}
   .order-card{animation:riseIn 0.35s ease both;}
   .order-card:nth-child(2){animation-delay:0.04s;} .order-card:nth-child(3){animation-delay:0.08s;}
@@ -80,18 +135,25 @@
   .order-card:nth-child(n+6){animation-delay:0.2s;}
   @keyframes riseIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
-  /* Buttons acknowledge the tap. */
-  .tab-btn,.btn-quick,.login-btn,.logout-btn{transition:transform 0.12s ease,background 0.2s,border-color 0.2s,color 0.2s;}
-  .tab-btn:active,.btn-quick:active,.login-btn:active,.logout-btn:active{transform:scale(0.96);}
-  .order-card,.breakdown-row,.stat-card{transition:border-color 0.2s;}
-  .order-card:hover,.stat-card:hover{border-color:#4a4a4a;}
+  .tab-btn,.btn-quick,.login-btn,.logout-btn,.toggle-switch{transition:transform 0.12s ease,background 0.2s,border-color 0.2s,color 0.2s;}
+  .tab-btn:active,.btn-quick:active,.login-btn:active,.logout-btn:active,.toggle-switch:active{transform:scale(0.96);}
+  .order-card,.sales-section,.settings-section{transition:border-color 0.2s;}
 
-  /* Wrong password: the box shakes instead of only printing a line. */
   .login-box.shake{animation:loginShake 0.4s ease;}
   @keyframes loginShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
 
-  button:focus-visible,input:focus-visible{outline:2px solid var(--flame);outline-offset:2px;}
-  @media (max-width:768px){.login-input,.search-input,.filters-row input[type="date"]{font-size:16px;}}
+  button:focus-visible,input:focus-visible,.toggle-switch:focus-visible{outline:2px solid var(--orange);outline-offset:2px;}
+
+  /* ── Mobile-first sizing ──────────────────────────────────────────
+     16px on every text/number/date input avoids iOS's automatic zoom on
+     focus; buttons keep a ~38-44px tap target throughout. Content also
+     never has to scroll sideways, whatever the screen width. */
+  input,select,textarea{font-size:16px;}
+  body{overflow-x:hidden;}
+  @media (max-width:420px){
+    .logo{font-size:1.3rem;}
+    .sales-total-value{font-size:2.2rem;}
+  }
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}}
 </style>
 </head>
@@ -108,16 +170,21 @@
 
 <div class="app" id="app">
   <header>
-    <div class="logo">Grill Inn Admin</div>
-    <div class="tabs">
+    <div class="header-top">
+      <div class="logo">Grill Inn Admin</div>
+      <button class="logout-btn" onclick="logout()">Log Out</button>
+    </div>
+    <div class="tabs scroll-strip">
       <button class="tab-btn active" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">📋 History</button>
       <button class="tab-btn" id="controlsTab" onclick="switchTab('controls')">⚡ Controls</button>
       <!-- Prediction/giveaway tab disabled — re-enable with the blueprint in orders.py.
       <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button> -->
     </div>
-    <button class="logout-btn" onclick="logout()">Log Out</button>
   </header>
+  <div id="offlineBanner" style="display:none;background:rgba(220,38,38,0.15);color:var(--red);border-bottom:1px solid var(--red);font-weight:700;font-size:0.78rem;text-align:center;padding:0.5rem;">
+    ⚠️ OFFLINE TEST MODE — not connected to the real server, nothing shown here is live data
+  </div>
   <div class="main" id="mainContent"></div>
 </div>
 
@@ -129,6 +196,19 @@
 // this file; you type the password in each time you log in.
 const SERVER_URL = "https://orders.grillinnfalkawn.in";
 // ─────────────────────────────────────────────────────────
+
+// TESTING/OFFLINE ONLY: if the real server can't be reached at all (the
+// fetch below throws — no wifi, DNS down, server offline), this password
+// lets you into the shell of the app anyway so you can preview the layout.
+// It does NOT touch the real server or grant access to real data — every
+// tab still tries to fetch from SERVER_URL and will show its own "could
+// not reach the server" state once you're in, since there's no server to
+// answer. It only ever activates when the real login request fails to
+// even reach the server; a wrong real password still says "Incorrect
+// password" as normal. Change or remove this before handing the file to
+// anyone else.
+const OFFLINE_TEST_PASSWORD = '0000';
+let offlineMode = false;
 
 let currentTab = 'sales';
 let historyDate = toDateStr(new Date());
@@ -213,6 +293,15 @@ function attemptLogin() {
       if (box) { box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
     }
   }).catch(e => {
+    // Real network failure (not a rejected password — that's the branches
+    // above). Offer the offline test password as a fallback so the app's
+    // layout can still be checked with no server available.
+    if (p === OFFLINE_TEST_PASSWORD) {
+      dashPassword = p;
+      offlineMode = true;
+      showApp();
+      return;
+    }
     errEl.textContent = 'Could not reach the server. Check your connection.';
   });
 }
@@ -222,6 +311,7 @@ document.getElementById('loginPassword').addEventListener('keydown', e => { if (
 function logout() {
   sessionStorage.removeItem('gi_admin_auth_pw');
   dashPassword = '';
+  offlineMode = false;
   document.getElementById('app').classList.remove('visible');
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginPassword').value = '';
@@ -230,6 +320,8 @@ function logout() {
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('visible');
+  const banner = document.getElementById('offlineBanner');
+  if (banner) banner.style.display = offlineMode ? 'block' : 'none';
   switchTab('sales');
 }
 
@@ -280,38 +372,51 @@ function loadSales(quick) {
 }
 
 function renderSalesFilters() {
-  return '<div class="filters-row">' +
+  return '<div class="chip-row scroll-strip">' +
     ['today','yesterday','week','month'].map(q =>
       '<button class="btn-quick ' + (activeQuick === q ? 'active' : '') + '" onclick="loadSales(\'' + q + '\')">' +
         ({today:'Today',yesterday:'Yesterday',week:'Last 7 Days',month:'Last 30 Days'})[q] + '</button>'
     ).join('') +
+  '</div>' +
+  '<div class="date-range-row">' +
     '<input type="date" value="' + salesStart + '" onchange="salesStart=this.value;loadSales(\'custom\')">' +
-    '<span style="color:var(--muted);">to</span>' +
+    '<span class="to-label">to</span>' +
     '<input type="date" value="' + salesEnd + '" onchange="salesEnd=this.value;loadSales(\'custom\')">' +
   '</div>';
 }
 
 function renderSales(data) {
   const main = document.getElementById('mainContent');
-  const statsHtml =
-    '<div class="stat-grid">' +
-      '<div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value" data-countup="' + (data.total_orders||0) + '">0</div></div>' +
-      '<div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" data-countup="' + (data.total_revenue||0) + '" data-prefix="₹">₹0</div></div>' +
+
+  if (!data.total_orders) {
+    main.innerHTML = renderSalesFilters() + '<div class="sales-empty">📭 No confirmed orders in this date range.</div>';
+    return;
+  }
+
+  const heroHtml =
+    '<div class="sales-summary-card">' +
+      '<div class="sales-total-label">Total Revenue</div>' +
+      '<div class="sales-total-value" data-countup="' + (data.total_revenue || 0) + '" data-prefix="₹">₹0</div>' +
+      '<div class="sales-total-sub">' + data.total_orders + ' confirmed order' + (data.total_orders === 1 ? '' : 's') + ' · ' + data.start_date + (data.start_date !== data.end_date ? ' to ' + data.end_date : '') + '</div>' +
     '</div>';
 
-  const byTypeHtml = data.by_type.length ? '<div class="section-title">By Order Type</div>' +
-    data.by_type.map(t => '<div class="breakdown-row"><span class="label">' + escapeHtml(t.type) + ' (' + t.count + ' orders)</span><span class="value">₹' + t.revenue + '</span></div>').join('') : '';
+  const byTypeHtml = data.by_type.map(t =>
+    '<div class="sales-row"><span>' + escapeHtml(t.type) + '</span><span>' + t.count + ' · ₹' + t.revenue + '</span></div>'
+  ).join('');
 
-  const bySourceHtml = data.by_source.length ? '<div class="section-title">By Source</div>' +
-    data.by_source.map(s => '<div class="breakdown-row"><span class="label">' + (s.source === 'pos' ? '🧾 POS' : '🌐 Website') + ' (' + s.count + ' orders)</span><span class="value">₹' + s.revenue + '</span></div>').join('') : '';
+  const bySourceHtml = data.by_source.map(s =>
+    '<div class="sales-row"><span>' + (s.source === 'pos' ? '🧾 POS' : '🌐 Website') + '</span><span>' + s.count + ' · ₹' + s.revenue + '</span></div>'
+  ).join('');
 
-  const topItemsHtml = data.top_items.length ? '<div class="section-title">Top Items</div>' +
-    '<div class="order-card">' + data.top_items.map(it =>
-      '<div class="top-items-row"><span>' + it.qty + 'x ' + escapeHtml(it.name) + '</span><span style="color:var(--flame);font-weight:700;">₹' + it.revenue + '</span></div>'
-    ).join('') + '</div>' : '';
+  const topItemsHtml = data.top_items.map(it =>
+    '<div class="sales-row"><span>' + it.qty + '× ' + escapeHtml(it.name) + '</span><span>₹' + it.revenue + '</span></div>'
+  ).join('');
 
-  main.innerHTML = renderSalesFilters() + '<div class="rise-in">' + statsHtml +
-    (data.total_orders === 0 ? '<div class="empty-state">No confirmed orders in this date range.</div>' : byTypeHtml + bySourceHtml + topItemsHtml) + '</div>';
+  main.innerHTML = renderSalesFilters() + '<div class="rise-in">' + heroHtml +
+    (byTypeHtml ? '<div class="sales-section"><div class="sales-section-title">By Order Type</div>' + byTypeHtml + '</div>' : '') +
+    (bySourceHtml ? '<div class="sales-section"><div class="sales-section-title">By Source</div>' + bySourceHtml + '</div>' : '') +
+    (topItemsHtml ? '<div class="sales-section"><div class="sales-section-title">Top Items</div>' + topItemsHtml + '</div>' : '') +
+  '</div>';
   countUpStats();
 }
 
@@ -335,7 +440,7 @@ function loadHistory() {
 
 function renderHistoryFilters() {
   const isToday = historyDate === toDateStr(new Date());
-  return '<div class="filters-row">' +
+  return '<div class="date-range-row">' +
       '<button class="btn-quick ' + (isToday && !historySearchAllDates ? 'active' : '') + '" onclick="setHistoryDate(null)">Today</button>' +
       '<input type="date" value="' + historyDate + '" onchange="setHistoryDate(this.value)">' +
     '</div>' +
@@ -397,6 +502,9 @@ function renderOrderCard(order) {
   ).join('');
   const discountAmount = order.discount_amount || 0;
   const grandTotal = order.subtotal + (order.packing_charge||0) - discountAmount + (order.order_type === 'Delivery' ? (order.delivery_charge||0) : 0);
+  // "Dine In" -> "Dine-In" so it matches the .order-type-tag.Dine-In CSS
+  // rule (same transform the dashboard uses for the same reason).
+  const typeClass = String(order.order_type || '').replace(/[^A-Za-z ]/g, '').replace(' ', '-');
   const statusLabel = KNOWN_STATUSES[order.status] || escapeHtml(order.status);
   // Whitelisted class name — never inject a raw status string into an attribute.
   const statusClass = Object.prototype.hasOwnProperty.call(KNOWN_STATUSES, order.status) ? order.status : '';
@@ -407,12 +515,15 @@ function renderOrderCard(order) {
   // Owner-only remote void: only offered on a live 'printed' order (not one
   // already voided/rejected/delivered/expired). Enforced server-side too.
   const canVoid = (order.status === 'printed' || order.status === 'print_failed') && !order.delivered_at && !order.delivery_expired_at;
-  const voidBtn = canVoid
-    ? '<button class="btn-quick" style="margin-top:0.6rem;background:rgba(220,38,38,0.15);border-color:var(--red);color:var(--red);" onclick="voidOrderRemote(' + order.id + ', \'' + escapeHtml(String(order.order_number)).replace(/'/g, "\\'") + '\')">🚫 Void this order</button>'
-    : '';
+  const actionButtons = '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.6rem;">' +
+    '<button class="btn-quick" onclick="downloadPdfReceiptRemote(' + order.id + ', \'' + escapeHtml(String(order.order_number)).replace(/'/g, "\\'") + '\', this)">📄 PDF Receipt</button>' +
+    (canVoid
+      ? '<button class="btn-quick" style="background:rgba(220,38,38,0.15);border-color:var(--red);color:var(--red);" onclick="voidOrderRemote(' + order.id + ', \'' + escapeHtml(String(order.order_number)).replace(/'/g, "\\'") + '\')">🚫 Void this order</button>'
+      : '') +
+  '</div>';
 
   return '<div class="order-card">' +
-    '<div class="order-header"><span class="order-num">#' + escapeHtml(order.order_number) + sourceTag + handledTag + '</span><span class="order-type-tag">' + escapeHtml(order.order_type) + '</span></div>' +
+    '<div class="order-header"><span class="order-num">#' + escapeHtml(order.order_number) + sourceTag + handledTag + '</span><span class="order-type-tag ' + typeClass + '">' + escapeHtml(order.order_type) + '</span></div>' +
     '<div class="order-meta">' + escapeHtml(order.customer_name) + ' • ' + escapeHtml(order.customer_phone) + (order.address ? '<br>📍 ' + escapeHtml(order.address) : '') + '<br>🕒 ' + escapeHtml(order.order_time) + '</div>' +
     '<div class="order-items">' + itemsHtml +
       (discountAmount > 0 ? '<div class="order-item-row" style="color:var(--flame);"><span>Discount (' + (order.discount_percent||0) + '%)</span><span>−₹' + discountAmount + '</span></div>' : '') +
@@ -421,7 +532,7 @@ function renderOrderCard(order) {
     (order.out_for_delivery_at ? '<span class="status-tag printed" style="margin-left:0.4rem;">🛵 Out ' + escapeHtml((order.out_for_delivery_at || '').split(', ')[1] || order.out_for_delivery_at) + (order.driver_name ? ' • ' + escapeHtml(order.driver_name) : '') + '</span>' : '') +
     (order.status === 'voided' && order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
     (order.status === 'rejected' && order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
-    voidBtn +
+    actionButtons +
   '</div>';
 }
 
@@ -442,6 +553,34 @@ function voidOrderRemote(orderId, orderNumber) {
         alert((body && body.message) || 'Could not void the order.');
       }
     }).catch(() => alert('Could not reach the server.'));
+}
+
+// Downloads a PDF receipt for one order onto the shop's own letterhead.
+// authFetch already carries the dashboard password as a header (not a URL
+// param), so a plain link/window.location can't be used here — the request
+// has to go through fetch, and the response (a PDF, not JSON) is turned
+// into a temporary object URL that a throwaway <a> click downloads.
+function downloadPdfReceiptRemote(orderId, orderNumber, btn) {
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Preparing…';
+  authFetch(SERVER_URL + '/api/pdf-receipt/' + orderId).then(r => {
+    if (r.status === 401) { handleUnauthorized(); throw new Error('__unauthorized'); }
+    if (!r.ok) return r.json().then(b => { throw new Error((b && b.message) || 'Could not generate the PDF.'); });
+    return r.blob();
+  }).then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'receipt_' + orderNumber + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    btn.disabled = false; btn.textContent = original;
+  }).catch(e => {
+    btn.disabled = false; btn.textContent = original;
+    if (e.message !== '__unauthorized') alert(e.message || 'Could not download the PDF.');
+  });
 }
 
 // ── PREDICTION / GIVEAWAY ADMIN (disabled) ─────────────────────
@@ -630,10 +769,14 @@ function syncControls() {
     if (!s) return;
     ctrlSettings = s;
     const banner = s.banner || {}, offer = s.threshold_offer || {}, dc = s.delivery_control || {}, dstatus = s.delivery_status || { available: true };
-    const setSwitch = (id, on) => { const el = document.getElementById(id); if (el && el !== document.activeElement) el.checked = !!on; };
+    const setSwitch = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('on', !!on); };
     setSwitch('ctrlBannerSwitch', banner.active);
     setSwitch('ctrlDiscountSwitch', offer.active);
     setSwitch('ctrlPauseSwitch', dc.paused);
+    const podt = s.pos_disabled_types || {};
+    setSwitch('ctrlPosType_DineIn', podt['Dine In']);
+    setSwitch('ctrlPosType_Takeaway', podt['Takeaway']);
+    setSwitch('ctrlPosType_Delivery', podt['Delivery']);
     const st = document.getElementById('ctrlDeliveryStatus');
     if (st) { st.textContent = dstatus.available ? '✅ Delivery is ON' : '⛔ Delivery is OFF'; st.style.color = dstatus.available ? 'var(--green)' : 'var(--red)'; }
     // Reflect text changes from the dashboard, but never overwrite a field the
@@ -654,9 +797,9 @@ function syncControls() {
 }
 
 function ctrlToggleRow(label, on, onclick, id) {
-  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;padding:0.5rem 0;">' +
+  return '<div class="toggle-row">' +
     '<span style="font-size:0.9rem;">' + label + '</span>' +
-    '<label class="switch"><input type="checkbox" ' + (on ? 'checked' : '') + (id ? ' id="' + id + '"' : '') + ' onchange="' + onclick + '"><span class="slider"></span></label>' +
+    '<div class="toggle-switch' + (on ? ' on' : '') + '"' + (id ? ' id="' + id + '"' : '') + ' onclick="' + onclick + '"></div>' +
   '</div>';
 }
 
@@ -669,7 +812,7 @@ function renderControls() {
   const drivers = s.delivery_drivers || [];
 
   const card = (title, inner) =>
-    '<div class="stat-card" style="margin-bottom:0.8rem;"><div style="font-weight:800;color:var(--flame);margin-bottom:0.6rem;">' + title + '</div>' + inner + '</div>';
+    '<div class="settings-section"><div class="settings-section-title">' + title + '</div>' + inner + '</div>';
 
   // Banner
   const bannerCard = card('📢 Announcement Banner',
@@ -693,6 +836,15 @@ function renderControls() {
     '<div id="ctrlDeliveryStatus" style="font-size:0.82rem;margin-bottom:0.6rem;font-weight:700;color:' + (dstatus.available ? 'var(--green)' : 'var(--red)') + ';">' +
       (dstatus.available ? '✅ Delivery is ON' : '⛔ Delivery is OFF') + '</div>' +
     ctrlToggleRow('Pause deliveries now', !!dc.paused, 'ctrlTogglePause()', 'ctrlPauseSwitch'));
+
+  // POS order types — owner-only lever, no extra password needed since this
+  // whole console is already gated behind the dashboard password.
+  const podt = s.pos_disabled_types || {};
+  const posTypesCard = card('🚫 POS Order Types',
+    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.4rem;">Turn an order type OFF to stop counter staff from keying it in at the POS — it can then only come from the website. Takeaway/Delivery (or whichever stays on) keep working from the counter.</div>' +
+    ctrlToggleRow('Disable Dine In orders from POS', !!podt['Dine In'], "ctrlTogglePosType('Dine In')", 'ctrlPosType_DineIn') +
+    ctrlToggleRow('Disable Takeaway orders from POS', !!podt['Takeaway'], "ctrlTogglePosType('Takeaway')", 'ctrlPosType_Takeaway') +
+    ctrlToggleRow('Disable Delivery orders from POS', !!podt['Delivery'], "ctrlTogglePosType('Delivery')", 'ctrlPosType_Delivery'));
 
   // Send report
   const reportCard = card('📧 Sales Report',
@@ -747,7 +899,7 @@ function renderControls() {
     hoursRows +
     '<button class="btn-quick" style="width:100%;margin-top:0.6rem;" onclick="ctrlSaveHours(this)">💾 Save opening hours</button>');
 
-  document.getElementById('mainContent').innerHTML = bannerCard + discountCard + deliveryCard + reportCard + hoursCard + managerCard + driverCard;
+  document.getElementById('mainContent').innerHTML = bannerCard + discountCard + deliveryCard + posTypesCard + reportCard + hoursCard + managerCard + driverCard;
 }
 
 function ctrlToggleHoursClosed(i) {
@@ -846,6 +998,22 @@ function ctrlTogglePause() {
   ctrlSaveKey('delivery_control', { paused: !dc.paused, cutoff_enabled: !!dc.cutoff_enabled, cutoff_time: dc.cutoff_time || '21:00', message: dc.message || '' }, dc.paused ? 'Deliveries resumed' : 'Deliveries paused');
 }
 
+// Owner-only POS order-type lever. No re-typed password here (unlike the
+// dashboard's own toggle) — neitu is already fully gated behind the
+// dashboard password for the whole session, so asking again on every
+// tap would just be friction with no real security benefit. The server
+// still independently enforces that only the owner role can change this
+// (neitu always authenticates as owner — see authFetchPost), and merges
+// this single key in rather than replacing the whole setting, so the
+// other two order types are left untouched.
+function ctrlTogglePosType(type) {
+  const podt = ctrlSettings.pos_disabled_types || {};
+  const turningOn = !podt[type];
+  const payload = {};
+  payload[type] = turningOn;
+  ctrlSaveKey('pos_disabled_types', payload, type + (turningOn ? ' disabled from POS' : ' re-enabled on POS'));
+}
+
 function ctrlSendReport(btn) {
   const period = document.getElementById('ctrlReportPeriod').value;
   const now = new Date();
@@ -868,7 +1036,7 @@ function ctrlLoadDriverActivity(phone) {
   box.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Loading…</div>';
   authFetch(SERVER_URL + '/api/driver-activity?phone=' + encodeURIComponent(phone)).then(r => r.json()).then(data => {
     if (!data || data.status !== 'ok') { box.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">Could not load.</div>'; return; }
-    const line = (t, sub) => '<div class="breakdown-row"><span>' + t + '</span><span class="value">' + sub + '</span></div>';
+    const line = (t, sub) => '<div class="sales-row"><span>' + t + '</span><span>' + sub + '</span></div>';
     const actSys = data.active.system || [], actMan = data.active.manual || [], doneSys = data.delivered.system || [], doneMan = data.delivered.manual || [];
     let h = '<div style="font-size:0.8rem;font-weight:700;margin:0.5rem 0 0.4rem;">⏳ In progress (' + (actSys.length + actMan.length) + ')</div>';
     if (!actSys.length && !actMan.length) h += '<div style="color:var(--muted);font-size:0.82rem;margin-bottom:0.4rem;">Nothing in progress.</div>';
