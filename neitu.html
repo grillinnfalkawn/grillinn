@@ -445,7 +445,7 @@ function renderHistoryFilters() {
       '<input type="date" value="' + historyDate + '" onchange="setHistoryDate(this.value)">' +
     '</div>' +
     '<div class="search-row">' +
-      '<input type="text" class="search-input" placeholder="🔍 Search by order # or phone number..." value="' + historySearchQuery.replace(/"/g,'&quot;') + '" oninput="onHistorySearch(this.value)">' +
+      '<input type="text" class="search-input" placeholder="🔍 Search by name, order #, or phone..." value="' + historySearchQuery.replace(/"/g,'&quot;') + '" oninput="onHistorySearch(this.value)">' +
     '</div>' +
     (historySearchQuery ? '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;color:var(--muted);margin-bottom:0.8rem;"><input type="checkbox" ' + (historySearchAllDates?'checked':'') + ' onchange="historySearchAllDates=this.checked;loadHistory()"> Search all dates</label>' : '');
 }
