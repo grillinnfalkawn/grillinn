@@ -565,7 +565,9 @@ function downloadPdfReceiptRemote(orderId, orderNumber, btn) {
   btn.disabled = true; btn.textContent = 'Preparing…';
   authFetch(SERVER_URL + '/api/pdf-receipt/' + orderId).then(r => {
     if (r.status === 401) { handleUnauthorized(); throw new Error('__unauthorized'); }
-    if (!r.ok) return r.json().then(b => { throw new Error((b && b.message) || 'Could not generate the PDF.'); });
+    // The error body is normally JSON with a readable message, but fall back
+    // gracefully if it isn't (e.g. an HTML error page from a proxy).
+    if (!r.ok) return r.json().catch(() => ({})).then(b => { throw new Error((b && b.message) || ('Could not generate the PDF (server error ' + r.status + ').')); });
     return r.blob();
   }).then(blob => {
     const url = URL.createObjectURL(blob);
@@ -579,7 +581,15 @@ function downloadPdfReceiptRemote(orderId, orderNumber, btn) {
     btn.disabled = false; btn.textContent = original;
   }).catch(e => {
     btn.disabled = false; btn.textContent = original;
-    if (e.message !== '__unauthorized') alert(e.message || 'Could not download the PDF.');
+    if (e.message === '__unauthorized') return;
+    // The browser reports every network-level failure (server unreachable, the
+    // request blocked, or the shop PC running an older orders.py without this
+    // endpoint) as a bare "Failed to fetch" — say something more useful.
+    if (e.name === 'TypeError' || e.message === 'Failed to fetch') {
+      alert('Could not reach the PDF service. Check the shop PC is online, and that it is running the latest orders.py (restart it after updating).');
+    } else {
+      alert(e.message || 'Could not download the PDF.');
+    }
   });
 }
 
