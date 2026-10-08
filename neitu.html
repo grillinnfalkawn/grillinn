@@ -214,6 +214,8 @@ let currentTab = 'sales';
 let historyDate = toDateStr(new Date());
 let historySearchQuery = '';
 let historySearchAllDates = false;
+let historyTypeFilter = [];   // selected order types to include; [] = all types
+let historyStatusFilter = []; // selected statuses to include; [] = all statuses
 let dashPassword = '';
 
 // Escapes text before it's inserted into HTML. Names, addresses, item
@@ -425,11 +427,17 @@ function loadHistory() {
   const main = document.getElementById('mainContent');
   main.innerHTML = renderHistoryFilters() + skeletonCards(4);
 
-  const url = historySearchQuery
-    ? SERVER_URL + '/api/search-orders?q=' + encodeURIComponent(historySearchQuery) + (historySearchAllDates ? '' : '&date=' + historyDate)
-    : SERVER_URL + '/api/recent-orders?date=' + historyDate;
+  // One endpoint now for every combination: a text search (order #, phone,
+  // name, or an item in the order — "pasta" finds every order containing a
+  // pasta dish), an order-type filter, and a status filter (e.g. just
+  // voided orders) — all narrowing the same result set together.
+  const params = new URLSearchParams();
+  if (historySearchQuery) params.set('q', historySearchQuery);
+  if (!(historySearchQuery && historySearchAllDates)) params.set('date', historyDate);
+  if (historyTypeFilter.length) params.set('types', historyTypeFilter.join(','));
+  if (historyStatusFilter.length) params.set('statuses', historyStatusFilter.join(','));
 
-  authFetch(url)
+  authFetch(SERVER_URL + '/api/search-orders?' + params.toString())
     .then(r => { if (r.status === 401) { handleUnauthorized(); throw new Error('unauthorized'); } return r.json(); })
     .then(orders => renderHistory(orders))
     .catch(e => {
@@ -440,14 +448,66 @@ function loadHistory() {
 
 function renderHistoryFilters() {
   const isToday = historyDate === toDateStr(new Date());
+  const hasActiveFilters = !!historySearchQuery || historyTypeFilter.length > 0 || historyStatusFilter.length > 0;
+
+  // Order-type and status filters are multi-select chips — tap toggles
+  // that one value in/out of the list; [] on either means "no filter on
+  // that dimension". Same horizontally-scrolling single-row strip as the
+  // rest of this page, so a phone screen never has to stack them into
+  // extra rows.
+  const typeOptions = ['Delivery', 'Takeaway', 'Dine In'];
+  const statusOptions = [
+    ['printed', '✅ Printed'], ['print_failed', '⚠️ Print Failed'], ['voided', '🚫 Voided'],
+    ['cancelled', '🚫 Cancelled'], ['rejected', '✕ Rejected']
+  ];
+
+  const typeChipsHtml = '<div class="chip-row scroll-strip">' +
+    typeOptions.map(t =>
+      '<button class="btn-quick ' + (historyTypeFilter.includes(t) ? 'active' : '') + '" onclick="toggleHistoryTypeFilter(&quot;' + t + '&quot;)">' + t + '</button>'
+    ).join('') +
+  '</div>';
+
+  const statusChipsHtml = '<div class="chip-row scroll-strip">' +
+    statusOptions.map(([val, label]) =>
+      '<button class="btn-quick ' + (historyStatusFilter.includes(val) ? 'active' : '') + '" onclick="toggleHistoryStatusFilter(&quot;' + val + '&quot;)">' + label + '</button>'
+    ).join('') +
+  '</div>';
+
+  // "Clear all" lives in the date row, not at the end of the scrolling
+  // status strip — there it would sit off-screen to the right on a phone,
+  // and putting it at the front would make the chips jump sideways every
+  // time a filter is toggled. The date row has spare room and never shifts.
   return '<div class="date-range-row">' +
       '<button class="btn-quick ' + (isToday && !historySearchAllDates ? 'active' : '') + '" onclick="setHistoryDate(null)">Today</button>' +
       '<input type="date" value="' + historyDate + '" onchange="setHistoryDate(this.value)">' +
+      (hasActiveFilters ? '<button class="btn-quick" style="margin-left:auto;color:var(--red);border-color:var(--red);" onclick="clearHistoryFilters()">✕ Clear</button>' : '') +
     '</div>' +
+    typeChipsHtml +
+    statusChipsHtml +
     '<div class="search-row">' +
-      '<input type="text" class="search-input" placeholder="🔍 Search by name, order #, or phone..." value="' + historySearchQuery.replace(/"/g,'&quot;') + '" oninput="onHistorySearch(this.value)">' +
+      '<input type="text" class="search-input" placeholder="🔍 Name, order #, phone or item..." value="' + historySearchQuery.replace(/"/g,'&quot;') + '" oninput="onHistorySearch(this.value)">' +
     '</div>' +
     (historySearchQuery ? '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;color:var(--muted);margin-bottom:0.8rem;"><input type="checkbox" ' + (historySearchAllDates?'checked':'') + ' onchange="historySearchAllDates=this.checked;loadHistory()"> Search all dates</label>' : '');
+}
+
+function toggleHistoryTypeFilter(type) {
+  const i = historyTypeFilter.indexOf(type);
+  if (i === -1) historyTypeFilter.push(type); else historyTypeFilter.splice(i, 1);
+  loadHistory();
+}
+
+function toggleHistoryStatusFilter(status) {
+  const i = historyStatusFilter.indexOf(status);
+  if (i === -1) historyStatusFilter.push(status); else historyStatusFilter.splice(i, 1);
+  loadHistory();
+}
+
+function clearHistoryFilters() {
+  historySearchQuery = '';
+  historySearchAllDates = false;
+  historyTypeFilter = [];
+  historyStatusFilter = [];
+  loadHistory();
 }
 
 function setHistoryDate(d) {
@@ -475,7 +535,9 @@ function renderHistory(orders) {
   const caretEnd = wasFocused ? prev.selectionEnd : null;
 
   if (orders.length === 0) {
-    main.innerHTML = renderHistoryFilters() + '<div class="empty-state">No orders found.</div>';
+    const hasActiveFilters = !!historySearchQuery || historyTypeFilter.length > 0 || historyStatusFilter.length > 0;
+    const msg = hasActiveFilters ? 'No orders found matching the selected filters.' : 'No orders found.';
+    main.innerHTML = renderHistoryFilters() + '<div class="empty-state">' + msg + '</div>';
   } else {
     main.innerHTML = renderHistoryFilters() + orders.map(renderOrderCard).join('');
   }
