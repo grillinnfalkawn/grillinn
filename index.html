@@ -267,6 +267,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .live-status.st-waiting .ls-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange);margin-right:0.45rem;animation:lsPulse 1.4s ease-in-out infinite;}
 .live-status.st-accepted{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);color:#4ade80;animation:statusPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
 .live-status.st-rejected{background:rgba(209,56,44,0.12);border:1px solid rgba(209,56,44,0.4);color:#f87171;animation:statusPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
+.live-status .ls-total{display:block;font-size:1rem;font-weight:800;color:var(--white);margin-top:0.55rem;background:rgba(0,0,0,0.25);border-radius:8px;padding:0.55rem 0.7rem;}
+.wa-warning{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:8px;color:#fca5a5;font-size:0.78rem;line-height:1.45;padding:0.6rem 0.75rem;margin-bottom:0.7rem;}
+.wa-warning strong{color:#fecaca;}
+.wa-warning-sm{max-width:340px;margin:0.9rem auto 0;text-align:left;}
 .live-status .ls-reason{display:block;font-size:0.78rem;font-weight:400;color:var(--white);margin-top:0.4rem;background:rgba(0,0,0,0.25);border-radius:8px;padding:0.45rem 0.6rem;}
 @keyframes lsPulse{0%,100%{opacity:0.4;transform:scale(0.85);}50%{opacity:1;transform:scale(1.15);}}
 @keyframes statusPop{0%{transform:scale(0.85);opacity:0;}60%{transform:scale(1.04);opacity:1;}100%{transform:scale(1);}}
@@ -442,6 +446,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <div class="success-order" id="successOrder"></div>
   <div class="success-sub" id="successPrepTime" style="color:var(--orange);font-weight:700;"></div>
   <div class="live-status" id="liveStatus" style="display:none;"></div>
+  <div class="wa-warning wa-warning-sm">⚠️ <strong>Do not send this order again on WhatsApp.</strong> If your order is confirmed here, a second order via WhatsApp will be treated as a separate order, and the customer is liable to pay for any duplicate order placed through both channels.</div>
   <div class="success-sub" style="margin-top:0.5rem;">Payment: <span style="color:var(--orange);font-weight:700;">UPI — scan the QR on your receipt</span></div>
   <div class="success-sub" style="margin-top:0.5rem;">Questions? Call <span style="color:var(--orange);font-weight:700;">9612992023</span></div>
   <button class="new-order-btn" onclick="resetOrder()">Place Another Order</button>
@@ -1739,6 +1744,7 @@ function renderCheckoutForm(status) {
     ) : '') +
     '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" maxlength="120" placeholder="Any special requests for the whole order..." oninput="document.getElementById(\'fNotesCount\').textContent=this.value.length+\'/120\'">'+esc(vNotes)+'</textarea><div class="note-count" id="fNotesCount">'+vNotes.length+'/120</div></div>' +
     '<div class="note-box">📲 Payment: <strong>UPI only</strong> — scan the QR code on your receipt to pay' + (orderType === 'Delivery' ? ' when your order arrives' : ' at pickup') + '.</div>' +
+    '<div class="wa-warning">⚠️ <strong>Please do not send this order again on WhatsApp.</strong> Once you place it here, it goes straight to our kitchen. If the same order reaches us through both this website and WhatsApp, the customer is liable to pay for every duplicate order.</div>' +
     '<button class="place-btn" id="placeBtn" onclick="placeOrder()" '+(!canOrder ? 'disabled' : '')+'>'+eff.btn+'</button>';
 
   setTimeout(() => {
@@ -2868,6 +2874,15 @@ async function cancelMyOrder() {
   }
 }
 
+// "Total payable" line for a CONFIRMED order. The figure comes from the server
+// (grand_total), which is only finalised when staff confirm on the dashboard —
+// it then includes the delivery charge they entered. Never shown while pending.
+function payableHtml(o) {
+  const t = Number(o && o.grand_total);
+  if (!isFinite(t) || t <= 0) return '';
+  return '<span class="ls-total">Total payable: \u20B9' + t + '</span>';
+}
+
 function startStatusWatch(clientRef, customerPhone) {
   const el = document.getElementById('liveStatus');
   if (!clientRef || !el) return;
@@ -2933,7 +2948,7 @@ async function checkOrderStatus() {
             (o.driver_phone ? ' \u2022 <a href="tel:' + escapeHtml(o.driver_phone) + '" style="color:var(--orange);font-weight:700;">' + escapeHtml(o.driver_phone) + '</a>' : '') + '</span>'
           : '';
         settleStatus('st-accepted',
-          '\uD83D\uDEF5 Out for delivery \u2014 get ready to receive your order!' + driverHtml,
+          '\uD83D\uDEF5 Out for delivery \u2014 get ready to receive your order!' + payableHtml(o) + driverHtml,
           '\uD83D\uDEF5 Out for delivery! \u2014 Grill Inn');
       } else if (o.order_type === 'Delivery') {
         // Accepted, but a Delivery order may still get an "out for
@@ -2943,15 +2958,15 @@ async function checkOrderStatus() {
           clearCancelToken(); // kitchen accepted it — cancelling is no longer possible
           const el2 = document.getElementById('liveStatus');
           el2.className = 'live-status st-accepted';
-          el2.innerHTML = '\u2705 We are on it! Your order is being prepared.' +
-            '<span class="ls-sub">Still watching \u2014 this will update again when it goes out for delivery.</span>';
+          el2.innerHTML = '\u2705 Order confirmed. We are on it!' + payableHtml(o) +
+            '<span class="ls-sub">Your order is being prepared. Still watching \u2014 this will update again when it goes out for delivery.</span>';
           document.title = '\u2705 Order accepted! \u2014 Grill Inn';
           if (navigator.vibrate && !REDUCED_MOTION) navigator.vibrate(150);
         }
       } else {
         settleStatus('st-accepted',
-          '\u2705 We are on it! Your order is being prepared.' +
-          '<span class="ls-sub">It will be ready for you soon.</span>',
+          '\u2705 Order confirmed. We are on it!' + payableHtml(o) +
+          '<span class="ls-sub">Your order is being prepared and will be ready for you soon.</span>',
           '\u2705 Order accepted! \u2014 Grill Inn');
       }
     } else if (o.status === 'rejected') {
@@ -3063,9 +3078,12 @@ async function trackLookup(silent) {
           (o.driver_phone ? ' \u2022 <a href="tel:' + escapeHtml(o.driver_phone) + '" style="color:var(--orange);">' + escapeHtml(o.driver_phone) + '</a>' : '') + '</div>'
         : '';
       const itemsHtml = (o.items || []).map(i => escapeHtml(i.qty + 'x ' + i.title)).join('<br>');
-      const totalLine = o.order_type === 'Delivery' && !o.delivery_charge
-        ? '\u20B9' + o.grand_total + ' + delivery charges'
-        : '\u20B9' + o.grand_total;
+      const confirmedNow = (o.status === 'printed' || o.status === 'print_failed');
+      const totalLine = confirmedNow
+        ? 'Total payable: \u20B9' + o.grand_total
+        : (o.order_type === 'Delivery' && !o.delivery_charge
+            ? '\u20B9' + o.grand_total + ' + delivery charges'
+            : '\u20B9' + o.grand_total);
       return '<div class="track-card">' +
         '<div class="track-card-head"><span class="track-num">#' + escapeHtml(o.order_number) + '</span><span class="track-status ' + st.cls + '">' + st.label + '</span></div>' +
         '<div class="track-meta">' + escapeHtml(o.order_type) + ' \u2022 ' + escapeHtml(o.order_time) + '</div>' +
