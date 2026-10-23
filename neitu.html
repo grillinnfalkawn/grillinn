@@ -155,6 +155,94 @@
     .sales-total-value{font-size:2.2rem;}
   }
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}}
+
+  /* ── Settings tab: ported from the dashboard's Settings screen (same classes, same look) ── */
+  .settings-section{background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;}
+  .settings-section-title{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.8rem;}
+  .field-label{font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem;}
+  .settings-input{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.9rem;padding:0.6rem 0.75rem;outline:none;margin-bottom:0.8rem;}
+  .settings-input:focus{border-color:var(--orange);}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;}
+  .special-date-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:0.8rem;margin-bottom:0.6rem;}
+  .special-date-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
+  .btn-add-date{width:100%;background:var(--panel);border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.7rem;cursor:pointer;font-size:0.85rem;margin-bottom:0.6rem;}
+  .btn-remove-date{background:none;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;font-weight:700;}
+  .row-2col{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+  .banner-preset-row{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.6rem;}
+  .banner-preset-btn{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:600;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.78rem;white-space:nowrap;}
+  .btn-confirm{flex:1;background:linear-gradient(135deg,var(--green),#16a34a);border:none;border-radius:8px;color:white;font-weight:700;padding:0.7rem;cursor:pointer;font-size:0.9rem;}
+  .btn-reject{background:var(--panel);border:1px solid var(--red);border-radius:8px;color:var(--red);font-weight:700;padding:0.7rem 1rem;cursor:pointer;font-size:0.9rem;}
+  .btn-reprint{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.5rem 0.9rem;cursor:pointer;font-size:0.8rem;}
+  .pos-preset-btn{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-weight:700;padding:0.45rem;cursor:pointer;font-size:0.8rem;}
+  .settings-intro{font-size:0.9rem;color:var(--muted);line-height:1.55;margin-bottom:1.1rem;padding:0.85rem 1rem;background:rgba(240,138,42,0.06);border:1px solid rgba(240,138,42,0.2);border-radius:8px;}
+  .stock-toggle-row{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;font-size:0.85rem;color:var(--white);cursor:pointer;border-bottom:1px solid var(--border);}
+  .stock-toggle-row input{width:18px;height:18px;cursor:pointer;flex-shrink:0;}
+  .stock-count{color:var(--muted);font-size:0.75rem;}
+  .stock-group-block{border-bottom:1px solid var(--border);}
+  .stock-group-block .stock-toggle-row{border-bottom:none;}
+  .stock-group-items{background:rgba(255,255,255,0.03);border-left:2px solid var(--orange);margin-left:0.5rem;}
+  .stock-group-items .stock-toggle-row{border-bottom:1px dashed var(--border);}
+  .cart-item-name{font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cart-item-price{font-weight:700;color:var(--orange);}
+  .menu-item-card{display:flex;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;}
+  .settings-content-header{margin-bottom:1.3rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+  .settings-content-title{font-size:1.5rem;font-weight:800;color:var(--white);}
+  .settings-content-sub{font-size:0.85rem;color:var(--muted);margin-top:0.35rem;}
+  .settings-cat-icon{width:36px;height:36px;border-radius:9px;background:var(--panel);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+  .settings-cat-title{font-size:0.87rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .settings-cat-sub{font-size:0.71rem;color:var(--muted);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .btn-save{background:linear-gradient(135deg,var(--orange),var(--red));
+            border:none;border-radius:10px;color:white;font-weight:800;padding:0.85rem 1.9rem;cursor:pointer;
+            font-size:0.95rem;letter-spacing:0.3px;transition:transform 0.1s,filter 0.15s;}
+  .btn-discard{background:transparent;border:1px solid var(--border);color:var(--muted);font-weight:700;
+              padding:0.85rem 1.4rem;border-radius:10px;cursor:pointer;font-size:0.9rem;font-family:'Inter',sans-serif;}
+  .settings-input{font-size:16px;}             /* 16px stops iOS zooming into a focused field */
+  .settings-save-btn{background:linear-gradient(135deg,var(--orange),var(--red));border:none;border-radius:8px;color:white;font-weight:700;padding:0.7rem 1rem;cursor:pointer;font-size:0.9rem;width:100%;}
+  .menu-items-grid{display:grid;grid-template-columns:1fr;gap:0.6rem;margin-top:0.6rem;}
+  .toggle-row{padding:0;gap:0.6rem;}
+  .main.settings-wide{max-width:none;}
+  .settings-shell{display:block;}
+  .settings-sidebar{display:flex;flex-direction:column;gap:0.5rem;}
+  .settings-cat-item{display:flex;align-items:center;gap:0.75rem;width:100%;text-align:left;cursor:pointer;font-family:'Inter',sans-serif;
+    background:var(--charcoal);border:1px solid var(--border);border-radius:12px;padding:0.7rem 0.8rem;color:var(--white);}
+  .settings-cat-text{min-width:0;flex:1;}
+  .settings-cat-sub{display:block;font-size:0.72rem;color:var(--muted);margin-top:0.12rem;line-height:1.35;}
+  .settings-cat-title{white-space:normal;}
+  .settings-cat-chev{color:var(--muted);font-size:1.4rem;line-height:1;flex-shrink:0;}
+  .settings-cat-item.active .settings-cat-title{color:var(--orange);}
+  .settings-content{display:none;min-width:0;}
+  .settings-shell.is-detail .settings-sidebar{display:none;}
+  .settings-shell.is-detail .settings-content{display:block;}
+  .settings-back{background:none;border:none;color:var(--orange);font-weight:700;font-size:0.9rem;cursor:pointer;padding:0.2rem 0 0.7rem;font-family:'Inter',sans-serif;}
+  .settings-content-title{font-size:1.25rem;}
+  .settings-intro{margin-bottom:0.9rem;font-size:0.8rem;padding:0.7rem 0.85rem;}
+  .stock-toggle-row{min-height:44px;}
+  .save-bar{position:fixed;left:0;right:0;bottom:0;z-index:200;display:none;justify-content:flex-end;align-items:center;gap:0.6rem;
+    padding:0.7rem 1rem calc(0.7rem + var(--safe-bottom));background:rgba(20,15,9,0.92);backdrop-filter:blur(8px);
+    border-top:1px solid var(--border);box-shadow:0 -6px 24px rgba(0,0,0,0.45);}
+  .save-bar.visible{display:flex;}
+  .save-bar .btn-save{flex:1;padding:0.8rem 1rem;}
+  .save-bar .btn-discard{padding:0.8rem 1rem;}
+  .save-bar-spacer{height:calc(5rem + var(--safe-bottom));}
+  .banner-preset-btn{min-height:36px;}
+  @media (max-width:520px){ .row-2col{grid-template-columns:1fr;} .row-2col.keep2{grid-template-columns:1fr 1fr;} }
+  @media (min-width:820px){
+    .main.settings-wide{padding:1.5rem 2rem;padding-bottom:calc(1.5rem + var(--safe-bottom));}
+    .settings-shell{display:flex;align-items:flex-start;}
+    .settings-sidebar,.settings-shell.is-detail .settings-sidebar{display:flex;width:30%;max-width:320px;flex-shrink:0;gap:0.25rem;padding-right:1.2rem;border-right:1px solid var(--border);}
+    .settings-cat-item{background:none;border:none;border-left:3px solid transparent;border-radius:8px;padding:0.5rem 0.7rem;}
+    .settings-cat-item:hover{background:rgba(255,255,255,0.04);}
+    .settings-cat-item.active{background:rgba(249,115,22,0.1);border-left-color:var(--orange);}
+    .settings-cat-sub{display:none;}
+    .settings-cat-chev{display:none;}
+    .settings-content,.settings-shell.is-detail .settings-content{display:block;flex:1;padding-left:1.8rem;}
+    .settings-back{display:none;}
+    .settings-content-title{font-size:1.5rem;}
+    .menu-items-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+    .save-bar{padding-left:2rem;padding-right:2rem;}
+    .save-bar .btn-save{flex:0 0 auto;padding:0.85rem 1.9rem;}
+  }
 </style>
 </head>
 <body>
@@ -177,7 +265,7 @@
     <div class="tabs scroll-strip">
       <button class="tab-btn active" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">📋 History</button>
-      <button class="tab-btn" id="controlsTab" onclick="switchTab('controls')">⚡ Controls</button>
+      <button class="tab-btn" id="settingsTab" onclick="switchTab('settings')">⚙️ Settings</button>
       <!-- Prediction/giveaway tab disabled — re-enable with the blueprint in orders.py.
       <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button> -->
     </div>
@@ -187,6 +275,8 @@
   </div>
   <div class="main" id="mainContent"></div>
 </div>
+
+<div class="save-bar" id="saveBar"><button class="btn-discard" onclick="discardSettingsChanges()">Discard Changes</button><button class="btn-save" id="saveSettingsBtn" onclick="saveAllSettings()">💾 Save Settings</button></div>
 
 <script>
 // ── CONFIG ──────────────────────────────────────────────
@@ -314,6 +404,8 @@ function logout() {
   sessionStorage.removeItem('gi_admin_auth_pw');
   dashPassword = '';
   offlineMode = false;
+  currentSettings = {}; currentMenu = {}; settingsDetailOpen = false;
+  const _sb = document.getElementById('saveBar'); if (_sb) _sb.classList.remove('visible');
   document.getElementById('app').classList.remove('visible');
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginPassword').value = '';
@@ -335,14 +427,20 @@ function handleUnauthorized() {
 }
 
 function switchTab(tab) {
+  if (tab === 'controls') tab = 'settings';       // old name of this tab
   currentTab = tab;
-  if (tab !== 'controls' && typeof stopControlsSync === 'function') stopControlsSync();
+  const main = document.getElementById('mainContent');
+  if (tab !== 'settings') {
+    // Leaving Settings: back to the normal narrow column, hide the save bar.
+    main.className = 'main';
+    const sb = document.getElementById('saveBar'); if (sb) sb.classList.remove('visible');
+  }
   document.getElementById('salesTab').classList.toggle('active', tab === 'sales');
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
-  document.getElementById('controlsTab').classList.toggle('active', tab === 'controls');
+  document.getElementById('settingsTab').classList.toggle('active', tab === 'settings');
   // document.getElementById('worldcupTab').classList.toggle('active', tab === 'worldcup');
   if (tab === 'sales') loadSales('today');
-  else if (tab === 'controls') loadControls();
+  else if (tab === 'settings') loadSettingsTab();
   // else if (tab === 'worldcup') loadWorldCup();
   else loadHistory();
 }
@@ -801,304 +899,1331 @@ function wcResetDraw() {
 */
 
 // POST helper with the admin password header (authFetch is GET-only).
-// ── QUICK CONTROLS (remote) ───────────────────────────────
-// Reuses the SAME password-protected endpoints as the main dashboard —
-// GET/POST /api/settings, /api/send-daily-report, /api/driver-activity.
-// Nothing here is a new capability or a weaker door: it's the same
-// authenticated admin API, just reachable remotely from this page.
-let ctrlSettings = null;
 
-function loadControls() {
-  const main = document.getElementById('mainContent');
-  main.innerHTML = '<div style="color:var(--muted);padding:2rem;text-align:center;">Loading controls…</div>';
-  authFetch(SERVER_URL + '/api/settings').then(r => {
-    if (r.status === 401) { handleUnauthorized(); return null; }
-    return r.json();
-  }).then(s => {
-    if (!s) return;
-    ctrlSettings = s;
-    renderControls();
-    startControlsSync();
-  }).catch(() => { main.innerHTML = '<div style="color:var(--red);padding:2rem;text-align:center;">Could not reach the server.</div>'; });
-}
+// ── SETTINGS (remote twin of the dashboard's Settings screen) ─────────────
+// Same categories, same sections, same fields and same API calls as the
+// dashboard's Settings screen (orders.py) — the section code below is the
+// dashboard's own, so the two stay in step. This page is always the OWNER's
+// console, so every owner-only category is included. Layout: on a wide screen
+// it is the dashboard's split panel; on a phone the categories become a list
+// and tapping one opens its panel (with a back button). ONE "Save Settings"
+// bar saves every manually-saved field across all categories, exactly like the
+// dashboard; stock, POS order types, menu edits, passwords, reports, backups
+// and cloud sync act immediately.
+const dashRole = 'owner';
+const DRIVER_PAGE_URL = 'https://grillinnfalkawn.in/driver.html';
+const esc2 = escapeHtml;
+let currentSettings = {};
+let currentMenu = {};
+let settingsActiveCategory = null;
+let settingsDetailOpen = false;      // phones: false = category list, true = a category's panel
+let stockGroupsCache = null;
+const stockExpanded = new Set();
+let menuEditingId = null;
+let menuItemIdEditedByHand = false;
 
-// Live sync: keeps this page's toggles in step with changes made on the main
-// dashboard (or the reverse). Both sides read/write the same settings.json, so
-// this just reflects the current truth. Done surgically — only switch states,
-// the delivery status line, and any NON-focused text field are updated — so it
-// never wipes what you're typing or the driver activity you've opened.
-let _ctrlSyncTimer = null;
-function startControlsSync() {
-  stopControlsSync();
-  _ctrlSyncTimer = setInterval(syncControls, 10000);
-}
-function stopControlsSync() {
-  if (_ctrlSyncTimer) { clearInterval(_ctrlSyncTimer); _ctrlSyncTimer = null; }
-}
-function syncControls() {
-  if (currentTab !== 'controls') { stopControlsSync(); return; }
-  authFetch(SERVER_URL + '/api/settings').then(r => (r.status === 401 ? null : r.json())).then(s => {
-    if (!s) return;
-    ctrlSettings = s;
-    const banner = s.banner || {}, offer = s.threshold_offer || {}, dc = s.delivery_control || {}, dstatus = s.delivery_status || { available: true };
-    const setSwitch = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('on', !!on); };
-    setSwitch('ctrlBannerSwitch', banner.active);
-    setSwitch('ctrlDiscountSwitch', offer.active);
-    setSwitch('ctrlPauseSwitch', dc.paused);
-    const podt = s.pos_disabled_types || {};
-    setSwitch('ctrlPosType_DineIn', podt['Dine In']);
-    setSwitch('ctrlPosType_Takeaway', podt['Takeaway']);
-    setSwitch('ctrlPosType_Delivery', podt['Delivery']);
-    const st = document.getElementById('ctrlDeliveryStatus');
-    if (st) { st.textContent = dstatus.available ? '✅ Delivery is ON' : '⛔ Delivery is OFF'; st.style.color = dstatus.available ? 'var(--green)' : 'var(--red)'; }
-    // Reflect text changes from the dashboard, but never overwrite a field the
-    // user is actively editing here.
-    const setField = (id, val) => { const el = document.getElementById(id); if (el && el !== document.activeElement) el.value = (val == null ? '' : val); };
-    setField('ctrlBannerText', banner.text);
-    setField('ctrlBannerEmoji', banner.emoji);
-    setField('ctrlThreshAmt', offer.threshold_amount || '');
-    setField('ctrlThreshPct', offer.discount_percent || '');
-    // Keep the manager-account status line accurate if it's toggled elsewhere.
-    const mst = document.getElementById('ctrlMgrStatus');
-    if (mst) {
-      const on = !!s.manager_enabled;
-      mst.textContent = on ? '✅ Manager account is set up' : '⚪ No manager account yet';
-      mst.style.color = on ? 'var(--green)' : 'var(--muted)';
-    }
-  }).catch(() => {});
+// The dashboard's dashFetch, pointed at the real server and always as owner.
+function dashFetch(path, opts) {
+  opts = Object.assign({}, opts || {});
+  if (!dashPassword) { return new Promise(() => {}); }
+  opts.headers = Object.assign({}, opts.headers, { 'X-Dash-Password': dashPassword, 'X-Dash-Role': dashRole });
+  if (opts.body && !opts.headers['Content-Type']) opts.headers['Content-Type'] = 'application/json';
+  return fetch(SERVER_URL + path, opts).then(r => {
+    if (r.status === 401) { handleUnauthorized(); return new Promise(() => {}); }
+    return r;
+  });
 }
 
-function ctrlToggleRow(label, on, onclick, id) {
-  return '<div class="toggle-row">' +
-    '<span style="font-size:0.9rem;">' + label + '</span>' +
-    '<div class="toggle-switch' + (on ? ' on' : '') + '"' + (id ? ' id="' + id + '"' : '') + ' onclick="' + onclick + '"></div>' +
+const QTY_OFFER_GROUPS_LIST = [
+  {key:'pizza_pan', label:'Pizza — Pan (6")', noun:'Pizza (Pan)'},
+  {key:'pizza_regular', label:'Pizza — Regular (9")', noun:'Pizza (Regular)'},
+  {key:'burgers', label:'Burgers', noun:'Burger'},
+  {key:'sandwiches', label:'Sandwiches', noun:'Sandwich'},
+  {key:'wraps', label:'Wraps', noun:'Wrap'},
+  {key:'garlic_bread', label:'Garlic Bread', noun:'Garlic Bread'},
+  {key:'fried_chicken', label:'Fried Chicken', noun:'Fried Chicken'},
+  {key:'grilled_chicken', label:'Tandoori Grilled Chicken', noun:'Tandoori Grilled Chicken'},
+  {key:'pastas', label:'Pastas', noun:'Pasta'},
+];
+
+const BANNER_PRESETS = [
+  { emoji: '🚫', label: 'Closed Today', text: 'Closed Today' },
+  { emoji: '🔥', label: 'Busy Today', text: "We're extremely busy right now — orders may take longer than usual. Thank you for your patience!" },
+  { emoji: '🛵', label: 'Delivery Delayed', text: 'Delivery orders are running delayed today. We appreciate your patience!' },
+  { emoji: '🌧️', label: 'Heavy Rain', text: 'Heavy rain in the area — deliveries may be delayed. Takeaway and dine-in are unaffected.' },
+  { emoji: '⚡', label: 'Power Outage', text: "We're experiencing a power outage and working with limited capacity. Thank you for your patience!" },
+];
+
+function renderQtyOfferCard(rule) {
+  const groupOptions = QTY_OFFER_GROUPS_LIST.map(g =>
+    '<option value="' + g.key + '"' + (rule.buy_group === g.key ? ' selected' : '') + '>' + g.label + '</option>'
+  ).join('');
+  const freeGroupOptions = QTY_OFFER_GROUPS_LIST.map(g =>
+    '<option value="group:' + g.key + '"' + (rule.free_target_type === 'group' && rule.free_target === g.key ? ' selected' : '') + '>' + g.label + '</option>'
+  ).join('');
+  const freeItemOptions = qtyOfferFreeItemOptions().map(it =>
+    '<option value="item:' + it.id + '"' + (rule.free_target_type === 'item' && rule.free_target === it.id ? ' selected' : '') + '>' + it.title + '</option>'
+  ).join('');
+  return '<div class="special-date-card qty-offer-card" data-rule-id="' + rule.id + '">' +
+    '<div class="special-date-header">' +
+      '<div class="toggle-row" style="margin-bottom:0;"><span>Active</span><div class="toggle-switch ' + (rule.active ? 'on' : '') + '" data-field="active" onclick="this.classList.toggle(\'on\')"></div></div>' +
+      '<button class="btn-remove-date" onclick="removeQtyOfferRule(\'' + rule.id + '\')">✕ Remove</button>' +
+    '</div>' +
+    '<div class="row-2col">' +
+      '<div><label class="field-label">Buy Qty (pieces/units)</label><input class="settings-input" type="number" min="1" data-field="buy_qty" value="' + rule.buy_qty + '"></div>' +
+      '<div><label class="field-label">Buy Item Group</label><select class="settings-input" data-field="buy_group">' + groupOptions + '</select></div>' +
+    '</div>' +
+    '<div class="row-2col">' +
+      '<div><label class="field-label">Free Qty (pieces/units)</label><input class="settings-input" type="number" min="1" data-field="free_qty" value="' + rule.free_qty + '"></div>' +
+      '<div><label class="field-label">Free Item</label><select class="settings-input" data-field="free_target"><optgroup label="Whole Groups">' + freeGroupOptions + '</optgroup><optgroup label="Individual Snack Items">' + freeItemOptions + '</optgroup></select></div>' +
+    '</div>' +
   '</div>';
 }
 
-function renderControls() {
-  const s = ctrlSettings || {};
-  const banner = s.banner || {};
-  const offer = s.threshold_offer || {};
-  const dc = s.delivery_control || {};
-  const dstatus = s.delivery_status || { available: true };
-  const drivers = s.delivery_drivers || [];
+function syncQtyOfferRulesFromDOM() {
+  document.querySelectorAll('.qty-offer-card').forEach(card => {
+    const id = card.dataset.ruleId;
+    const rule = (currentSettings.qty_offers || []).find(r => r.id === id);
+    if (!rule) return;
+    rule.active = card.querySelector('[data-field="active"]').classList.contains('on');
+    rule.buy_qty = parseInt(card.querySelector('[data-field="buy_qty"]').value) || 1;
+    rule.buy_group = card.querySelector('[data-field="buy_group"]').value;
+    rule.free_qty = parseInt(card.querySelector('[data-field="free_qty"]').value) || 1;
+    const freeVal = card.querySelector('[data-field="free_target"]').value; // "group:xxx" or "item:xxx"
+    const sep = freeVal.indexOf(':');
+    rule.free_target_type = freeVal.slice(0, sep);
+    rule.free_target = freeVal.slice(sep + 1);
+  });
+}
 
-  const card = (title, inner) =>
-    '<div class="settings-section"><div class="settings-section-title">' + title + '</div>' + inner + '</div>';
+function addQtyOfferRule() {
+  syncQtyOfferRulesFromDOM();
+  if (!currentSettings.qty_offers) currentSettings.qty_offers = [];
+  currentSettings.qty_offers.push({
+    id: 'rule_' + Date.now(),
+    active: true,
+    buy_group: 'fried_chicken',
+    buy_qty: 9,
+    free_target_type: 'group',
+    free_target: 'fried_chicken',
+    free_qty: 1
+  });
+  renderSettings();
+}
 
-  // Banner
-  const bannerCard = card('📢 Announcement Banner',
-    '<input class="search-input" id="ctrlBannerText" placeholder="Banner text" value="' + escapeHtml(banner.text || '') + '" style="margin-bottom:0.5rem;">' +
-    '<input class="search-input" id="ctrlBannerEmoji" placeholder="Emoji" maxlength="8" value="' + escapeHtml(banner.emoji || '') + '" style="margin-bottom:0.5rem;">' +
-    ctrlToggleRow('Show banner on website', !!banner.active, 'ctrlToggleBanner()', 'ctrlBannerSwitch') +
-    '<button class="btn-quick" style="width:100%;margin-top:0.4rem;" onclick="ctrlSaveBanner()">💾 Save banner text</button>');
+function removeQtyOfferRule(id) {
+  if (!confirm('Remove this offer rule?')) return;
+  syncQtyOfferRulesFromDOM();
+  currentSettings.qty_offers = (currentSettings.qty_offers || []).filter(r => r.id !== id);
+  renderSettings();
+}
 
-  // Discount
-  const discountCard = card('🏷️ Spend & Save Discount',
-    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.5rem;">Applies to both the website and the POS counter.</div>' +
-    '<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">' +
-      '<input class="search-input" id="ctrlThreshAmt" type="number" placeholder="Above ₹" value="' + (offer.threshold_amount || '') + '">' +
-      '<input class="search-input" id="ctrlThreshPct" type="number" placeholder="% off" value="' + (offer.discount_percent || '') + '">' +
+function loadMenuTab() {
+  const container = document.getElementById('menuTabContainer');
+  dashFetch('/api/menu').then(r => r.json()).then(menu => {
+    currentMenu = menu;
+    renderMenuTab();
+  }).catch(e => {
+    console.log('Menu load error', e);
+    if (container) container.innerHTML = '<div class="sales-empty">Failed to load menu.</div>';
+  });
+}
+
+function menuFormHtml(item, category) {
+  // item is null when adding a new item; otherwise the item being edited.
+  const isEdit = !!item;
+  const categories = Object.keys(currentMenu);
+  const isAddon = item ? !!item.is_addon : false;
+  return '<div class="settings-section" id="menuItemForm">' +
+    '<div class="settings-section-title">' + (isEdit ? '✏️ Edit Item' : '➕ Add New Item') + '</div>' +
+    '<label class="field-label">Category' + (isEdit ? '' : ' — pick this first, it suggests the item code below') + '</label>' +
+    '<select class="settings-input" id="menuItemCategory" onchange="onMenuCategoryChanged()">' +
+      '<option value="" disabled' + (category ? '' : ' selected') + '>Choose a category...</option>' +
+      categories.map(c => '<option value="' + esc2(c) + '"' + (c === category ? ' selected' : '') + '>' + esc2(c) + '</option>').join('') +
+      '<option value="__new__"' + (category && !categories.includes(category) ? ' selected' : '') + '>+ Add new category...</option>' +
+    '</select>' +
+    '<input class="settings-input" id="menuItemNewCategory" maxlength="40" placeholder="New category name" style="display:' + (category && !categories.includes(category) ? '' : 'none') + ';" value="' + (category && !categories.includes(category) ? esc2(category) : '') + '" oninput="onMenuCategoryChanged()">' +
+    '<label class="field-label">Item ID' + (isEdit ? ' (cannot be changed)' : ' — auto-suggested from the category, or type your own') + '</label>' +
+    '<input class="settings-input" id="menuItemId" maxlength="20" value="' + esc2(item ? item.id : '') + '"' + (isEdit ? ' disabled' : ' oninput="menuItemIdEditedByHand=true" placeholder="Pick a category above first...."') + '>' +
+    '<label class="field-label">Title</label>' +
+    '<input class="settings-input" id="menuItemTitle" maxlength="80" value="' + esc2(item ? item.title : '') + '" placeholder="e.g. Maha Veggie Burger">' +
+    '<label class="field-label">Description</label>' +
+    '<input class="settings-input" id="menuItemDescription" maxlength="120" value="' + esc2(item ? (item.description || '') : '') + '" placeholder="e.g. Veg Burger">' +
+    '<label class="field-label">Price (₹)</label>' +
+    '<input class="settings-input" id="menuItemPrice" type="number" min="1" max="100000" value="' + (item ? item.price : '') + '">' +
+    '<div class="toggle-row"><span>This is an add-on (e.g. Cheese Burst) rather than a standalone item</span><div class="toggle-switch ' + (isAddon ? 'on' : '') + '" id="menuItemAddonToggle" onclick="this.classList.toggle(\'on\')"></div></div>' +
+    '<label class="field-label">Add-on size (only if the add-on above is on — "pan" or "regular", optional)</label>' +
+    '<input class="settings-input" id="menuItemAddonSize" maxlength="20" value="' + esc2(item ? (item.addon_size || '') : '') + '">' +
+    '<div style="display:flex;gap:0.5rem;margin-top:0.6rem;">' +
+      '<button class="settings-save-btn" style="flex:1;" onclick="saveMenuItem(\'' + (isEdit ? esc2(item.id) : '') + '\')">' + (isEdit ? 'Save Changes' : 'Add Item') + '</button>' +
+      '<button class="pos-preset-btn" style="flex:0 0 auto;padding:0.6rem 1rem;" onclick="cancelMenuItemForm()">Cancel</button>' +
     '</div>' +
-    ctrlToggleRow('Discount active', !!offer.active, 'ctrlToggleDiscount()', 'ctrlDiscountSwitch') +
-    '<button class="btn-quick" style="width:100%;margin-top:0.4rem;" onclick="ctrlSaveDiscount()">💾 Save discount amounts</button>');
-
-  // Delivery availability
-  const deliveryCard = card('🚦 Delivery Availability',
-    '<div id="ctrlDeliveryStatus" style="font-size:0.82rem;margin-bottom:0.6rem;font-weight:700;color:' + (dstatus.available ? 'var(--green)' : 'var(--red)') + ';">' +
-      (dstatus.available ? '✅ Delivery is ON' : '⛔ Delivery is OFF') + '</div>' +
-    ctrlToggleRow('Pause deliveries now', !!dc.paused, 'ctrlTogglePause()', 'ctrlPauseSwitch'));
-
-  // POS order types — owner-only lever, no extra password needed since this
-  // whole console is already gated behind the dashboard password.
-  const podt = s.pos_disabled_types || {};
-  const posTypesCard = card('🚫 POS Order Types',
-    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.4rem;">Turn an order type OFF to stop counter staff from keying it in at the POS — it can then only come from the website. Takeaway/Delivery (or whichever stays on) keep working from the counter.</div>' +
-    ctrlToggleRow('Disable Dine In orders from POS', !!podt['Dine In'], "ctrlTogglePosType('Dine In')", 'ctrlPosType_DineIn') +
-    ctrlToggleRow('Disable Takeaway orders from POS', !!podt['Takeaway'], "ctrlTogglePosType('Takeaway')", 'ctrlPosType_Takeaway') +
-    ctrlToggleRow('Disable Delivery orders from POS', !!podt['Delivery'], "ctrlTogglePosType('Delivery')", 'ctrlPosType_Delivery'));
-
-  // Send report
-  const reportCard = card('📧 Sales Report',
-    '<div style="display:flex;gap:0.5rem;">' +
-      '<select class="search-input" id="ctrlReportPeriod"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="month">This Month</option><option value="lastmonth">Last Month</option></select>' +
-      '<button class="btn-quick" onclick="ctrlSendReport(this)">Send</button>' +
-    '</div>');
-
-  // Driver activity
-  const driverOpts = ['<option value="">Choose a driver…</option>']
-    .concat(drivers.map(d => '<option value="' + escapeHtml(d.phone || '') + '">' + escapeHtml(d.name || '') + '</option>')).join('');
-  const driverCard = card('🛵 Driver Activity',
-    (drivers.length
-      ? '<select class="search-input" id="ctrlDriverSel" onchange="ctrlLoadDriverActivity(this.value)" style="margin-bottom:0.6rem;">' + driverOpts + '</select><div id="ctrlDriverActivity"></div>'
-      : '<div style="color:var(--muted);font-size:0.85rem;">No drivers added yet.</div>'));
-
-  // Manager account — set / change / remove the limited-access manager login.
-  // Uses the owner-only /api/set-manager-password endpoint (neitu always
-  // authenticates as owner). The hash is never sent back; the server only tells
-  // us whether an account currently exists (settings.manager_enabled).
-  const mgrOn = !!s.manager_enabled;
-  const managerCard = card('👤 Manager Account',
-    '<div id="ctrlMgrStatus" style="font-size:0.82rem;font-weight:700;margin-bottom:0.6rem;color:' + (mgrOn ? 'var(--green)' : 'var(--muted)') + ';">' +
-      (mgrOn ? '✅ Manager account is set up' : '⚪ No manager account yet') + '</div>' +
-    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.5rem;">Limited login: no voiding, no Sales, can\'t edit Menu/Prices or Backups. Must differ from the owner password.</div>' +
-    '<input class="search-input" id="ctrlMgrPw" type="password" autocomplete="new-password" placeholder="New manager password (min 4 chars)" style="margin-bottom:0.5rem;">' +
-    '<button class="btn-quick" style="width:100%;margin-bottom:0.4rem;" onclick="ctrlSetManagerPw(this)">💾 ' + (mgrOn ? 'Change' : 'Set') + ' manager password</button>' +
-    (mgrOn ? '<button class="btn-quick" style="width:100%;background:rgba(220,38,38,0.15);border-color:var(--red);color:var(--red);" onclick="ctrlClearManagerPw(this)">🗑️ Remove manager account</button>' : ''));
-
-  // Opening hours editor (Sun..Sat). Mirrors the dashboard Settings editor.
-  const DAY_LABELS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const wh = Array.isArray(s.weekly_hours) && s.weekly_hours.length === 7
-    ? s.weekly_hours
-    : [ {open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},
-        {open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},{open:'11:00',close:'16:30'}, null ];
-  const hoursRows = DAY_LABELS.map((label, i) => {
-    const e = wh[i]; const closed = !e;
-    const o = e ? (e.open || '11:00') : '11:00';
-    const c = e ? (e.close || '21:30') : '21:30';
-    return '<div class="ctrl-hours-row" data-day="' + i + '" style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
-        '<span style="width:80px;font-weight:700;font-size:0.85rem;">' + label + '</span>' +
-        '<label style="display:flex;align-items:center;gap:0.25rem;font-size:0.78rem;color:var(--muted);"><input type="checkbox" id="chrClosed' + i + '" ' + (closed ? 'checked' : '') + ' onchange="ctrlToggleHoursClosed(' + i + ')">Closed</label>' +
-        '<span id="chrWrap' + i + '" style="display:' + (closed ? 'none' : 'flex') + ';align-items:center;gap:0.3rem;">' +
-          '<input class="search-input" type="time" id="chrOpen' + i + '" value="' + o + '" style="width:auto;">' +
-          '<span style="color:var(--muted);">to</span>' +
-          '<input class="search-input" type="time" id="chrClose' + i + '" value="' + c + '" style="width:auto;">' +
-        '</span>' +
-      '</div>';
-  }).join('');
-  const hoursCard = card('🕒 Opening Hours',
-    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.5rem;">Regular weekly hours the website uses for open/closed status. Tick Closed for a day off.</div>' +
-    hoursRows +
-    '<button class="btn-quick" style="width:100%;margin-top:0.6rem;" onclick="ctrlSaveHours(this)">💾 Save opening hours</button>');
-
-  document.getElementById('mainContent').innerHTML = bannerCard + discountCard + deliveryCard + posTypesCard + reportCard + hoursCard + managerCard + driverCard;
+  '</div>';
 }
 
-function ctrlToggleHoursClosed(i) {
-  const cb = document.getElementById('chrClosed' + i);
-  const wrap = document.getElementById('chrWrap' + i);
-  if (wrap) wrap.style.display = (cb && cb.checked) ? 'none' : 'flex';
+function suggestNextItemCode(category) {
+  const items = (currentMenu[category] || []);
+  const parsed = items.map(it => {
+    const m = /^([A-Za-z]+)([0-9]+)$/.exec(it.id || '');
+    return m ? { prefix: m[1], num: parseInt(m[2], 10), width: m[2].length } : null;
+  }).filter(Boolean);
+  if (parsed.length === 0) return '';
+  const counts = {};
+  parsed.forEach(p => { counts[p.prefix] = (counts[p.prefix] || 0) + 1; });
+  const topPrefix = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+  const matching = parsed.filter(p => p.prefix === topPrefix);
+  const maxNum = Math.max(...matching.map(p => p.num));
+  const width = Math.max(...matching.map(p => p.width));
+  return topPrefix + String(maxNum + 1).padStart(width, '0');
 }
 
-function ctrlSaveHours(btn) {
-  const weekly_hours = [];
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const toMin = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; };
-  for (let i = 0; i < 7; i++) {
-    const cb = document.getElementById('chrClosed' + i);
-    if (cb && cb.checked) { weekly_hours.push(null); continue; }
-    const o = (document.getElementById('chrOpen' + i) || {}).value || '';
-    const c = (document.getElementById('chrClose' + i) || {}).value || '';
-    const om = toMin(o), cm = toMin(c);
-    if (om == null || cm == null || cm <= om) {
-      alert('Hours for ' + days[i] + ' are invalid — set both times (close after open), or tick Closed.');
-      return;
-    }
-    weekly_hours.push({ open: o, close: c });
+function selectedMenuCategory() {
+  const sel = document.getElementById('menuItemCategory');
+  if (!sel) return '';
+  if (sel.value === '__new__') {
+    const newInput = document.getElementById('menuItemNewCategory');
+    return newInput ? newInput.value.trim() : '';
   }
-  btn.disabled = true;
-  authFetchPost(SERVER_URL + '/api/settings', { weekly_hours: weekly_hours })
-    .then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
-      btn.disabled = false;
-      if (status === 401) { handleUnauthorized(); return; }
-      if (status === 200 && body.status === 'ok') { showControlToast('Opening hours saved.'); loadControls(); }
-      else { alert((body && body.message) || 'Could not save opening hours.'); }
-    }).catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
+  return sel.value;
 }
 
-// Owner sets/changes the manager password remotely.
-function ctrlSetManagerPw(btn) {
-  const inp = document.getElementById('ctrlMgrPw');
+function onMenuCategoryChanged() {
+  const sel = document.getElementById('menuItemCategory');
+  const newInput = document.getElementById('menuItemNewCategory');
+  if (sel && newInput) {
+    newInput.style.display = (sel.value === '__new__') ? '' : 'none';
+    if (sel.value === '__new__') newInput.focus();
+  }
+  if (menuItemIdEditedByHand) return; // they've already typed their own id — leave it alone
+  const idInput = document.getElementById('menuItemId');
+  if (!idInput || idInput.disabled) return; // editing an existing item — id is fixed, nothing to suggest
+  const suggestion = suggestNextItemCode(selectedMenuCategory());
+  if (suggestion) idInput.value = suggestion;
+}
+
+function renderMenuTab() {
+  const container = document.getElementById('menuTabContainer');
+  if (!container) return; // Settings tab isn't open right now — nothing to render into
+  let html =
+    '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">' +
+      'Add, edit, or remove items and change prices here — takes effect immediately for POS and online orders, no restart needed. ' +
+      'The customer-facing website has its own separate copy (a static site, hosted independently) — after making changes here, ' +
+      '<a href="#" onclick="downloadAuthedFile(\'/api/menu/export\', \'menu_for_index_html.json\');return false;" style="color:var(--orange);">download the updated menu</a> ' +
+      'and paste it into index.html\'s <code>const MENU = ...</code> line, then re-upload index.html to keep the website\'s display in sync.' +
+    '</div>' +
+    '<button class="settings-save-btn" style="margin-bottom:1rem;" onclick="showAddMenuItemForm()">➕ Add New Item</button>';
+
+  if (menuEditingId !== undefined && menuEditingId !== null && menuEditingId !== '__new__') {
+    const found = findMenuItemById(menuEditingId);
+    if (found) html += menuFormHtml(found.item, found.category);
+  } else if (menuEditingId === '__new__') {
+    html += menuFormHtml(null, '');
+  }
+
+  Object.entries(currentMenu).forEach(([category, items]) => {
+    html += '<div class="settings-section" style="margin-top:0.8rem;"><div class="settings-section-title" style="font-size:0.9rem;">' + esc2(category) + '</div>' +
+      '<div class="menu-items-grid">';
+    items.forEach(item => {
+      html += '<div class="cart-item menu-item-card">' +
+        '<div style="flex:1;min-width:0;"><div class="cart-item-name">' + esc2(item.title) + (item.is_addon ? ' <span style="color:var(--orange);font-size:0.7rem;">⚡ add-on</span>' : '') + '</div>' +
+        '<div style="font-size:0.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc2(item.description || '') + ' · ' + esc2(item.id) + '</div></div>' +
+        '<div class="cart-item-price" style="margin-right:0.5rem;white-space:nowrap;">₹' + item.price + '</div>' +
+        '<button class="pos-preset-btn" style="flex:0 0 auto;padding:0.35rem 0.6rem;margin-right:0.3rem;font-size:0.78rem;" data-id="' + esc2(item.id) + '" onclick="editMenuItem(this.dataset.id)">Edit</button>' +
+        '<button class="pos-preset-btn" style="flex:0 0 auto;padding:0.35rem 0.6rem;font-size:0.78rem;color:var(--flame);border-color:var(--flame);" data-id="' + esc2(item.id) + '" data-title="' + esc2(item.title) + '" onclick="deleteMenuItem(this.dataset.id, this.dataset.title)">Delete</button>' +
+      '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function findMenuItemById(itemId) {
+  for (const [category, items] of Object.entries(currentMenu)) {
+    const item = items.find(it => it.id === itemId);
+    if (item) return { item, category };
+  }
+  return null;
+}
+
+function showAddMenuItemForm() {
+  menuEditingId = '__new__';
+  menuItemIdEditedByHand = false; // fresh form — let category selection suggest a code again
+  renderMenuTab();
+  document.getElementById('menuItemForm')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function editMenuItem(itemId) {
+  menuEditingId = itemId;
+  renderMenuTab();
+  document.getElementById('menuItemForm')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelMenuItemForm() {
+  menuEditingId = null;
+  renderMenuTab();
+}
+
+function confirmMenuChangeWithPassword(summaryLines) {
+  const summary = summaryLines.join('\n');
+  if (!confirm('Please confirm this menu change:\n\n' + summary + '\n\nYou will be asked for the dashboard password next.')) {
+    return false;
+  }
+  const entered = prompt('Re-enter the dashboard password to apply this menu change:') || '';
+  if (!entered) return false;
+  if (entered !== dashPassword) {
+    alert('Password did not match — no change was made.');
+    return false;
+  }
+  return true;
+}
+
+function saveMenuItem(originalId) {
+  const isEdit = !!originalId;
+  const idVal = originalId || document.getElementById('menuItemId').value.trim();
+  const titleVal = document.getElementById('menuItemTitle').value.trim();
+  const priceVal = parseInt(document.getElementById('menuItemPrice').value, 10);
+
+  // Basic sanity before we bother confirming (the server validates too).
+  const categoryVal = selectedMenuCategory();
+  if (!categoryVal) {
+    alert('Please choose a category (or type a new one) before saving.');
+    return;
+  }
+  if (!idVal || !titleVal || !priceVal || priceVal < 1) {
+    alert('Please fill in the item ID, name, and a valid price before saving.');
+    return;
+  }
+
+  // Show exactly what's about to change, then require the password.
+  const summary = isEdit
+    ? ['Save changes to: ' + titleVal, 'Item ID: ' + idVal, 'Price: Rs.' + priceVal]
+    : ['ADD new item: ' + titleVal, 'Item ID: ' + idVal, 'Price: Rs.' + priceVal];
+  if (!confirmMenuChangeWithPassword(summary)) return;
+
+  const payload = {
+    id: idVal,
+    category: categoryVal,
+    title: titleVal,
+    description: document.getElementById('menuItemDescription').value.trim(),
+    price: priceVal,
+    is_addon: document.getElementById('menuItemAddonToggle').classList.contains('on'),
+    addon_size: document.getElementById('menuItemAddonSize').value.trim()
+  };
+  dashFetch('/api/menu/item', { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status !== 'ok') { alert(res.message || 'Could not save item.'); return; }
+      menuEditingId = null;
+      loadMenuTab();
+    })
+    .catch(() => alert('Could not reach the server — please try again.'));
+}
+
+function deleteMenuItem(itemId, title) {
+  // Deletion already confirmed; now also require the password, same as edits.
+  if (!confirmMenuChangeWithPassword(['REMOVE from menu: ' + title, 'Item ID: ' + itemId, '(Past orders are unaffected.)'])) return;
+  dashFetch('/api/menu/item/delete', { method: 'POST', body: JSON.stringify({ id: itemId }) })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status !== 'ok') { alert(res.message || 'Could not delete item.'); return; }
+      loadMenuTab();
+    })
+    .catch(() => alert('Could not reach the server — please try again.'));
+}
+
+function loadStockSection() {
+  dashFetch('/api/stock-groups').then(r => r.json()).then(data => {
+    stockGroupsCache = data;
+    renderStockSection();
+  }).catch(e => console.log('Stock groups load error', e));
+}
+
+function toggleStockExpand(key) {
+  if (stockExpanded.has(key)) stockExpanded.delete(key); else stockExpanded.add(key);
+  renderStockSection();
+}
+
+function renderStockSection() {
+  const el = document.getElementById('stockSection');
+  if (!el || !stockGroupsCache) return;
+
+  // Individual item flags are the single source of truth. A group's checkbox
+  // is DERIVED: checked when all its items are out, a dash (indeterminate)
+  // when only some are, empty when none. So ticking a group marks everything
+  // in it out, and unticking brings it all back — no lingering hidden flags.
+  const oosIds = new Set();
+  stockGroupsCache.groups.forEach(g => g.items.forEach(it => { if (it.active) oosIds.add(it.id); }));
+  const oosCount = oosIds.size;
+
+  const groupsHtml = stockGroupsCache.groups.map((g, gi) => {
+    const isOpen = stockExpanded.has(g.key);
+    const total = g.items.length;
+    const activeCount = g.items.filter(it => it.active).length;
+    const allOn = total > 0 && activeCount === total;
+    const itemsHtml = g.items.map(it =>
+      '<label class="stock-toggle-row" style="padding-left:1.8rem;">' +
+        '<input type="checkbox" ' + (it.active ? 'checked' : '') + ' onchange="toggleStockItem(&quot;' + it.id + '&quot;, this.checked)">' +
+        '<span>' + it.title + '</span>' +
+      '</label>'
+    ).join('');
+    const countLabel = activeCount ? (activeCount + ' of ' + total + ' out') : (total + ' items');
+    return '<div class="stock-group-block">' +
+      '<label class="stock-toggle-row">' +
+        '<input type="checkbox" id="stockGrpChk_' + gi + '" ' + (allOn ? 'checked' : '') + ' onchange="toggleStockGroup(&quot;' + g.key + '&quot;, this.checked)">' +
+        '<span style="flex:1;">' + g.label + ' <span class="stock-count">(' + countLabel + ')</span></span>' +
+        '<span onclick="toggleStockExpand(&quot;' + g.key + '&quot;)" style="cursor:pointer;padding:0.2rem 0.5rem;color:var(--muted);">' + (isOpen ? '▾' : '▸') + '</span>' +
+      '</label>' +
+      (isOpen ? '<div class="stock-group-items">' + itemsHtml + '</div>' : '') +
+    '</div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📦 Out of Stock</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Changes take effect immediately on the website and POS — no need to hit Save Settings. Tick a group to mark everything in it out of stock; untick it to bring it all back. Tap ▸ to expand a group and toggle single items.</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.8rem;">' +
+        '<span style="font-size:0.85rem;font-weight:700;' + (oosCount ? 'color:var(--red);' : 'color:var(--green);') + '">' + (oosCount ? ('⛔ ' + oosCount + ' item' + (oosCount === 1 ? '' : 's') + ' out of stock') : '✅ Everything in stock') + '</span>' +
+        (oosCount ? '<button class="btn-reprint" style="flex-shrink:0;" onclick="clearAllStock()">↩ Mark all back in stock</button>' : '') +
+      '</div>' +
+      groupsHtml +
+    '</div>';
+
+  // indeterminate can't be set via an HTML attribute — set it after render.
+  stockGroupsCache.groups.forEach((g, gi) => {
+    const total = g.items.length, activeCount = g.items.filter(it => it.active).length;
+    const chk = document.getElementById('stockGrpChk_' + gi);
+    if (chk) chk.indeterminate = activeCount > 0 && activeCount < total;
+  });
+}
+
+function toggleStockGroup(key, checked) {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password:') || '';
+    if (!dashPassword) { loadStockSection(); return; }
+  }
+  // Cascade to every item in the group (updating all copies of shared item
+  // ids across groups so their state stays consistent), then save.
+  const grp = stockGroupsCache.groups.find(g => g.key === key);
+  if (!grp) return;
+  const ids = new Set(grp.items.map(it => it.id));
+  stockGroupsCache.groups.forEach(g => g.items.forEach(it => { if (ids.has(it.id)) it.active = checked; }));
+  saveStockItems();
+}
+
+function toggleStockItem(id, checked) {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password:') || '';
+    if (!dashPassword) { loadStockSection(); return; }
+  }
+  // Update every copy of this id (an item can appear under more than one group).
+  stockGroupsCache.groups.forEach(g => g.items.forEach(it => { if (it.id === id) it.active = checked; }));
+  saveStockItems();
+}
+
+function clearAllStock() {
+  if (!confirm('Mark ALL items back in stock?')) return;
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password:') || '';
+    if (!dashPassword) return;
+  }
+  stockGroupsCache.groups.forEach(g => g.items.forEach(it => { it.active = false; }));
+  saveStockItems();
+}
+
+function onReportPeriodChange() {
+  const sel = document.getElementById('reportPeriod');
+  const custom = document.getElementById('reportCustomRange');
+  if (!sel || !custom) return;
+  const isCustom = (sel.value === 'custom');
+  custom.style.display = isCustom ? 'flex' : 'none';
+  if (isCustom) {
+    // Seed the custom inputs with a sensible default (this month so far).
+    const s = document.getElementById('reportStart');
+    const e = document.getElementById('reportEnd');
+    const now = new Date();
+    if (s && !s.value) s.value = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+    if (e && !e.value) e.value = toDateStr(now);
+  }
+  updateReportPreview();
+}
+
+function updateReportPreview() {
+  // Show exactly which dates the Send button will use, live.
+  const el = document.getElementById('reportDatePreview');
+  const sel = document.getElementById('reportPeriod');
+  if (!el || !sel) return;
+  const r = reportPeriodRange();
+  if (sel.value === 'custom' && (!r.start || !r.end)) {
+    el.textContent = 'Pick both dates above.';
+    return;
+  }
+  if (r.start > r.end) {
+    el.textContent = '⚠️ Start date is after end date.';
+    return;
+  }
+  const range = (r.start === r.end) ? r.start : (r.start + ' to ' + r.end);
+  // For named periods, show the label too; custom just shows the dates.
+  el.textContent = 'Will send: ' + (sel.value === 'custom' ? range : (r.label + ' (' + range + ')'));
+}
+
+function reportPeriodRange() {
+  // Resolve the selected period to concrete { start, end, label } dates,
+  // mirroring the date maths the Sales tab already uses (local time).
+  const sel = document.getElementById('reportPeriod');
+  const val = sel ? sel.value : 'today';
+  const now = new Date();
+  if (val === 'yesterday') {
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    const d = toDateStr(y);
+    return { start: d, end: d, label: 'Yesterday' };
+  }
+  if (val === 'month') {
+    return { start: toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)), end: toDateStr(now), label: 'This Month' };
+  }
+  if (val === 'lastmonth') {
+    const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const last = new Date(now.getFullYear(), now.getMonth(), 0); // day 0 = last day of prev month
+    return { start: toDateStr(first), end: toDateStr(last), label: 'Last Month' };
+  }
+  if (val === 'custom') {
+    const s = document.getElementById('reportStart');
+    const e = document.getElementById('reportEnd');
+    return { start: (s && s.value) || '', end: (e && e.value) || '', label: 'Custom' };
+  }
+  const t = toDateStr(now);
+  return { start: t, end: t, label: 'Today' };
+}
+
+function toggleBanner() {
+  document.getElementById('bannerToggle').classList.toggle('on');
+}
+
+function applyBannerPreset(i) {
+  const p = BANNER_PRESETS[i];
+  if (!p) return;
+  document.getElementById('bannerEmoji').value = p.emoji;
+  document.getElementById('bannerText').value = p.text;
+  // Doesn't touch the active toggle or auto-save — the owner reviews/edits
+  // the text and flips "Show banner on website" + Save Settings themselves.
+}
+
+function toggleOffer() {
+  document.getElementById('offerToggle').classList.toggle('on');
+}
+
+function toggleHoursClosed(i) {
+  const sw = document.getElementById('hrClosed' + i);
+  if (sw) sw.classList.toggle('on');
+  const wrap = document.getElementById('hrOpenWrap' + i);
+  if (wrap) wrap.style.display = (sw && sw.classList.contains('on')) ? 'none' : 'flex';
+}
+
+function addSpecialDate() {
+  const todayStr = toDateStr(new Date());
+  if (!currentSettings.special_dates) currentSettings.special_dates = {};
+  if (currentSettings.special_dates[todayStr]) { alert('That date already has an entry — scroll to edit it.'); return; }
+  currentSettings.special_dates[todayStr] = { open: 11, close: 21.5, label: '' };
+  renderSettings();
+}
+
+function removeSpecialDate(dateKey) {
+  if (!confirm('Remove this special date override?')) return;
+  delete currentSettings.special_dates[dateKey];
+  renderSettings();
+}
+
+function addDriverRow() {
+  const list = document.getElementById('driversList');
+  const row = document.createElement('div');
+  row.className = 'row-2col driver-row';
+  row.style.cssText = 'align-items:center;margin-bottom:0.5rem;';
+  row.innerHTML =
+    '<input class="settings-input driver-name" placeholder="Driver name">' +
+    '<div style="display:flex;gap:0.4rem;">' +
+      '<input class="settings-input driver-phone" placeholder="Phone (optional)" inputmode="numeric" style="flex:1;">' +
+      '<button class="btn-reject" style="flex-shrink:0;" onclick="this.closest(\'.driver-row\').remove()">✕</button>' +
+    '</div>';
+  list.appendChild(row);
+  row.querySelector('.driver-name').focus();
+}
+
+function refreshManagerStatus() {
+  dashFetch('/api/settings').then(r => r.json()).then(s => {
+    const on = !!(s && s.manager_enabled);
+    const st = document.getElementById('managerStatus');
+    if (st) { st.textContent = on ? '✅ Manager account is set up' : '⚪ No manager account yet'; st.style.color = on ? 'var(--green)' : 'var(--muted)'; }
+    const clr = document.getElementById('mgrClearBtn');
+    if (clr) clr.style.display = on ? '' : 'none';
+  }).catch(() => {});
+}
+
+function saveManagerPassword(btn) {
+  const inp = document.getElementById('mgrPwInput');
   const pw = (inp ? inp.value : '').trim();
   if (pw.length < 4) { alert('Manager password must be at least 4 characters.'); return; }
   btn.disabled = true;
-  authFetchPost(SERVER_URL + '/api/set-manager-password', { new_password: pw })
-    .then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
+  dashFetch('/api/set-manager-password', { method: 'POST', body: JSON.stringify({ new_password: pw }) })
+    .then(r => r.json().then(b => ({status: r.status, body: b}))).then(({status, body}) => {
       btn.disabled = false;
-      if (status === 401) { handleUnauthorized(); return; }
+      if (status === 200 && body.status === 'ok') { if (inp) inp.value = ''; alert('Manager password saved.'); refreshManagerStatus(); }
+      else { alert((body && body.message) || 'Could not save the manager password.'); }
+    }).catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
+}
+
+function clearManagerPassword(btn) {
+  if (!confirm('Remove the manager account? That login will stop working immediately.')) return;
+  btn.disabled = true;
+  dashFetch('/api/set-manager-password', { method: 'POST', body: JSON.stringify({ clear: true }) })
+    .then(r => r.json()).then(() => { btn.disabled = false; alert('Manager account removed.'); refreshManagerStatus(); })
+    .catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
+}
+
+function loadPrinters() {
+  const box = document.getElementById('printerPicker');
+  if (!box) return;
+  dashFetch('/api/printers').then(r => r.json()).then(data => {
+    if (!data || data.status !== 'ok') { box.innerHTML = '<span style="color:var(--muted);">Could not read the printer list.</span>'; return; }
+    const chosen = (currentSettings.printer_name || '');
+    const list = data.printers || [];
+    if (!list.length) {
+      box.innerHTML = '<span style="color:var(--muted);">No printers found on this PC. Check Windows printer settings.</span>';
+      return;
+    }
+    const opts = ['<option value=""' + (chosen === '' ? ' selected' : '') + '>Default (' + esc2(data.configured_default || '') + ')</option>']
+      .concat(list.map(p => '<option value="' + esc2(p) + '"' + (p === chosen ? ' selected' : '') + '>' + esc2(p) + '</option>')).join('');
+    box.innerHTML =
+      '<select class="settings-input" id="printerSelect" style="margin-bottom:0.5rem;">' + opts + '</select>' +
+      '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.6rem;">Currently printing to: <b style="color:var(--white);">' + esc2(data.active || '') + '</b></div>' +
+      '<button class="btn-reprint" onclick="testPrint(this)">🖨️ Print test slip</button>' +
+      '<div style="font-size:0.76rem;color:var(--muted);margin-top:0.5rem;">Changing this takes effect after you press <b>Save Settings</b>.</div>';
+  }).catch(() => { box.innerHTML = '<span style="color:var(--muted);">Could not read the printer list.</span>'; });
+}
+
+function testPrint(btn) {
+  btn.disabled = true; btn.textContent = 'Printing…';
+  dashFetch('/api/test-print', { method: 'POST', body: JSON.stringify({}) })
+    .then(r => r.json()).then(res => {
+      btn.disabled = false; btn.textContent = '🖨️ Print test slip';
+      alert((res && res.message) || 'Test print sent.');
+    }).catch(() => { btn.disabled = false; btn.textContent = '🖨️ Print test slip'; alert('Could not reach the server.'); });
+}
+
+function copyDriverLink(token, btn) {
+  const link = DRIVER_PAGE_URL + '?t=' + token;
+  const done = () => { const o = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = o; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(done).catch(() => prompt('Copy this driver link:', link));
+  } else {
+    prompt('Copy this driver link:', link);
+  }
+}
+
+function collectSettingsFromForm() {
+  syncQtyOfferRulesFromDOM();
+
+  const delivery_drivers = [];
+  document.querySelectorAll('.driver-row').forEach(row => {
+    const name = row.querySelector('.driver-name').value.trim();
+    const phone = row.querySelector('.driver-phone').value.replace(/\D/g, '');
+    const token = row.getAttribute('data-token') || '';
+    if (name) delivery_drivers.push(token ? { name, phone, token } : { name, phone });
+  });
+
+  const banner = {
+    active: document.getElementById('bannerToggle').classList.contains('on'),
+    text: document.getElementById('bannerText').value.trim(),
+    emoji: document.getElementById('bannerEmoji').value.trim() || '🎉'
+  };
+
+  const threshold_offer = {
+    active: document.getElementById('offerToggle').classList.contains('on'),
+    threshold_amount: parseInt(document.getElementById('offerThreshold').value) || 0,
+    discount_percent: Math.max(0, Math.min(100, parseInt(document.getElementById('offerPercent').value) || 0))
+  };
+
+  const special_dates = {};
+  let dateError = null;
+  document.querySelectorAll('.special-date-card').forEach(card => {
+    const dateKey = card.dataset.date;
+    if (!dateKey) return;
+    const label = card.querySelector('[data-field="label"]').value.trim();
+    const closedToggle = card.querySelector('[data-field="closed"]');
+    const isClosed = closedToggle.classList.contains('on');
+    if (isClosed) {
+      special_dates[dateKey] = { open: null, close: null, label: label };
+    } else {
+      const openRaw = card.querySelector('[data-field="open"]').value.trim();
+      const closeRaw = card.querySelector('[data-field="close"]').value.trim();
+      const open = parseFloat(openRaw);
+      const close = parseFloat(closeRaw);
+      // Validate: a date that ISN'T force-closed must have real hours.
+      // Previously a blank field became NaN -> JSON null -> the server read
+      // it as "closed all day", so accidentally clearing an hours field
+      // silently shut ordering for that date. Now we refuse the save and say
+      // why (or the user can flip "Force closed all day" on purpose).
+      if (openRaw === '' || closeRaw === '' || isNaN(open) || isNaN(close) ||
+          open < 0 || open > 24 || close < 0 || close > 24 || close <= open) {
+        if (!dateError) {
+          dateError = 'Special date "' + (label || dateKey) + '" has invalid hours. '
+            + 'Enter both open and close times (0–24, close after open), '
+            + 'or turn on "Force closed all day".';
+        }
+        return;
+      }
+      special_dates[dateKey] = { open: open, close: close, label: label };
+    }
+  });
+  if (dateError) { alert(dateError); return null; }
+
+  const preorder_time = {
+    active: document.getElementById('preorderToggle').classList.contains('on'),
+    label: (document.getElementById('preorderLabel').value || '').trim() || 'When should your order be ready?',
+    options: (document.getElementById('preorderOptions').value || '').split(',').map(s => s.trim()).filter(Boolean)
+  };
+
+  const delivery_control = {
+    paused: document.getElementById('deliveryPauseToggle').classList.contains('on'),
+    cutoff_enabled: document.getElementById('deliveryCutoffToggle').classList.contains('on'),
+    cutoff_time: (document.getElementById('deliveryCutoffTime').value || '21:00'),
+    message: (document.getElementById('deliveryMessage').value || '').trim()
+  };
+
+  // pos_disabled_types is NOT collected here — it saves itself immediately,
+  // one toggle at a time, each gated behind a re-typed password. See
+  // togglePosDisabledType(). Bundling it into this generic Save Settings
+  // payload would also break the save for managers, who don't have this
+  // category (and therefore these DOM elements) at all.
+
+  const printerSel = document.getElementById('printerSelect');
+  const printer_name = printerSel ? printerSel.value : (currentSettings.printer_name || '');
+
+  // Weekly opening hours — 7 entries, Sunday..Saturday. Closed day = null.
+  let weekly_hours = null;
+  let hoursError = null;
+  if (document.querySelector('.hours-row')) {
+    weekly_hours = [];
+    for (let i = 0; i < 7; i++) {
+      const closedEl = document.getElementById('hrClosed' + i);
+      if (closedEl && closedEl.classList.contains('on')) { weekly_hours.push(null); continue; }
+      const o = (document.getElementById('hrOpen' + i) || {}).value || '';
+      const c = (document.getElementById('hrClose' + i) || {}).value || '';
+      const toMin = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+      const om = toMin(o), cm = toMin(c);
+      if (om == null || cm == null || cm <= om) {
+        hoursError = 'Opening hours for ' + ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][i] +
+          ' are invalid — set both open and close (close after open), or toggle Closed.';
+        break;
+      }
+      weekly_hours.push({ open: o, close: c });
+    }
+  }
+  if (hoursError) { alert(hoursError); return null; }
+
+  // Packing charges — 4 flat per-item rates. Missing/invalid fields fall
+  // back to the previously saved value rather than blocking the whole save.
+  let packing_rates = null;
+  if (document.getElementById('pkRate_pizza_small')) {
+    const prev = currentSettings.packing_rates || { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5, bowls: 8, snack_box: 3, wraps: 4, burgers: 0 };
+    packing_rates = {};
+    ['pizza_small', 'pizza_large', 'footlong_sandwich', 'chicken', 'bowls', 'snack_box', 'wraps', 'burgers'].forEach(key => {
+      const el = document.getElementById('pkRate_' + key);
+      const val = el ? parseInt(el.value) : NaN;
+      packing_rates[key] = (!isNaN(val) && val >= 0) ? val : (prev[key] != null ? prev[key] : 0);
+    });
+  }
+
+  const out = { banner, special_dates, threshold_offer, qty_offers: currentSettings.qty_offers || [], delivery_drivers, preorder_time, delivery_control, printer_name };
+  if (weekly_hours) out.weekly_hours = weekly_hours;
+  if (packing_rates) out.packing_rates = packing_rates;
+  return out;
+}
+
+function renderCloudSyncStatus(s) {
+  const box = document.getElementById('cloudSyncStatus');
+  if (!box) return;
+  if (!s || !s.enabled) {
+    box.innerHTML = '⚪ Not set up yet. Add SHEETS_WEBHOOK_URL and SHEETS_WEBHOOK_TOKEN to secrets.env, then restart orders.py.';
+    return;
+  }
+  let html = s.last_error ? '🔴 Last attempt failed: ' + esc2(s.last_error) : '🟢 Connected';
+  html += '<br>Last successful sync: ' + (s.last_ok ? esc2(s.last_ok) : 'not yet');
+  html += '<br>Waiting to upload: ' + (s.pending || 0) + ' order(s)';
+  box.innerHTML = html;
+}
+
+function loadCloudSyncStatus() {
+  const box = document.getElementById('cloudSyncStatus');
+  if (!box) return;
+  dashFetch('/api/cloud-sync-status').then(r => r.json()).then(renderCloudSyncStatus)
+    .catch(() => { box.textContent = 'Could not load status.'; });
+}
+
+function syncCloudNow(btn) {
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Syncing…';
+  dashFetch('/api/cloud-sync-now', { method: 'POST', body: '{}' })
+    .then(r => r.json()).then(renderCloudSyncStatus)
+    .catch(() => { alert('Sync failed - check the PC internet connection.'); })
+    .finally(() => { btn.disabled = false; btn.textContent = old; });
+}
+
+function toggleReportDay(i) {
+  const el = document.getElementById('rsOff' + i);
+  if (!el) return;
+  el.classList.toggle('on');
+  const wrap = document.getElementById('rsTimeWrap' + i);
+  if (wrap) wrap.style.display = el.classList.contains('on') ? 'none' : 'flex';
+}
+
+function saveReportSchedule() {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const schedule = [];
+  for (let i = 0; i < 7; i++) {
+    const off = document.getElementById('rsOff' + i);
+    if (off && off.classList.contains('on')) { schedule.push(null); continue; }
+    const t = ((document.getElementById('rsTime' + i) || {}).value || '').trim();
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(t)) {
+      alert('Please set a valid send time for ' + days[i] + ', or switch it to No report.');
+      return;
+    }
+    schedule.push(t);
+  }
+  dashFetch('/api/settings', {
+    method: 'POST',
+    body: JSON.stringify({ report_schedule: schedule })
+  }).then(r => r.json().then(body => ({status: r.status, body}))).then(({status, body}) => {
+    if (status === 200 && body.status === 'ok') {
+      alert('Report schedule saved!');
+      currentSettings.report_schedule = schedule;
+    } else {
+      alert('Failed to save: ' + (body.message || 'Unknown error'));
+    }
+  }).catch(e => { alert('Failed to save report schedule.'); console.log(e); });
+}
+
+function saveReportEmail() {
+  const email = (document.getElementById('reportEmailInput').value || '').trim();
+  dashFetch('/api/settings', {
+    method: 'POST',
+    body: JSON.stringify({ report_email: email })
+  }).then(r => r.json().then(body => ({status: r.status, body}))).then(({status, body}) => {
+    if (status === 200 && body.status === 'ok') {
+      alert('Report email saved!');
+      currentSettings.report_email = email;
+    } else {
+      alert('Failed to save: ' + (body.message || 'Unknown error'));
+    }
+  }).catch(e => { alert('Failed to save report email.'); console.log(e); });
+}
+
+function downloadAuthedFile(path, fallbackName) {
+  dashFetch(path).then(r => {
+    if (!r.ok) throw new Error('bad status');
+    const cd = r.headers.get('Content-Disposition') || '';
+    const m = cd.match(/filename="?([^";]+)"?/);
+    const name = m ? m[1] : fallbackName;
+    return r.blob().then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    });
+  }).catch(e => alert('Download failed — check the connection and try again.'));
+}
+
+function saveOwnerPassword(btn) {
+  const cur = (document.getElementById('ownCurPw') || {}).value || '';
+  const nw = ((document.getElementById('ownNewPw') || {}).value || '').trim();
+  const nw2 = ((document.getElementById('ownNewPw2') || {}).value || '').trim();
+  if (nw.length < 4) { alert('New password must be at least 4 characters.'); return; }
+  if (nw !== nw2) { alert('The two new-password fields do not match.'); return; }
+  btn.disabled = true;
+  dashFetch('/api/set-owner-password', { method: 'POST', body: JSON.stringify({ current_password: cur, new_password: nw }) })
+    .then(r => r.json().then(b => ({status: r.status, body: b}))).then(({status, body}) => {
+      btn.disabled = false;
       if (status === 200 && body.status === 'ok') {
-        if (inp) inp.value = '';
-        showControlToast('Manager password saved.');
-        loadControls();
+        // The password we authenticate future calls with just changed — update
+        // the in-memory + stored password so this session keeps working.
+        dashPassword = nw;
+        sessionStorage.setItem('gi_admin_auth_pw', nw);
+        ['ownCurPw','ownNewPw','ownNewPw2'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        alert('Owner password changed. Use the new password next time you log in.');
       } else {
-        alert((body && body.message) || 'Could not save the manager password.');
+        alert((body && body.message) || 'Could not change the password.');
       }
     }).catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
 }
 
-// Owner removes the manager account remotely.
-function ctrlClearManagerPw(btn) {
-  if (!confirm('Remove the manager account? That login will stop working immediately.')) return;
-  btn.disabled = true;
-  authFetchPost(SERVER_URL + '/api/set-manager-password', { clear: true })
+function qtyOfferFreeItemOptions() {
+  return [].concat(currentMenu['Veg Snacks'] || [], currentMenu['Non Veg Snacks'] || []);
+}
+
+function downloadBackupNow() {
+  if (!dashPassword) {
+    dashPassword = prompt('Re-enter dashboard password to download a backup:') || '';
+    if (!dashPassword) return;
+  }
+  downloadAuthedFile('/api/download-backup', 'grillinn_orders_backup_' + toDateStr(new Date()) + '.db');
+}
+
+
+function saveStockItems() {
+  // Item-level flags are the single source of truth; group flags are cleared.
+  const activeById = {};
+  stockGroupsCache.groups.forEach(g => g.items.forEach(it => { if (it.active) activeById[it.id] = true; }));
+  dashFetch('/api/stock-status', {
+    method: 'POST',
+    body: JSON.stringify({ out_of_stock_items: Object.keys(activeById), out_of_stock_groups: [] })
+  }).then(r => r.json()).then(res => {
+    if (res.status !== 'ok') alert(res.message || 'Failed to update.');
+    loadStockSection();
+  }).catch(() => { alert('Network error — please try again.'); loadStockSection(); });
+}
+
+function sendReportNow() {
+  const r = reportPeriodRange();
+  if (!r.start || !r.end) { alert('Please choose both a start and an end date.'); return; }
+  if (r.start > r.end) { alert('The start date is after the end date — please fix the range.'); return; }
+  dashFetch('/api/send-daily-report', { method: 'POST', body: JSON.stringify({ start: r.start, end: r.end, label: r.label }) })
+    .then(res => res.json().then(body => ({ status: res.status, body }))).then(({ status, body }) => {
+      if (status === 200 && body.status === 'ok') alert('Report sent for ' + (r.start === r.end ? r.start : (r.start + ' to ' + r.end)) + '!');
+      else alert('Failed to send: ' + (body.message || 'Check that the report email (above) and SMTP settings are configured'));
+    }).catch(() => alert('Failed to send report.'));
+}
+
+// POS order-type lever: owner-only, saves immediately, merges just this key
+// (the server leaves the other two types untouched). No re-typed password —
+// this whole console is already behind the owner password for the session.
+function togglePosDisabledType(el, type) {
+  const turningOn = !el.classList.contains('on');
+  el.classList.toggle('on');
+  const payload = {}; payload[type] = turningOn;
+  dashFetch('/api/settings', { method: 'POST', body: JSON.stringify({ pos_disabled_types: payload }) })
     .then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
-      btn.disabled = false;
-      if (status === 401) { handleUnauthorized(); return; }
-      if (status === 200 && body.status === 'ok') { showControlToast('Manager account removed.'); loadControls(); }
-      else { alert((body && body.message) || 'Could not remove the manager account.'); }
-    }).catch(() => { btn.disabled = false; alert('Could not reach the server.'); });
+      if (status === 200 && body.status === 'ok') {
+        currentSettings.pos_disabled_types = Object.assign({}, currentSettings.pos_disabled_types || {}, payload);
+        showControlToast(type + (turningOn ? ' disabled from POS' : ' re-enabled on POS'));
+      } else { el.classList.toggle('on'); alert((body && body.message) || 'Could not save.'); }
+    }).catch(() => { el.classList.toggle('on'); alert('Could not reach the server.'); });
 }
 
-// Toggles fetch-free: they flip the value in ctrlSettings and POST just that
-// key (the server does partial updates and re-stamps activation dates).
-function ctrlSaveKey(key, obj, okMsg) {
-  authFetchPost(SERVER_URL + '/api/settings', { [key]: obj }).then(r => {
-    if (r.status === 401) { handleUnauthorized(); return; }
-    if (okMsg) showControlToast(okMsg);
-    loadControls();
-  }).catch(() => alert('Could not save — check your connection.'));
+function loadSettingsTab() {
+  const main = document.getElementById('mainContent');
+  main.className = 'main settings-wide';
+  if (!currentSettings || !Object.keys(currentSettings).length) main.innerHTML = skeletonCards(3);
+  Promise.all([
+    dashFetch('/api/settings').then(r => r.json()),
+    dashFetch('/api/menu').then(r => r.json()).catch(() => ({}))
+  ]).then(([s, menu]) => {
+    if (currentTab !== 'settings') return;     // user already moved to another tab
+    currentSettings = s || {};
+    currentMenu = (menu && typeof menu === 'object' && !menu.status) ? menu : {};
+    renderSettings();
+  }).catch(() => {
+    main.innerHTML = '<div class="empty-state" style="color:var(--red);">Could not reach the server.</div>';
+  });
 }
 
-function ctrlToggleBanner() {
-  const b = ctrlSettings.banner || {};
-  ctrlSaveKey('banner', { active: !b.active, text: (document.getElementById('ctrlBannerText') || {}).value || b.text || '', emoji: (document.getElementById('ctrlBannerEmoji') || {}).value || b.emoji || '' }, 'Banner updated');
-}
-function ctrlSaveBanner() {
-  const b = ctrlSettings.banner || {};
-  ctrlSaveKey('banner', { active: !!b.active, text: document.getElementById('ctrlBannerText').value, emoji: document.getElementById('ctrlBannerEmoji').value }, 'Banner saved');
-}
-function ctrlToggleDiscount() {
-  const o = ctrlSettings.threshold_offer || {};
-  ctrlSaveKey('threshold_offer', { active: !o.active, threshold_amount: parseInt((document.getElementById('ctrlThreshAmt') || {}).value) || o.threshold_amount || 0, discount_percent: parseInt((document.getElementById('ctrlThreshPct') || {}).value) || o.discount_percent || 0 }, 'Discount updated');
-}
-function ctrlSaveDiscount() {
-  const o = ctrlSettings.threshold_offer || {};
-  ctrlSaveKey('threshold_offer', { active: !!o.active, threshold_amount: parseInt(document.getElementById('ctrlThreshAmt').value) || 0, discount_percent: parseInt(document.getElementById('ctrlThreshPct').value) || 0 }, 'Discount saved');
-}
-function ctrlTogglePause() {
-  const dc = ctrlSettings.delivery_control || {};
-  ctrlSaveKey('delivery_control', { paused: !dc.paused, cutoff_enabled: !!dc.cutoff_enabled, cutoff_time: dc.cutoff_time || '21:00', message: dc.message || '' }, dc.paused ? 'Deliveries resumed' : 'Deliveries paused');
+function renderSettings() {
+  const main = document.getElementById('mainContent');
+  const banner = currentSettings.banner || { active: false, text: '', emoji: '🎉' };
+  const dates = currentSettings.special_dates || {};
+  const offer = currentSettings.threshold_offer || { active: false, threshold_amount: 499, discount_percent: 10 };
+
+  const offerHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">💰 Spend-and-Save Discount</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">"Spend ₹X or more, get Y% off." Customers see it live in their cart on the website, and it comes off their total automatically at checkout. Switch it on only while the offer is running, then off again when it ends.</div>' +
+      '<div class="toggle-row"><span>Active</span><div class="toggle-switch ' + (offer.active ? 'on' : '') + '" id="offerToggle" onclick="toggleOffer()"></div></div>' +
+      '<div class="row-2col">' +
+        '<div><label class="field-label">Minimum order amount (₹)</label><input class="settings-input" id="offerThreshold" type="number" min="0" value="' + (offer.threshold_amount || 0) + '"></div>' +
+        '<div><label class="field-label">Discount (%)</label><input class="settings-input" id="offerPercent" type="number" min="0" max="100" value="' + (offer.discount_percent || 0) + '"></div>' +
+      '</div>' +
+    '</div>';
+
+  const qtyOfferCards = (currentSettings.qty_offers || []).map(renderQtyOfferCard).join('');
+  const qtyOffersHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🎁 "Buy Some, Get One Free" Deals</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Adds a real ₹0 line to the order once the cart qualifies — e.g. "OFFER — 1 pc Fried Chicken FREE" — so it prints on the KOT and the kitchen preps the extra piece(s). Quantities count actual pieces, not order lines (a 9-piece Fried Chicken pack counts as 9, and any combination of packs reaching the same total also qualifies). Rules can be turned on/off individually, and more than one can apply to the same order.</div>' +
+      qtyOfferCards +
+      '<button class="btn-add-date" onclick="addQtyOfferRule()">+ Add Rule</button>' +
+    '</div>';
+
+  // One-click presets for common situations — fills the emoji + text inputs,
+  // doesn't touch the active toggle or save anything by itself, so the owner
+  // can still tweak the wording before saving, and custom text still works
+  // exactly as before (just type into the fields). Defined once, in
+  // BANNER_PRESETS below, and reused for both the buttons and their click handler.
+  const bannerPresetsHtml =
+    '<div class="banner-preset-row">' +
+      BANNER_PRESETS.map((p, i) => '<button type="button" class="banner-preset-btn" onclick="applyBannerPreset(' + i + ')">' + p.emoji + ' ' + p.label + '</button>').join('') +
+    '</div>';
+
+  const bannerHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📣 Announcement Banner</div>' +
+      '<div class="toggle-row"><span>Show banner on website</span><div class="toggle-switch ' + (banner.active ? 'on' : '') + '" id="bannerToggle" onclick="toggleBanner()"></div></div>' +
+      '<label class="field-label">Quick presets</label>' +
+      bannerPresetsHtml +
+      '<label class="field-label">Emoji</label>' +
+      '<input class="settings-input" id="bannerEmoji" maxlength="4" value="' + (banner.emoji || '🎉') + '" style="width:80px;">' +
+      '<label class="field-label">Banner Text</label>' +
+      '<input class="settings-input" id="bannerText" placeholder="e.g. Diwali Special: 20% off all pizzas!" value="' + (banner.text || '').replace(/"/g,'&quot;') + '">' +
+    '</div>';
+
+  const dateCards = Object.keys(dates).sort().map(dateKey => {
+    const d = dates[dateKey];
+    const isClosed = d.open === null;
+    return '<div class="special-date-card" data-date="' + dateKey + '">' +
+      '<div class="special-date-header">' +
+        '<input type="date" class="settings-input" style="margin-bottom:0;width:auto;" value="' + dateKey + '" onchange="this.parentElement.parentElement.dataset.date=this.value">' +
+        '<button class="btn-remove-date" onclick="removeSpecialDate(\'' + dateKey + '\')">✕ Remove</button>' +
+      '</div>' +
+      '<label class="field-label">Label (shown to customers)</label>' +
+      '<input class="settings-input" placeholder="e.g. New Year\'s Eve — Open till Midnight!" value="' + (d.label || '').replace(/"/g,'&quot;') + '" data-field="label">' +
+      '<div class="toggle-row"><span>Force closed all day</span><div class="toggle-switch ' + (isClosed ? 'on' : '') + '" data-field="closed" onclick="this.classList.toggle(\'on\');this.parentElement.nextElementSibling.style.display=this.classList.contains(\'on\')?\'none\':\'grid\'"></div></div>' +
+      '<div class="row-2col" style="display:' + (isClosed ? 'none' : 'grid') + ';">' +
+        '<div><label class="field-label">Open (24h, e.g. 11 or 9.5)</label><input class="settings-input" type="number" step="0.5" value="' + (isClosed ? 11 : d.open) + '" data-field="open"></div>' +
+        '<div><label class="field-label">Close (24h, e.g. 23.5, 24=midnight)</label><input class="settings-input" type="number" step="0.5" value="' + (isClosed ? 21.5 : d.close) + '" data-field="close"></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  const datesHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📅 Special Days (holidays, late nights)</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Override the normal opening hours for a specific date — stay open late for a festival, or close for a holiday. Leave this empty to just use your regular weekly hours.</div>' +
+      dateCards +
+      '<button class="btn-add-date" onclick="addSpecialDate()">+ Add Special Date</button>' +
+    '</div>';
+
+  const backupHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">💾 Backups</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Your order database backs itself up automatically once a day on this PC. For real protection against this PC failing, download a copy now and then again periodically, and save it to Google Drive, a USB drive, or email it to yourself.</div>' +
+      '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="downloadBackupNow()">⬇️ Download Backup Now</button>' +
+    '</div>';
+
+  // Daily report schedule: one row per weekday (Sun..Sat), "Off" toggle + time.
+  const RS_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const rsDefault = ['21:30','21:30','21:30','21:30','21:30','16:30', null];
+  const rs = Array.isArray(currentSettings.report_schedule) && currentSettings.report_schedule.length === 7
+    ? currentSettings.report_schedule : rsDefault;
+  const reportScheduleRows = RS_DAYS.map((label, i) => {
+    const t = rs[i];
+    const off = !t;
+    return '<div class="rs-row" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+        '<span style="width:88px;font-weight:700;font-size:0.9rem;">' + label + '</span>' +
+        '<div class="toggle-row" style="margin:0;flex:0 0 auto;"><span style="font-size:0.8rem;color:var(--muted);margin-right:0.4rem;">No report</span>' +
+          '<div id="rsOff' + i + '" class="toggle-switch' + (off ? ' on' : '') + '" onclick="toggleReportDay(' + i + ')"></div></div>' +
+        '<span id="rsTimeWrap' + i + '" style="display:' + (off ? 'none' : 'flex') + ';align-items:center;gap:0.35rem;">' +
+          '<span style="color:var(--muted);font-size:0.8rem;">Send at</span>' +
+          '<input class="settings-input" type="time" id="rsTime' + i + '" value="' + (t || '21:30') + '" style="width:auto;margin:0;">' +
+        '</span>' +
+      '</div>';
+  }).join('');
+
+  const reportScheduleHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">⏰ Daily Report Schedule</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Choose what time the daily sales report is emailed on each day, or switch a day to <b>No report</b> (e.g. Saturday while closed). Times are 24-hour. If the PC was off or offline at that time, the report is sent as soon as it is back on and online (retried every 5 minutes), and a missed day is sent later, up to 7 days back. Changes apply immediately.</div>' +
+      reportScheduleRows +
+      '<button class="btn-confirm" style="margin-top:0.8rem;" onclick="saveReportSchedule()">💾 Save Schedule</button>' +
+    '</div>';
+
+  const cloudHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">☁️ Cloud Copy (Google Sheets)</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Every order is copied to your private Google Sheet within about a minute, so you can check sales from your phone even when this PC is off. If the internet is down, orders wait here and upload by themselves when it returns.</div>' +
+      '<div id="cloudSyncStatus" style="font-size:0.85rem;line-height:1.6;margin-bottom:0.7rem;">Checking…</div>' +
+      '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="syncCloudNow(this)">🔄 Sync Now</button>' +
+    '</div>';
+
+  const reportHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📧 Sales Report</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.4rem;line-height:1.5;">Reports and the weekly database backup email go to this address:</div>' +
+      '<div style="display:flex;gap:0.4rem;margin-bottom:0.7rem;">' +
+        '<input type="email" id="reportEmailInput" class="settings-input" placeholder="you@example.com" value="' + esc2(currentSettings.report_email || '') + '" style="flex:1;">' +
+        '<button class="btn-confirm" style="flex-shrink:0;" onclick="saveReportEmail()">💾 Save</button>' +
+      '</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">A daily summary also auto-sends by email on the schedule above. You can send a report for any period right now:</div>' +
+      '<select id="reportPeriod" class="settings-input" onchange="onReportPeriodChange()" style="margin-bottom:0.6rem;">' +
+        '<option value="today">Today</option>' +
+        '<option value="yesterday">Yesterday</option>' +
+        '<option value="month">This Month</option>' +
+        '<option value="lastmonth">Last Month</option>' +
+        '<option value="custom">Custom range…</option>' +
+      '</select>' +
+      '<div id="reportCustomRange" style="display:none;gap:0.4rem;align-items:center;margin-bottom:0.6rem;">' +
+        '<input type="date" id="reportStart" class="settings-input" style="flex:1;" onchange="updateReportPreview()">' +
+        '<span style="color:var(--muted);font-size:0.8rem;">to</span>' +
+        '<input type="date" id="reportEnd" class="settings-input" style="flex:1;" onchange="updateReportPreview()">' +
+      '</div>' +
+      '<div id="reportDatePreview" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.6rem;"></div>' +
+      '<button class="btn-add-date" style="border-style:solid;color:var(--white);" onclick="sendReportNow()">📧 Send Report</button>' +
+    '</div>';
+
+  const drivers = currentSettings.delivery_drivers || [];
+  const driversHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🛵 Delivery Drivers</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Add your drivers here. Each one gets a personal link (below their name) to open their delivery page — copy it and send it to them once. When you mark an order Out for Delivery, it appears on that driver\'s page automatically. A phone number is required for a driver to receive deliveries.</div>' +
+      '<div id="driversList">' +
+      drivers.map(d =>
+        '<div class="row-2col driver-row" style="align-items:center;margin-bottom:0.9rem;" data-token="' + esc2(d.token || '') + '">' +
+          '<input class="settings-input driver-name" placeholder="Driver name" value="' + esc2(d.name || '').replace(/"/g,'&quot;') + '">' +
+          '<div style="display:flex;gap:0.4rem;">' +
+            '<input class="settings-input driver-phone" placeholder="Phone (required for driver link)" inputmode="numeric" value="' + esc2(d.phone || '') + '" style="flex:1;">' +
+            '<button class="btn-reject" style="flex-shrink:0;" onclick="this.closest(\'.driver-row\').remove()">✕</button>' +
+          '</div>' +
+          (d.token
+            ? '<div style="grid-column:1/-1;background:var(--charcoal);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.65rem;margin-top:0.4rem;">' +
+                '<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:0.35rem;">🔗 Driver link — send this to ' + esc2(d.name || 'the driver') + '</div>' +
+                '<div style="display:flex;gap:0.4rem;align-items:center;">' +
+                  '<input class="settings-input" readonly onclick="this.select()" value="' + esc2(DRIVER_PAGE_URL + '?t=' + d.token) + '" style="flex:1;font-size:0.76rem;padding:0.45rem 0.55rem;">' +
+                  '<button class="btn-confirm" style="flex-shrink:0;padding:0.45rem 0.7rem;font-size:0.8rem;" onclick="copyDriverLink(\'' + esc2(d.token) + '\', this)">📋 Copy</button>' +
+                '</div>' +
+              '</div>'
+            : '<div style="grid-column:1/-1;background:rgba(249,115,22,0.1);border:1px solid var(--flame);border-radius:8px;padding:0.5rem 0.65rem;margin-top:0.4rem;font-size:0.78rem;color:var(--flame);">💾 Click <b>Save Settings</b> below to generate this driver\'s shareable link.</div>') +
+        '</div>'
+      ).join('') +
+      '</div>' +
+      '<button class="btn-reprint" onclick="addDriverRow()">+ Add Driver</button>' +
+    '</div>';
+
+  // Group the sections into a few plain-language, collapsible categories so
+  // the tab opens as a short scannable menu ("what do you want to change?")
+  // instead of one long wall of fields. Every section's inner markup — and so
+  // every input id, data-field, toggle and handler — is exactly as before;
+  // we only wrap them, so collectSettingsFromForm/saveAllSettings and all the
+  // add/remove handlers keep working untouched.
+  const preorder = currentSettings.preorder_time || { active: false, label: '', options: [] };
+  const preorderOptionsStr = (preorder.options || []).join(', ');
+  const preorderHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">⏰ Pre-order Time Selection</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">When turned on, customers can choose when they want their order ready (e.g. "11:00 PM"). The chosen time prints prominently on the receipt and KOT, and shows in the dashboard pending queue. Turn this on before events with pre-orders (e.g. big match nights, parties, festivals), off for normal service.</div>' +
+      '<div class="toggle-row"><span>Active</span><div id="preorderToggle" class="toggle-switch' + (preorder.active ? ' on' : '') + '" onclick="this.classList.toggle(\'on\')"></div></div>' +
+      '<span class="field-label">Label shown to customer</span>' +
+      '<input class="settings-input" id="preorderLabel" placeholder="e.g. When should your order be ready?" value="' + esc2(preorder.label || '').replace(/"/g,'&quot;') + '">' +
+      '<span class="field-label">Time options (comma-separated)</span>' +
+      '<input class="settings-input" id="preorderOptions" placeholder="e.g. ASAP, 7:00 PM, 8:00 PM, 9:00 PM, 10:00 PM, 11:00 PM" value="' + esc2(preorderOptionsStr).replace(/"/g,'&quot;') + '">' +
+    '</div>';
+
+  const dctl = currentSettings.delivery_control || {};
+  const dstatus = currentSettings.delivery_status || { available: true };
+  const deliveryControlHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🛵 Delivery Availability</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Turn off Delivery orders on a busy day, or automatically after a set time each day — Takeaway and Dine-In stay open. The website greys out Delivery and shows your message, and the server refuses any delivery order that slips through.</div>' +
+      '<div style="font-size:0.85rem;font-weight:700;margin-bottom:0.8rem;padding:0.5rem 0.7rem;border-radius:8px;' + (dstatus.available ? 'background:rgba(74,222,128,0.12);color:var(--green);' : 'background:rgba(220,38,38,0.12);color:var(--red);') + '">' + (dstatus.available ? '✅ Delivery is currently available' : '⛔ Delivery is currently OFF') + '</div>' +
+      '<div class="toggle-row"><span>Pause delivery orders now</span><div id="deliveryPauseToggle" class="toggle-switch' + (dctl.paused ? ' on' : '') + '" onclick="this.classList.toggle(\'on\')"></div></div>' +
+      '<div class="toggle-row"><span>Automatically stop deliveries at a set time each day</span><div id="deliveryCutoffToggle" class="toggle-switch' + (dctl.cutoff_enabled ? ' on' : '') + '" onclick="this.classList.toggle(\'on\')"></div></div>' +
+      '<span class="field-label">Daily cutoff time (deliveries stop at/after this)</span>' +
+      '<input class="settings-input" type="time" id="deliveryCutoffTime" value="' + esc2(dctl.cutoff_time || '21:00') + '">' +
+      '<span class="field-label">Message shown to customers when delivery is off</span>' +
+      '<input class="settings-input" id="deliveryMessage" maxlength="200" placeholder="Delivery isn\'t available right now — Takeaway & Dine-In are open!" value="' + esc2(dctl.message || '').replace(/"/g,'&quot;') + '">' +
+    '</div>';
+
+  const podt = currentSettings.pos_disabled_types || {};
+  const posDisabledHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🚫 POS Order Types</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Turn an order type OFF here to stop counter staff from manually keying it in at the POS — e.g. disable Dine In so those orders can only come from the website, while Takeaway and Delivery keep working from the counter. This has no effect on the website\'s own ordering flow. Owner-only, and each change asks for the dashboard password again to confirm — it saves immediately, it isn\'t part of the Save Settings button below.</div>' +
+      ['Dine In', 'Takeaway', 'Delivery'].map(t =>
+        '<div class="toggle-row"><span>Disable ' + t + ' orders from the POS</span><div id="posDisable_' + t.replace(/\s/g, '') + '" class="toggle-switch' + (podt[t] ? ' on' : '') + '" onclick="togglePosDisabledType(this,\'' + t + '\')"></div></div>'
+      ).join('') +
+    '</div>';
+
+  const printerHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🖨️ Receipt Printer</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Which printer receipts and kitchen tickets go to. Leave on "Default" to use the printer set in orders.py. Print a test slip to confirm you picked the right device.</div>' +
+      '<div id="printerPicker" style="color:var(--muted);font-size:0.85rem;">Loading printers…</div>' +
+    '</div>';
+
+  // Regular weekly opening hours. Built from currentSettings.weekly_hours if
+  // present, otherwise sensible defaults. Saved as 7 entries (Sun..Sat).
+  const DAY_LABELS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const wh = Array.isArray(currentSettings.weekly_hours) && currentSettings.weekly_hours.length === 7
+    ? currentSettings.weekly_hours
+    : [ {open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},
+        {open:'11:00',close:'21:30'},{open:'11:00',close:'21:30'},{open:'11:00',close:'16:30'}, null ];
+  const hoursRows = DAY_LABELS.map((label, i) => {
+    const e = wh[i];
+    const closed = !e;
+    const o = e ? (e.open || '11:00') : '11:00';
+    const c = e ? (e.close || '21:30') : '21:30';
+    return '<div class="hours-row" data-day="' + i + '" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+        '<span style="width:88px;font-weight:700;font-size:0.9rem;">' + label + '</span>' +
+        '<div class="toggle-row" style="margin:0;flex:0 0 auto;"><span style="font-size:0.8rem;color:var(--muted);margin-right:0.4rem;">Closed</span>' +
+          '<div id="hrClosed' + i + '" class="toggle-switch' + (closed ? ' on' : '') + '" onclick="toggleHoursClosed(' + i + ')"></div></div>' +
+        '<span id="hrOpenWrap' + i + '" style="display:' + (closed ? 'none' : 'flex') + ';align-items:center;gap:0.35rem;">' +
+          '<input class="settings-input" type="time" id="hrOpen' + i + '" value="' + o + '" style="width:auto;margin:0;">' +
+          '<span style="color:var(--muted);">to</span>' +
+          '<input class="settings-input" type="time" id="hrClose' + i + '" value="' + c + '" style="width:auto;margin:0;">' +
+        '</span>' +
+      '</div>';
+  }).join('');
+  const hoursHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">🕒 Opening Hours</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Your regular weekly hours. The website uses these to show "Open now" / "We reopen…" and to accept or hold online orders. Toggle <b>Closed</b> for a day off. For one-off holidays use Website Display → special days instead.</div>' +
+      hoursRows +
+    '</div>';
+
+  const intro =
+    '<div class="settings-intro">ℹ️ Out-of-stock changes save automatically. All other settings require manual saving.</div>';
+
+  const ownerHtml =
+    '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Change the owner (your) login password. It\'s stored only as a secure hash — never in plain text. If you ever forget it, there\'s a recovery step in your setup notes.</div>' +
+    '<input class="settings-input" type="password" id="ownCurPw" placeholder="Current owner password" style="margin-bottom:0.5rem;" autocomplete="current-password">' +
+    '<input class="settings-input" type="password" id="ownNewPw" placeholder="New owner password (min 4 chars)" style="margin-bottom:0.5rem;" autocomplete="new-password">' +
+    '<input class="settings-input" type="password" id="ownNewPw2" placeholder="Re-type new password" style="margin-bottom:0.5rem;" autocomplete="new-password">' +
+    '<button class="btn-reprint" onclick="saveOwnerPassword(this)">🔑 Change my password</button>';
+
+  const managerHtml =
+    '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">The manager account is a second login with limited access: no voiding orders, no Sales tab, and it can\'t edit Menu &amp; Prices or Backups &amp; Reports. Set a password here to enable it; leave blank and Save to remove it. The manager uses a <b>different password</b> from yours.</div>' +
+    '<div id="managerStatus" style="font-size:0.85rem;font-weight:700;margin-bottom:0.6rem;"></div>' +
+    '<input class="settings-input" type="password" id="mgrPwInput" placeholder="New manager password (min 4 chars)" style="margin-bottom:0.5rem;" autocomplete="new-password">' +
+    '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+      '<button class="btn-reprint" onclick="saveManagerPassword(this)">💾 Set manager password</button>' +
+      '<button class="btn-reprint" id="mgrClearBtn" onclick="clearManagerPassword(this)" style="display:none;">🗑️ Remove manager account</button>' +
+    '</div>';
+
+  const alertsHtml =
+    '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">New orders trigger a sound, a desktop pop-up notification, a flashing browser tab, and an on-screen banner — so they\'re hard to miss even if you\'re working in another app or the speakers are off. Desktop notifications need a one-time permission from your browser.</div>' +
+    '<div id="alertsStatusLine" style="font-size:0.85rem;font-weight:700;margin-bottom:0.6rem;"></div>' +
+    '<button class="btn-reprint" onclick="testAlerts()">🔔 Test alert</button>';
+
+  const pr = currentSettings.packing_rates || { pizza_small: 5, pizza_large: 7, footlong_sandwich: 5, chicken: 5, bowls: 8, snack_box: 3, wraps: 4, burgers: 0 };
+  const packingRatesHtml =
+    '<div class="settings-section">' +
+      '<div class="settings-section-title">📦 Packing Charges</div>' +
+      '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Flat per-item packing fee for Delivery & Takeaway orders (items that come in their own box). Everything else packs free. Dine In is never charged. These can still be overridden per-order at POS or when accepting an online order.</div>' +
+      [
+        ['pizza_small', 'Pizza — Small / Pan (6")'],
+        ['pizza_large', 'Pizza — Large / Regular (9")'],
+        ['footlong_sandwich', 'Footlong, Sandwich & Garlic Bread'],
+        ['chicken', 'Fried & Grilled Chicken (per box, up to 9 pcs)'],
+        ['bowls', 'Pastas & Overloaded Fries (bowls)'],
+        ['snack_box', 'Nuggets, Popcorn, Strips, Fries & Paneer Pops'],
+        ['wraps', 'Wraps'],
+        ['burgers', 'Burgers'],
+      ].map(([key, label]) =>
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.6rem;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
+          '<span style="font-size:0.88rem;">' + label + '</span>' +
+          '<div style="display:flex;align-items:center;gap:0.3rem;"><span style="color:var(--muted);">₹</span><input class="settings-input" type="number" min="0" max="500" id="pkRate_' + key + '" value="' + (pr[key] != null ? pr[key] : 0) + '" style="width:80px;margin:0;text-align:right;"></div>' +
+        '</div>'
+      ).join('') +
+    '</div>';
+
+
+  // Driver activity — carried over from this page's old Controls tab.
+  const driverOpts = ['<option value="">Choose a driver…</option>']
+    .concat(drivers.map(d => '<option value="' + escapeHtml(d.phone || '') + '">' + escapeHtml(d.name || '') + '</option>')).join('');
+  const driverActivityHtml =
+    '<div class="settings-section"><div class="settings-section-title">📋 Driver Activity</div>' +
+    (drivers.length
+      ? '<select class="settings-input" id="ctrlDriverSel" onchange="ctrlLoadDriverActivity(this.value)">' + driverOpts + '</select><div id="ctrlDriverActivity"></div>'
+      : '<div style="color:var(--muted);font-size:0.85rem;">No drivers added yet.</div>') +
+    '</div>';
+
+  const categories = [
+    { key: 'offers', icon: '💰', title: 'Discounts & Offers', subtitle: 'Spend-and-save discounts and "buy X get Y free" deals', html: offerHtml + qtyOffersHtml },
+    { key: 'website', icon: '🌐', title: 'Website Display', subtitle: 'Banner, special days, and pre-order time picker', html: bannerHtml + datesHtml + preorderHtml },
+    { key: 'hours', icon: '🕒', title: 'Opening Hours', subtitle: 'Set your regular weekly opening & closing times', html: hoursHtml },
+    { key: 'packing', icon: '🥡', title: 'Packing Charges', subtitle: 'Set the per-item packing fee for boxed items', html: packingRatesHtml },
+    { key: 'availability', icon: '📦', title: 'Item Availability', subtitle: 'Mark items or whole groups out of stock', html: '<div id="stockSection"></div>' },
+    { key: 'printer', icon: '🖨️', title: 'Receipt Printer', subtitle: 'Choose which printer to print orders on', html: printerHtml },
+    { key: 'deliveryavail', icon: '🚦', title: 'Delivery Availability', subtitle: 'Pause deliveries or set a daily cutoff time', html: deliveryControlHtml },
+    { key: 'drivers', icon: '🛵', title: 'Delivery Drivers', subtitle: 'The drivers you can assign to deliveries', html: driversHtml + driverActivityHtml },
+    { key: 'menuprices', icon: '🍔', title: 'Menu & Prices', subtitle: 'Add, edit, or remove items and change prices', html: '<div id="menuTabContainer">Loading…</div>' },
+    { key: 'posdisabled', icon: '🚫', title: 'POS Order Types', subtitle: 'Block an order type from being keyed in at the counter', html: posDisabledHtml },
+    { key: 'owner', icon: '🔑', title: 'Owner Account', subtitle: 'Change your own login password', html: ownerHtml },
+    { key: 'manager', icon: '👤', title: 'Manager Account', subtitle: 'Set or remove the limited-access manager login', html: managerHtml },
+    { key: 'admin', icon: '💾', title: 'Backups & Reports', subtitle: 'Download a database backup or send the sales report', html: backupHtml + cloudHtml + reportScheduleHtml + reportHtml }
+  ];
+  if (!settingsActiveCategory || !categories.some(c => c.key === settingsActiveCategory)) settingsActiveCategory = categories[0].key;
+  const activeCat = categories.find(c => c.key === settingsActiveCategory);
+
+  const sidebarHtml = categories.map(c =>
+    '<button class="settings-cat-item' + (c.key === settingsActiveCategory ? ' active' : '') + '" data-key="' + c.key + '" onclick="selectSettingsCategory(\'' + c.key + '\')">' +
+      '<div class="settings-cat-icon">' + c.icon + '</div>' +
+      '<div class="settings-cat-text"><div class="settings-cat-title">' + c.title + '</div><div class="settings-cat-sub">' + c.subtitle + '</div></div>' +
+      '<span class="settings-cat-chev">›</span>' +
+    '</button>'
+  ).join('');
+
+  // Every category is rendered into the DOM up front (only visibility changes
+  // when you switch), so ONE Save button can save every field across every
+  // category, and moving around never loses an unsaved edit.
+  const contentPanelsHtml = categories.map(c =>
+    '<div class="settings-panel" data-key="' + c.key + '" style="display:' + (c.key === settingsActiveCategory ? 'block' : 'none') + ';">' + c.html + '</div>'
+  ).join('');
+
+  main.className = 'main settings-wide';
+  main.innerHTML = intro +
+    '<div class="settings-shell' + (settingsDetailOpen ? ' is-detail' : '') + '" id="settingsShell">' +
+      '<div class="settings-sidebar">' + sidebarHtml + '</div>' +
+      '<div class="settings-content">' +
+        '<button class="settings-back" onclick="closeSettingsDetail()">‹ All settings</button>' +
+        '<div class="settings-content-header"><div class="settings-content-title" id="settingsContentTitle">' + activeCat.title + '</div><div class="settings-content-sub" id="settingsContentSub">' + activeCat.subtitle + '</div></div>' +
+        '<div class="settings-content-body" id="settingsContentBody">' + contentPanelsHtml + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="save-bar-spacer"></div>';
+  document.getElementById('saveBar').classList.add('visible');
+  updateReportPreview();
+  renderMenuTab();
+  loadCloudSyncStatus();
+  loadPrinters();
+  loadStockSection();
 }
 
-// Owner-only POS order-type lever. No re-typed password here (unlike the
-// dashboard's own toggle) — neitu is already fully gated behind the
-// dashboard password for the whole session, so asking again on every
-// tap would just be friction with no real security benefit. The server
-// still independently enforces that only the owner role can change this
-// (neitu always authenticates as owner — see authFetchPost), and merges
-// this single key in rather than replacing the whole setting, so the
-// other two order types are left untouched.
-function ctrlTogglePosType(type) {
-  const podt = ctrlSettings.pos_disabled_types || {};
-  const turningOn = !podt[type];
-  const payload = {};
-  payload[type] = turningOn;
-  ctrlSaveKey('pos_disabled_types', payload, type + (turningOn ? ' disabled from POS' : ' re-enabled on POS'));
+function selectSettingsCategory(key) {
+  settingsActiveCategory = key;
+  settingsDetailOpen = true;
+  document.querySelectorAll('.settings-panel').forEach(el => { el.style.display = (el.dataset.key === key) ? 'block' : 'none'; });
+  document.querySelectorAll('.settings-cat-item').forEach(el => { el.classList.toggle('active', el.dataset.key === key); });
+  const t = document.querySelector('.settings-cat-item[data-key="' + key + '"] .settings-cat-title');
+  const s = document.querySelector('.settings-cat-item[data-key="' + key + '"] .settings-cat-sub');
+  const ht = document.getElementById('settingsContentTitle'), hs = document.getElementById('settingsContentSub');
+  if (ht && t) ht.textContent = t.textContent;
+  if (hs && s) hs.textContent = s.textContent;
+  const shell = document.getElementById('settingsShell');
+  if (shell) shell.classList.add('is-detail');
+  window.scrollTo(0, 0);
 }
 
-function ctrlSendReport(btn) {
-  const period = document.getElementById('ctrlReportPeriod').value;
-  const now = new Date();
-  let start, end, label;
-  if (period === 'yesterday') { const y = new Date(now); y.setDate(now.getDate() - 1); start = end = toDateStr(y); label = 'Yesterday'; }
-  else if (period === 'month') { start = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)); end = toDateStr(now); label = 'This Month'; }
-  else if (period === 'lastmonth') { start = toDateStr(new Date(now.getFullYear(), now.getMonth() - 1, 1)); end = toDateStr(new Date(now.getFullYear(), now.getMonth(), 0)); label = 'Last Month'; }
-  else { start = end = toDateStr(now); label = 'Today'; }
-  btn.disabled = true; btn.textContent = 'Sending…';
-  authFetchPost(SERVER_URL + '/api/send-daily-report', { start: start, end: end, label: label }).then(r => r.json().then(b => ({ status: r.status, body: b }))).then(({ status, body }) => {
-    btn.disabled = false; btn.textContent = 'Send';
-    alert(status === 200 && body.status === 'ok' ? 'Report sent for ' + label + '.' : (body.message || 'Could not send the report.'));
-  }).catch(() => { btn.disabled = false; btn.textContent = 'Send'; alert('Could not send — check your connection.'); });
+function closeSettingsDetail() {
+  settingsDetailOpen = false;
+  const shell = document.getElementById('settingsShell');
+  if (shell) shell.classList.remove('is-detail');
+  window.scrollTo(0, 0);
+}
+
+function discardSettingsChanges() {
+  if (!confirm('Discard any unsaved changes?')) return;
+  renderSettings();
+}
+
+function saveAllSettings() {
+  const payload = collectSettingsFromForm();
+  if (!payload) return;                // validation failed — message already shown
+  const btn = document.getElementById('saveSettingsBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  dashFetch('/api/settings', { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json().then(body => ({ status: r.status, body }))).then(({ status, body }) => {
+      btn.disabled = false; btn.textContent = '💾 Save Settings';
+      if (status === 200 && body.status === 'ok') { showControlToast('Settings saved.'); loadSettingsTab(); }
+      else alert('Failed to save: ' + ((body && body.message) || 'Unknown error'));
+    }).catch(() => { btn.disabled = false; btn.textContent = '💾 Save Settings'; alert('Could not reach the server — nothing was saved.'); });
 }
 
 function ctrlLoadDriverActivity(phone) {
