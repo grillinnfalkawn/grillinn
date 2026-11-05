@@ -265,6 +265,7 @@
     <div class="tabs scroll-strip">
       <button class="tab-btn active" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">📋 History</button>
+      <button class="tab-btn" id="preordersTab" onclick="switchTab('preorders')">📅 Pre-orders <span id="preorderCount" style="display:none;background:var(--red);color:#fff;border-radius:999px;font-size:0.65rem;font-weight:800;padding:0.05rem 0.4rem;margin-left:0.2rem;">0</span></button>
       <button class="tab-btn" id="settingsTab" onclick="switchTab('settings')">⚙️ Settings</button>
       <!-- Prediction/giveaway tab disabled — re-enable with the blueprint in orders.py.
       <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button> -->
@@ -417,6 +418,8 @@ function showApp() {
   const banner = document.getElementById('offlineBanner');
   if (banner) banner.style.display = offlineMode ? 'block' : 'none';
   switchTab('sales');
+  preorderNotified = false;
+  checkPreorders(true);   // badge + "pre-orders due today" notice when the console is opened
 }
 
 // If any request comes back 401, the password is wrong/changed since —
@@ -438,9 +441,11 @@ function switchTab(tab) {
   document.getElementById('salesTab').classList.toggle('active', tab === 'sales');
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
   document.getElementById('settingsTab').classList.toggle('active', tab === 'settings');
+  document.getElementById('preordersTab').classList.toggle('active', tab === 'preorders');
   // document.getElementById('worldcupTab').classList.toggle('active', tab === 'worldcup');
   if (tab === 'sales') loadSales('today');
   else if (tab === 'settings') loadSettingsTab();
+  else if (tab === 'preorders') loadPreorders();
   // else if (tab === 'worldcup') loadWorldCup();
   else loadHistory();
 }
@@ -654,12 +659,146 @@ function renderHistory(orders) {
 
 const KNOWN_STATUSES = { printed:'✅ Printed', pending:'⏳ Pending', rejected:'✕ Rejected', voided:'🚫 Voided', cancelled:'🚫 Cancelled', print_failed:'⚠️ Print Failed' };
 
+// ── PRE-ORDERS ───────────────────────────────────────────────────────
+// Entered at the restaurant's POS for a later date/time (stock is reserved at
+// entry, nothing printed). Printing happens on the day at the restaurant; from
+// here the owner can see them, mark one fulfilled (it then joins History and
+// counts as that day's sale) or cancel it (its stock goes back on sale).
+let preorderData = { orders: [], counts: { overdue: 0, today: 0, upcoming: 0, total: 0 } };
+let preorderNotified = false;
+setInterval(function () { if (dashPassword) checkPreorders(false); }, 60000);
+
+function fmtWhen(v) {
+  if (!v) return '';
+  const d = new Date(String(v).replace(' ', 'T'));
+  if (isNaN(d.getTime())) return String(v);
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' +
+         d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function updatePreorderBadge(c) {
+  const el = document.getElementById('preorderCount');
+  if (!el) return;
+  const n = (c.today || 0) + (c.overdue || 0);
+  el.textContent = n;
+  el.style.display = n ? '' : 'none';
+}
+
+function checkPreorders(first) {
+  if (!dashPassword) return;
+  dashFetch('/api/preorders').then(r => r.json()).then(data => {
+    if (!data || !data.counts) return;
+    preorderData = data;
+    updatePreorderBadge(data.counts);
+    if (first && !preorderNotified) { preorderNotified = true; showPreorderNotice(data.counts); }
+    if (currentTab === 'preorders') renderPreorders();
+  }).catch(() => {});
+}
+
+function showPreorderNotice(c) {
+  if (!(c.today || c.overdue)) return;
+  const old = document.getElementById('preorderNotice');
+  if (old) old.remove();
+  const parts = [];
+  if (c.overdue) parts.push('<b>' + c.overdue + '</b> overdue');
+  if (c.today) parts.push('<b>' + c.today + '</b> due today');
+  const box = document.createElement('div');
+  box.id = 'preorderNotice';
+  box.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;padding:1rem;';
+  box.innerHTML = '<div style="background:var(--panel);border:2px solid var(--flame);border-radius:16px;max-width:360px;width:100%;padding:1.4rem;text-align:center;">' +
+    '<div style="font-size:2.2rem;">📅</div>' +
+    '<div style="font-weight:800;font-size:1.1rem;margin:0.3rem 0;">Pre-orders to handle</div>' +
+    '<div style="color:var(--muted);margin-bottom:1rem;line-height:1.5;">' + parts.join(' · ') + (c.upcoming ? '<br>' + c.upcoming + ' more coming up' : '') + '</div>' +
+    '<div style="display:flex;gap:0.5rem;">' +
+      '<button class="btn-quick" style="flex:1;background:var(--flame);color:#fff;border-color:var(--flame);" onclick="document.getElementById(&quot;preorderNotice&quot;).remove();switchTab(&quot;preorders&quot;)">View pre-orders</button>' +
+      '<button class="btn-quick" onclick="document.getElementById(&quot;preorderNotice&quot;).remove()">Later</button>' +
+    '</div></div>';
+  document.body.appendChild(box);
+}
+
+function loadPreorders() {
+  const main = document.getElementById('mainContent');
+  if (main && !main.querySelector('.preorder-wrap')) main.innerHTML = skeletonCards(3);
+  dashFetch('/api/preorders').then(r => r.json()).then(data => {
+    if (!data || !data.counts) return;
+    preorderData = data;
+    updatePreorderBadge(data.counts);
+    renderPreorders();
+  }).catch(() => { if (main) main.innerHTML = '<div class="empty-state" style="color:var(--red);">Could not load pre-orders. Check your connection.</div>'; });
+}
+
+function preorderCardHtml(o) {
+  const stateColor = o.due_state === 'overdue' ? 'var(--red)' : (o.due_state === 'today' ? 'var(--flame)' : 'var(--muted)');
+  const stateLabel = o.due_state === 'overdue' ? 'OVERDUE' : (o.due_state === 'today' ? 'DUE TODAY' : 'UPCOMING');
+  const items = (o.items || []).map(i =>
+    '<div class="order-item-row"><span>' + (parseInt(i.quantity, 10) || 0) + 'x ' + escapeHtml(i.product_retailer_id) + '</span><span>₹' + ((i.quantity || 0) * (i.item_price || 0)) + '</span></div>'
+  ).join('');
+  const phone = o.customer_phone ? '<a href="tel:' + escapeHtml(o.customer_phone) + '" style="color:var(--flame);text-decoration:none;">' + escapeHtml(o.customer_phone) + '</a>' : '';
+  return '<div class="order-card" style="border:1.5px solid ' + stateColor + ';">' +
+    '<div class="order-header"><span class="order-num">📅 PRE-ORDER · #' + escapeHtml(o.order_number) + '</span><span class="order-type-tag">' + escapeHtml(o.order_type) + '</span></div>' +
+    '<div style="margin:0.4rem 0 0.1rem;font-size:1rem;font-weight:800;color:var(--flame);">For: ' + escapeHtml(fmtWhen(o.fulfil_at)) + ' <span style="color:' + stateColor + ';font-size:0.7rem;margin-left:0.3rem;">' + stateLabel + '</span></div>' +
+    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.4rem;">Ordered: ' + escapeHtml(fmtWhen(o.placed_at)) + '</div>' +
+    '<div class="order-meta">' + escapeHtml(o.customer_name) + ' · ' + phone + (o.order_type === 'Delivery' && o.address ? '<br>📍 ' + escapeHtml(o.address) : '') + '</div>' +
+    '<div class="order-items">' + items + '<div class="order-total">Total: ₹' + (o.grand_total_calc || 0) + '</div></div>' +
+    (o.notes ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">Notes: ' + escapeHtml(o.notes) + '</div>' : '') +
+    '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.6rem;">' +
+      '<button class="btn-quick" style="background:rgba(34,197,94,0.18);border-color:var(--green);color:var(--green);" onclick="preorderFulfil(' + o.id + ')">✅ Mark fulfilled</button>' +
+      '<button class="btn-quick" onclick="preorderCancel(' + o.id + ')">✖ Cancel</button>' +
+    '</div></div>';
+}
+
+function renderPreorders() {
+  const main = document.getElementById('mainContent');
+  if (!main || currentTab !== 'preorders') return;
+  const list = preorderData.orders || [];
+  const c = preorderData.counts || {};
+  let html = '<div class="preorder-wrap">' +
+    '<div style="font-size:1.1rem;font-weight:800;margin:0.2rem 0;">📅 Pre-orders</div>' +
+    '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.8rem;">' + (c.total || 0) + ' waiting · stock already reserved · receipts are printed at the restaurant on the day.</div>';
+  if (!list.length) html += '<div class="empty-state">No pre-orders waiting.</div>';
+  [['overdue', '⚠️ Overdue', 'var(--red)'], ['today', '📅 Due today', 'var(--flame)'], ['upcoming', 'Upcoming', 'var(--muted)']].forEach(g => {
+    const rows = list.filter(o => o.due_state === g[0]);
+    if (!rows.length) return;
+    html += '<div style="font-weight:800;color:' + g[2] + ';margin:0.9rem 0 0.5rem;">' + g[1] + ' (' + rows.length + ')</div>';
+    let lastDay = '';
+    rows.forEach(o => {
+      const day = String(o.fulfil_at || '').slice(0, 10);
+      if (g[0] === 'upcoming' && day !== lastDay) {
+        lastDay = day;
+        html += '<div style="font-size:0.76rem;font-weight:700;color:var(--muted);margin:0.5rem 0 0.3rem;">' + escapeHtml(new Date(day + 'T00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })) + '</div>';
+      }
+      html += preorderCardHtml(o);
+    });
+  });
+  main.innerHTML = html + '</div>';
+}
+
+function preorderFulfil(id) {
+  if (!confirm('Mark this pre-order as fulfilled?\n\nIt moves to History and counts in today’s sales.')) return;
+  dashFetch('/api/preorders/' + id + '/fulfil', { method: 'POST' }).then(r => r.json()).then(res => {
+    if (res.status !== 'ok') alert(res.message || 'Could not mark it fulfilled.');
+    loadPreorders();
+  }).catch(() => alert('Could not reach the server — please try again.'));
+}
+
+function preorderCancel(id) {
+  const reason = prompt('Cancel this pre-order? Its stock goes back on sale.\n\nReason (optional):');
+  if (reason === null) return;
+  dashFetch('/api/preorders/' + id + '/cancel', { method: 'POST', body: JSON.stringify({ reason: reason }) }).then(r => r.json()).then(res => {
+    if (res.status !== 'ok') alert(res.message || 'Could not cancel it.');
+    loadPreorders();
+  }).catch(() => alert('Could not reach the server — please try again.'));
+}
+
 function renderOrderCard(order) {
   let items = [];
   try { items = JSON.parse(order.items_json || '[]'); } catch(e) {}
-  const itemsHtml = items.map(i =>
+  let itemsHtml = items.map(i =>
     '<div class="order-item-row"><span>' + (parseInt(i.quantity, 10) || 0) + 'x ' + escapeHtml(i.product_retailer_id) + '</span><span>₹' + ((i.quantity||0) * (i.item_price||0)) + '</span></div>'
   ).join('');
+  if (order.is_preorder) {
+    itemsHtml = '<div style="font-size:0.72rem;font-weight:800;color:var(--flame);margin-bottom:0.3rem;">📅 PRE-ORDER · entered ' + escapeHtml(fmtWhen(order.placed_at)) + ' · due ' + escapeHtml(fmtWhen(order.fulfil_at)) + (order.fulfilled_at ? ' · fulfilled ' + escapeHtml(fmtWhen(order.fulfilled_at)) : '') + '</div>' + itemsHtml;
+  }
   const discountAmount = order.discount_amount || 0;
   const grandTotal = order.subtotal + (order.packing_charge||0) - discountAmount + (order.order_type === 'Delivery' ? (order.delivery_charge||0) : 0);
   // "Dine In" -> "Dine-In" so it matches the .order-type-tag.Dine-In CSS
@@ -918,7 +1057,7 @@ let currentMenu = {};
 let settingsActiveCategory = null;
 let settingsDetailOpen = false;      // phones: false = category list, true = a category's panel
 let stockGroupsCache = null;
-const stockExpanded = new Set();
+const stockExpanded = new Set(['fruit_desserts']);   // fruit desserts open by default
 let menuEditingId = null;
 let menuItemIdEditedByHand = false;
 
@@ -1054,6 +1193,9 @@ function menuFormHtml(item, category) {
     '<div class="toggle-row"><span>This is an add-on (e.g. Cheese Burst) rather than a standalone item</span><div class="toggle-switch ' + (isAddon ? 'on' : '') + '" id="menuItemAddonToggle" onclick="this.classList.toggle(\'on\')"></div></div>' +
     '<label class="field-label">Add-on size (only if the add-on above is on — "pan" or "regular", optional)</label>' +
     '<input class="settings-input" id="menuItemAddonSize" maxlength="20" value="' + esc2(item ? (item.addon_size || '') : '') + '">' +
+    '<div class="toggle-row"><span>📦 Limited stock — staff enter a quantity, every sale reduces it, 0 = sold out everywhere</span><div class="toggle-switch ' + (item && item.track_stock ? 'on' : '') + '" id="menuItemTrackToggle" onclick="this.classList.toggle(&quot;on&quot;)"></div></div>' +
+    '<div class="toggle-row"><span>🍰 Ready-made — never needs the kitchen (no KOT if it is all the order has)</span><div class="toggle-switch ' + (item && item.ready_made ? 'on' : '') + '" id="menuItemReadyToggle" onclick="this.classList.toggle(&quot;on&quot;)"></div></div>' +
+    '<div class="toggle-row"><span>🚚 No delivery — Takeaway / Dine In only</span><div class="toggle-switch ' + (item && item.no_delivery ? 'on' : '') + '" id="menuItemNoDeliveryToggle" onclick="this.classList.toggle(&quot;on&quot;)"></div></div>' +
     '<div style="display:flex;gap:0.5rem;margin-top:0.6rem;">' +
       '<button class="settings-save-btn" style="flex:1;" onclick="saveMenuItem(\'' + (isEdit ? esc2(item.id) : '') + '\')">' + (isEdit ? 'Save Changes' : 'Add Item') + '</button>' +
       '<button class="pos-preset-btn" style="flex:0 0 auto;padding:0.6rem 1rem;" onclick="cancelMenuItemForm()">Cancel</button>' +
@@ -1125,7 +1267,7 @@ function renderMenuTab() {
       '<div class="menu-items-grid">';
     items.forEach(item => {
       html += '<div class="cart-item menu-item-card">' +
-        '<div style="flex:1;min-width:0;"><div class="cart-item-name">' + esc2(item.title) + (item.is_addon ? ' <span style="color:var(--orange);font-size:0.7rem;">⚡ add-on</span>' : '') + '</div>' +
+        '<div style="flex:1;min-width:0;"><div class="cart-item-name">' + esc2(item.title) + (item.is_addon ? ' <span style="color:var(--orange);font-size:0.7rem;">⚡ add-on</span>' : '') + (item.track_stock ? ' <span style="color:var(--green);font-size:0.7rem;">📦 limited</span>' : '') + (item.ready_made ? ' <span style="color:var(--muted);font-size:0.7rem;">🍰 ready-made</span>' : '') + (item.no_delivery ? ' <span style="color:var(--muted);font-size:0.7rem;">🚫 delivery</span>' : '') + '</div>' +
         '<div style="font-size:0.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc2(item.description || '') + ' · ' + esc2(item.id) + '</div></div>' +
         '<div class="cart-item-price" style="margin-right:0.5rem;white-space:nowrap;">₹' + item.price + '</div>' +
         '<button class="pos-preset-btn" style="flex:0 0 auto;padding:0.35rem 0.6rem;margin-right:0.3rem;font-size:0.78rem;" data-id="' + esc2(item.id) + '" onclick="editMenuItem(this.dataset.id)">Edit</button>' +
@@ -1208,7 +1350,10 @@ function saveMenuItem(originalId) {
     description: document.getElementById('menuItemDescription').value.trim(),
     price: priceVal,
     is_addon: document.getElementById('menuItemAddonToggle').classList.contains('on'),
-    addon_size: document.getElementById('menuItemAddonSize').value.trim()
+    addon_size: document.getElementById('menuItemAddonSize').value.trim(),
+    track_stock: document.getElementById('menuItemTrackToggle').classList.contains('on'),
+    ready_made: document.getElementById('menuItemReadyToggle').classList.contains('on'),
+    no_delivery: document.getElementById('menuItemNoDeliveryToggle').classList.contains('on')
   };
   dashFetch('/api/menu/item', { method: 'POST', body: JSON.stringify(payload) })
     .then(r => r.json())
@@ -1239,6 +1384,86 @@ function loadStockSection() {
   }).catch(e => console.log('Stock groups load error', e));
 }
 
+// ── Item Highlights ─────────────────────────────────────────────────
+// Items picked here are spotlighted at the top of the customer website with a
+// gold badge. Ticks are mirrored into currentSettings straight away, so the
+// page-level Save sends them and a re-draw never throws them away.
+const HL_LABELS = ["Featured", "New", "Bestseller", "Trending", "Chef's Pick", "Limited Time"];
+let hlState = {};
+let hlSearch = '';
+
+function loadHighlightSection() {
+  const el = document.getElementById('highlightSection');
+  if (!el) return;
+  hlState = {};
+  (currentSettings.highlighted_items || []).forEach(h => { hlState[h.id] = h.label; });
+  el.innerHTML =
+    '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.7rem;line-height:1.5;">Tick the items you want to spotlight. They appear in a ⭐ Highlights row at the top of the website menu, and keep a gold glow in their category. Customers see changes within about 30 seconds of saving.</div>' +
+    '<input class="settings-input" id="hlSearchBox" placeholder="Search items..." oninput="hlSearch=this.value;renderHighlightList()" style="margin-bottom:0.6rem;">' +
+    '<div id="hlSummary" style="font-size:0.8rem;font-weight:700;margin-bottom:0.4rem;"></div>' +
+    '<div id="hlList" style="max-height:26rem;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:0.3rem 0;"></div>' +
+    '<div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.7rem;">' +
+      '<button class="settings-save-btn" style="flex:1;" onclick="saveHighlights()">Save highlights</button>' +
+      '<button type="button" class="pos-preset-btn" style="padding:0.5rem 0.8rem;" onclick="hlClearAll()">Clear all</button>' +
+    '</div><div id="hlStatus" style="font-size:0.8rem;margin-top:0.4rem;min-height:1.1rem;"></div>';
+  renderHighlightList();
+}
+
+function renderHighlightList() {
+  const list = document.getElementById('hlList');
+  if (!list) return;
+  const keep = list.scrollTop;
+  const q = hlSearch.trim().toLowerCase();
+  let html = '';
+  Object.keys(currentMenu || {}).forEach(cat => {
+    const items = (currentMenu[cat] || []).filter(it => !it.is_addon && (!q || it.title.toLowerCase().includes(q) || cat.toLowerCase().includes(q)));
+    if (!items.length) return;
+    html += '<div style="font-size:0.72rem;font-weight:800;letter-spacing:0.4px;text-transform:uppercase;color:var(--muted);padding:0.5rem 0.8rem 0.2rem;">' + esc2(cat) + '</div>';
+    items.forEach(it => {
+      const on = hlState[it.id] !== undefined;
+      let sel = '';
+      if (on) {
+        sel = '<select class="settings-input" style="width:auto;padding:0.2rem 0.4rem;font-size:0.78rem;margin-left:auto;" onchange="hlSetLabel(&quot;' + it.id + '&quot;, this.value)">' +
+          HL_LABELS.map(l => '<option value="' + esc2(l) + '"' + (hlState[it.id] === l ? ' selected' : '') + '>' + esc2(l) + '</option>').join('') + '</select>';
+      }
+      html += '<div class="stock-toggle-row" style="padding:0.3rem 0.8rem;' + (on ? 'background:rgba(245,179,1,0.1);' : '') + '">' +
+        '<label style="display:flex;align-items:center;gap:0.5rem;flex:1;cursor:pointer;">' +
+          '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="hlToggle(&quot;' + it.id + '&quot;, this.checked)">' +
+          '<span>' + esc2(it.title) + ' <span style="color:var(--muted);font-size:0.75rem;">₹' + it.price + '</span></span>' +
+        '</label>' + sel + '</div>';
+    });
+  });
+  list.innerHTML = html || '<div style="padding:0.8rem;color:var(--muted);font-size:0.85rem;">No items match.</div>';
+  list.scrollTop = keep;
+  const n = Object.keys(hlState).length;
+  const sm = document.getElementById('hlSummary');
+  if (sm) sm.textContent = n ? '⭐ ' + n + ' item' + (n === 1 ? '' : 's') + ' highlighted' : 'No items highlighted';
+}
+
+function hlMirror() {
+  currentSettings.highlighted_items = Object.keys(hlState).map(id => ({ id: id, label: hlState[id] }));
+}
+function hlToggle(id, on) {
+  if (on) { hlState[id] = hlState[id] || HL_LABELS[0]; } else { delete hlState[id]; }
+  hlMirror();
+  renderHighlightList();
+}
+function hlSetLabel(id, label) { hlState[id] = label; hlMirror(); }
+function hlClearAll() { hlState = {}; hlMirror(); renderHighlightList(); }
+
+function saveHighlights() {
+  const status = document.getElementById('hlStatus');
+  const payload = Object.keys(hlState).map(id => ({ id: id, label: hlState[id] }));
+  if (status) { status.style.color = 'var(--muted)'; status.textContent = 'Saving...'; }
+  dashFetch('/api/settings', { method: 'POST', body: JSON.stringify({ highlighted_items: payload }) })
+    .then(r => r.json()).then(res => {
+      if (res.status === 'ok' || res.status === 'success' || res.ok) {
+        currentSettings.highlighted_items = payload;
+        if (status) { status.style.color = 'var(--green)'; status.textContent = '✓ Saved — customers will see it within about 30 seconds.'; }
+      } else if (status) { status.style.color = 'var(--red)'; status.textContent = res.message || 'Could not save.'; }
+    }).catch(() => { if (status) { status.style.color = 'var(--red)'; status.textContent = 'Network error — please try again.'; } });
+}
+
 function toggleStockExpand(key) {
   if (stockExpanded.has(key)) stockExpanded.delete(key); else stockExpanded.add(key);
   renderStockSection();
@@ -1261,13 +1486,29 @@ function renderStockSection() {
     const total = g.items.length;
     const activeCount = g.items.filter(it => it.active).length;
     const allOn = total > 0 && activeCount === total;
-    const itemsHtml = g.items.map(it =>
-      '<label class="stock-toggle-row" style="padding-left:1.8rem;">' +
-        '<input type="checkbox" ' + (it.active ? 'checked' : '') + ' onchange="toggleStockItem(&quot;' + it.id + '&quot;, this.checked)">' +
-        '<span>' + it.title + '</span>' +
-      '</label>'
-    ).join('');
-    const countLabel = activeCount ? (activeCount + ' of ' + total + ' out') : (total + ' items');
+    // Limited-stock items (fruit desserts): live count, SOLD OUT badge, sold-today,
+    // and Add / Set buttons. The checkbox stays the MANUAL "switch off" flag;
+    // running out is shown by the badge and needs no ticking.
+    const itemsHtml = g.items.map(it => {
+      const badge = it.tracked
+        ? '<span style="font-size:0.75rem;font-weight:700;margin-left:0.5rem;color:' + (it.sold_out ? 'var(--red)' : 'var(--green)') + ';">' + (it.sold_out ? 'SOLD OUT' : it.qty + ' left') + '</span>' +
+          (it.sold_today ? '<span style="font-size:0.7rem;color:var(--muted);margin-left:0.4rem;">sold today: ' + it.sold_today + '</span>' : '')
+        : '';
+      const buttons = it.tracked
+        ? '<span style="display:inline-flex;gap:0.3rem;margin-left:auto;">' +
+            '<button type="button" class="pos-preset-btn" style="padding:0.2rem 0.55rem;font-size:0.75rem;" onclick="stockEntry(&quot;' + it.id + '&quot;, &quot;add&quot;)">+ Add</button>' +
+            '<button type="button" class="pos-preset-btn" style="padding:0.2rem 0.55rem;font-size:0.75rem;" onclick="stockEntry(&quot;' + it.id + '&quot;, &quot;set&quot;)">Set</button>' +
+          '</span>'
+        : '';
+      return '<div class="stock-toggle-row" style="padding-left:1.8rem;">' +
+        '<label style="display:flex;align-items:center;gap:0.5rem;flex:1;cursor:pointer;" title="Tick to switch this item off by hand">' +
+          '<input type="checkbox" ' + (it.active ? 'checked' : '') + ' onchange="toggleStockItem(&quot;' + it.id + '&quot;, this.checked)">' +
+          '<span>' + it.title + badge + '</span>' +
+        '</label>' + buttons +
+      '</div>';
+    }).join('');
+    const soldOutN = g.items.filter(it => it.sold_out).length;
+    const countLabel = (activeCount ? (activeCount + ' of ' + total + ' out') : (total + ' items')) + (soldOutN ? ', ' + soldOutN + ' sold out' : '');
     return '<div class="stock-group-block">' +
       '<label class="stock-toggle-row">' +
         '<input type="checkbox" id="stockGrpChk_' + gi + '" ' + (allOn ? 'checked' : '') + ' onchange="toggleStockGroup(&quot;' + g.key + '&quot;, this.checked)">' +
@@ -1295,6 +1536,22 @@ function renderStockSection() {
     const chk = document.getElementById('stockGrpChk_' + gi);
     if (chk) chk.indeterminate = activeCount > 0 && activeCount < total;
   });
+}
+
+// Stock entry for a limited-stock item. "add" = restock (adds units),
+// "set" = replace the count (start-of-day count / correction).
+function stockEntry(id, mode) {
+  let title = id;
+  stockGroupsCache.groups.forEach(g => g.items.forEach(it => { if (it.id === id) title = it.title; }));
+  const q = prompt(mode === 'add' ? 'How many ' + title + ' to ADD to stock?' : 'Set the stock count for ' + title + ' to:');
+  if (q === null) return;
+  const n = parseInt(q, 10);
+  if (isNaN(n) || n < 0 || (mode === 'add' && n < 1)) { alert('Enter a whole number' + (mode === 'add' ? ' of 1 or more.' : '.')); return; }
+  dashFetch('/api/item-stock', { method: 'POST', body: JSON.stringify({ item_id: id, mode: mode, qty: n }) })
+    .then(r => r.json()).then(res => {
+      if (res.status !== 'ok') alert(res.message || 'Could not update stock.');
+      loadStockSection();
+    }).catch(() => { alert('Network error — please try again.'); loadStockSection(); });
 }
 
 function toggleStockGroup(key, checked) {
@@ -1636,6 +1893,9 @@ function collectSettingsFromForm() {
   const out = { banner, special_dates, threshold_offer, qty_offers: currentSettings.qty_offers || [], delivery_drivers, preorder_time, delivery_control, printer_name };
   if (weekly_hours) out.weekly_hours = weekly_hours;
   if (packing_rates) out.packing_rates = packing_rates;
+  // Highlights ride along with the page-level Save (the Highlights panel keeps its
+  // ticks in currentSettings, so a re-draw never loses them).
+  if (Array.isArray(currentSettings.highlighted_items)) out.highlighted_items = currentSettings.highlighted_items;
   return out;
 }
 
@@ -2140,6 +2400,7 @@ function renderSettings() {
     { key: 'hours', icon: '🕒', title: 'Opening Hours', subtitle: 'Set your regular weekly opening & closing times', html: hoursHtml },
     { key: 'packing', icon: '🥡', title: 'Packing Charges', subtitle: 'Set the per-item packing fee for boxed items', html: packingRatesHtml },
     { key: 'availability', icon: '📦', title: 'Item Availability', subtitle: 'Mark items or whole groups out of stock', html: '<div id="stockSection"></div>' },
+    { key: 'highlights', icon: '⭐', title: 'Item Highlights', subtitle: 'Pick items to spotlight at the top of the customer website', html: '<div id="highlightSection"></div>' },
     { key: 'printer', icon: '🖨️', title: 'Receipt Printer', subtitle: 'Choose which printer to print orders on', html: printerHtml },
     { key: 'deliveryavail', icon: '🚦', title: 'Delivery Availability', subtitle: 'Pause deliveries or set a daily cutoff time', html: deliveryControlHtml },
     { key: 'drivers', icon: '🛵', title: 'Delivery Drivers', subtitle: 'The drivers you can assign to deliveries', html: driversHtml + driverActivityHtml },
@@ -2184,6 +2445,7 @@ function renderSettings() {
   loadCloudSyncStatus();
   loadPrinters();
   loadStockSection();
+  loadHighlightSection();
 }
 
 function selectSettingsCategory(key) {
