@@ -927,12 +927,15 @@ const IMAGE_MAP = {
   "COM003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/com003.png",
   "COM004": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/com004.png",
   "COM005": "https://grillinnfalkawn.github.io/grillinn/menu-images/Combos/com005.png",
-  "VFD001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Mango.jpeg",
-  "VFD003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Banana.jpeg",
-  "VFD006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Blueberry.jpeg",
-  "VFD008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Lemon.jpeg",
-  "VFD009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Orange.jpeg",
-  "VFD015": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/CoffeeBeans.jpeg",
+
+  // ── Viral Fruit Desserts ── photos: upload each one to your menu-images/Viral-Fruit-Desserts/ folder,
+  // then remove the two slashes at the start of its line. Until then the card shows the cake icon.
+  // "VFD001": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Mango.jpeg",
+  // "VFD003": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Banana.jpeg",
+  // "VFD006": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Blueberry.jpeg",
+  // "VFD008": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Lemon.jpeg",
+  // "VFD009": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/Orange.jpeg",
+  // "VFD015": "https://grillinnfalkawn.github.io/grillinn/menu-images/Viral-Fruit-Desserts/CoffeeBeans.jpeg",
 };
 
 const CAT_ICONS = {"Viral Fruit Desserts":"\uD83C\uDF70","Veg Burgers":"🍔","Non Veg Burgers":"🍔","Wraps":"🌯","Fried Chicken":"🍗","Grilled Chicken":"🍖","Veg Footlongs":"🥖","Non Veg Footlongs":"🥖","Veg Sandwiches":"🥪","Non Veg Sandwiches":"🥪","Veg Pizza":"🍕","Non Veg Pizza":"🍕","Pastas":"🍝","Garlic Breads":"🧄","Veg Snacks":"🍟","Non Veg Snacks":"🍗","Beverages":"🥤","Desserts":"🍨","Add Ons":"➕","Combos":"🎁"};
@@ -1865,7 +1868,7 @@ function renderCheckoutForm(status) {
       '<div class="form-group"><label>' + esc(PREORDER_TIME.label || 'When should your order be ready?') + '</label>' +
       '<select id="fScheduledFor" style="width:100%;background:var(--charcoal);border:1px solid var(--border);border-radius:10px;color:var(--white);padding:0.75rem;font-size:1rem;outline:none;appearance:none;cursor:pointer;">' +
       (PREORDER_TIME.options || []).map(function(opt) { return '<option value="' + esc(opt) + '">' + esc(opt) + '</option>'; }).join('') +
-      '</select></div>'
+      '</select><div style="font-size:0.74rem;color:var(--muted);margin-top:0.3rem;">Pick a time to <b>pre-order</b> \uD83D\uDCC5 \u2014 we confirm it, then have it ready at that time. Choose ASAP for a normal order.</div></div>'
     ) : '') +
     '<div class="form-group"><label>Special Instructions (optional)</label><textarea id="fNotes" rows="2" maxlength="120" placeholder="Any special requests for the whole order..." oninput="document.getElementById(\'fNotesCount\').textContent=this.value.length+\'/120\'">'+esc(vNotes)+'</textarea><div class="note-count" id="fNotesCount">'+vNotes.length+'/120</div></div>' +
     '<div class="note-box">📲 Payment: <strong>UPI only</strong> — scan the QR code on your receipt to pay' + (orderType === 'Delivery' ? ' when your order arrives' : ' at pickup') + '.</div>' +
@@ -3037,6 +3040,17 @@ async function cancelMyOrder() {
 // "Total payable" line for a CONFIRMED order. The figure comes from the server
 // (grand_total), which is only finalised when staff confirm on the dashboard —
 // it then includes the delivery charge they entered. Never shown while pending.
+// Wording for a confirmed order: a pre-order is "confirmed for <time>", not "being prepared now".
+function confirmedLabel(o) {
+  return (o && o.is_preorder) ? '\u2705 Pre-order confirmed!' : '\u2705 Order confirmed. We are on it!';
+}
+function preorderWhenHtml(o) {
+  if (!o || !o.is_preorder) return '';
+  const when = o.scheduled_for || '';
+  return '<span class="ls-reason">\uD83D\uDCC5 We\u2019ll have it ready for ' + escapeHtml(when || 'your chosen time') + '. ' +
+         'We\u2019ll start preparing it shortly before then.</span>';
+}
+
 function stockNoteHtml(o) {
   if (!o || !o.stock_note) return '';
   return '<span class="ls-reason">\u26A0\uFE0F Some items weren\u2019t fully available: ' + escapeHtml(o.stock_note).split('; ').join(' \u2022 ') +
@@ -3124,15 +3138,15 @@ async function checkOrderStatus() {
           clearCancelToken(); // kitchen accepted it — cancelling is no longer possible
           const el2 = document.getElementById('liveStatus');
           el2.className = 'live-status st-accepted';
-          el2.innerHTML = '\u2705 Order confirmed. We are on it!' + stockNoteHtml(o) + payableHtml(o) +
-            '<span class="ls-sub">Your order is being prepared. Still watching \u2014 this will update again when it goes out for delivery.</span>';
+          el2.innerHTML = confirmedLabel(o) + preorderWhenHtml(o) + stockNoteHtml(o) + payableHtml(o) +
+            '<span class="ls-sub">' + (o.is_preorder ? 'Your pre-order is booked. Still watching \u2014 this will update when it goes out for delivery.' : 'Your order is being prepared. Still watching \u2014 this will update again when it goes out for delivery.') + '</span>';
           document.title = '\u2705 Order accepted! \u2014 Grill Inn';
           if (navigator.vibrate && !REDUCED_MOTION) navigator.vibrate(150);
         }
       } else {
         settleStatus('st-accepted',
-          '\u2705 Order confirmed. We are on it!' + stockNoteHtml(o) + payableHtml(o) +
-          '<span class="ls-sub">Your order is being prepared and will be ready for you soon.</span>',
+          confirmedLabel(o) + preorderWhenHtml(o) + stockNoteHtml(o) + payableHtml(o) +
+          '<span class="ls-sub">' + (o.is_preorder ? 'Your pre-order is booked \u2014 see you at the time you chose.' : 'Your order is being prepared and will be ready for you soon.') + '</span>',
           '\u2705 Order accepted! \u2014 Grill Inn');
       }
     } else if (o.status === 'rejected') {
@@ -3256,6 +3270,7 @@ async function trackLookup(silent) {
         '<div class="track-items">' + itemsHtml + '</div>' +
         '<div class="track-total">' + totalLine + '</div>' +
         (o.status === 'rejected' && o.reject_reason ? '<div class="track-meta" style="margin-top:0.35rem;">Reason: ' + escapeHtml(o.reject_reason) + '</div>' : '') +
+        (o.is_preorder ? '<div class="track-meta" style="margin-top:0.35rem;color:#a78bfa;font-weight:700;">\uD83D\uDCC5 Pre-order for ' + escapeHtml(o.scheduled_for || o.fulfil_at || '') + '</div>' : '') +
         (o.stock_note ? '<div class="track-meta" style="margin-top:0.35rem;color:#d97706;">\u26A0\uFE0F ' + escapeHtml(o.stock_note) + '</div>' : '') +
         driverLine +
       '</div>';

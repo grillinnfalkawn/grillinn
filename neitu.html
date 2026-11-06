@@ -727,6 +727,19 @@ function loadPreorders() {
   }).catch(() => { if (main) main.innerHTML = '<div class="empty-state" style="color:var(--red);">Could not load pre-orders. Check your connection.</div>'; });
 }
 
+function preMinsToDue(o) {
+  const d = new Date(String(o.fulfil_at || '').replace(' ', 'T'));
+  return isNaN(d.getTime()) ? null : (d.getTime() - Date.now()) / 60000;
+}
+function preDueSoon(o) { const m = preMinsToDue(o); return m !== null && m <= 30; }
+function preDueText(o) {
+  const m = preMinsToDue(o);
+  if (m === null) return '';
+  if (m > 1) return 'DUE IN ' + Math.round(m) + ' MIN';
+  if (m >= -1) return 'DUE NOW';
+  return 'LATE BY ' + Math.round(-m) + ' MIN';
+}
+
 function preorderCardHtml(o) {
   const stateColor = o.due_state === 'overdue' ? 'var(--red)' : (o.due_state === 'today' ? 'var(--flame)' : 'var(--muted)');
   const stateLabel = o.due_state === 'overdue' ? 'OVERDUE' : (o.due_state === 'today' ? 'DUE TODAY' : 'UPCOMING');
@@ -737,12 +750,14 @@ function preorderCardHtml(o) {
   return '<div class="order-card" style="border:1.5px solid ' + stateColor + ';">' +
     '<div class="order-header"><span class="order-num">📅 PRE-ORDER · #' + escapeHtml(o.order_number) + '</span><span class="order-type-tag">' + escapeHtml(o.order_type) + '</span></div>' +
     '<div style="margin:0.4rem 0 0.1rem;font-size:1rem;font-weight:800;color:var(--flame);">For: ' + escapeHtml(fmtWhen(o.fulfil_at)) + ' <span style="color:' + stateColor + ';font-size:0.7rem;margin-left:0.3rem;">' + stateLabel + '</span></div>' +
-    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.4rem;">Ordered: ' + escapeHtml(fmtWhen(o.placed_at)) + '</div>' +
+    '<div style="font-size:0.76rem;color:var(--muted);margin-bottom:0.3rem;">Ordered: ' + escapeHtml(fmtWhen(o.placed_at)) + (o.source === 'pos' ? ' · at the POS' : ' · website') + '</div>' +
+    (preDueSoon(o) ? '<div style="background:#6d28d9;color:#fff;font-weight:800;font-size:0.8rem;text-align:center;border-radius:8px;padding:0.3rem 0.5rem;margin:0.3rem 0;">⏰ ' + preDueText(o) + (o.preorder_printed_at ? '' : ' — not printed yet') + '</div>' : '') +
+    '<div style="font-size:0.74rem;margin-bottom:0.4rem;color:' + (o.preorder_printed_at ? 'var(--green)' : 'var(--muted)') + ';">' + (o.preorder_printed_at ? '🖨 Printed ' + escapeHtml(fmtWhen(o.preorder_printed_at)) : '⚠️ Not printed yet (printing is done at the restaurant)') + '</div>' +
     '<div class="order-meta">' + escapeHtml(o.customer_name) + ' · ' + phone + (o.order_type === 'Delivery' && o.address ? '<br>📍 ' + escapeHtml(o.address) : '') + '</div>' +
     '<div class="order-items">' + items + '<div class="order-total">Total: ₹' + (o.grand_total_calc || 0) + '</div></div>' +
     (o.notes ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;">Notes: ' + escapeHtml(o.notes) + '</div>' : '') +
     '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.6rem;">' +
-      '<button class="btn-quick" style="background:rgba(34,197,94,0.18);border-color:var(--green);color:var(--green);" onclick="preorderFulfil(' + o.id + ')">✅ Mark fulfilled</button>' +
+      '<button class="btn-quick" style="background:rgba(34,197,94,0.18);border-color:var(--green);color:var(--green);" onclick="preorderFulfil(' + o.id + ')">' + (o.order_type === 'Delivery' ? '🛵 Ready — send to dispatch' : '✅ Mark fulfilled') + '</button>' +
       '<button class="btn-quick" onclick="preorderCancel(' + o.id + ')">✖ Cancel</button>' +
     '</div></div>';
 }
