@@ -266,6 +266,7 @@
       <button class="tab-btn active" id="salesTab" onclick="switchTab('sales')">📊 Sales</button>
       <button class="tab-btn" id="historyTab" onclick="switchTab('history')">📋 History</button>
       <button class="tab-btn" id="preordersTab" onclick="switchTab('preorders')">📅 Pre-orders <span id="preorderCount" style="display:none;background:var(--red);color:#fff;border-radius:999px;font-size:0.65rem;font-weight:800;padding:0.05rem 0.4rem;margin-left:0.2rem;">0</span></button>
+      <button class="tab-btn" id="paylinkTab" onclick="switchTab('paylink')">🔗 Pay Link</button>
       <button class="tab-btn" id="settingsTab" onclick="switchTab('settings')">⚙️ Settings</button>
       <!-- Prediction/giveaway tab disabled — re-enable with the blueprint in orders.py.
       <button class="tab-btn" id="worldcupTab" onclick="switchTab('worldcup')">🏆 World Cup</button> -->
@@ -442,10 +443,12 @@ function switchTab(tab) {
   document.getElementById('historyTab').classList.toggle('active', tab === 'history');
   document.getElementById('settingsTab').classList.toggle('active', tab === 'settings');
   document.getElementById('preordersTab').classList.toggle('active', tab === 'preorders');
+  document.getElementById('paylinkTab').classList.toggle('active', tab === 'paylink');
   // document.getElementById('worldcupTab').classList.toggle('active', tab === 'worldcup');
   if (tab === 'sales') loadSales('today');
   else if (tab === 'settings') loadSettingsTab();
   else if (tab === 'preorders') loadPreorders();
+  else if (tab === 'paylink') renderPayLinkTab();
   // else if (tab === 'worldcup') loadWorldCup();
   else loadHistory();
 }
@@ -519,6 +522,7 @@ function renderSales(data) {
 
   main.innerHTML = renderSalesFilters() + '<div class="rise-in">' + heroHtml +
     (byTypeHtml ? '<div class="sales-section"><div class="sales-section-title">By Order Type</div>' + byTypeHtml + '</div>' : '') +
+    salesPaymentsHtml(data.payments) +
     (bySourceHtml ? '<div class="sales-section"><div class="sales-section-title">By Source</div>' + bySourceHtml + '</div>' : '') +
     (topItemsHtml ? '<div class="sales-section"><div class="sales-section-title">Top Items</div>' + topItemsHtml + '</div>' : '') +
   '</div>';
@@ -805,6 +809,291 @@ function preorderCancel(id) {
   }).catch(() => alert('Could not reach the server — please try again.'));
 }
 
+// ── PAYMENTS: Paid / Cash payment on History cards + UPI pay link ────────
+const payOrderCache = {};
+function fmtMoney(v) { return String(Math.round((Number(v) || 0) * 100) / 100); }
+
+function orderPaymentRowHtml(o) {
+  payOrderCache[o.id] = o;
+  const isCash = o.payment_method === 'cash';
+  const paid = !!o.is_paid;
+  const total = Number(o.grand_total) || 0;
+  const cr = (o.cash_received === null || o.cash_received === undefined) ? '' : o.cash_received;
+  let diff = '';
+  if (isCash && cr !== '') {
+    const d = Number(cr) - total;
+    diff = d > 0.004 ? '<span style="color:var(--green);font-weight:700;">Change ₹' + fmtMoney(d) + '</span>'
+         : d < -0.004 ? '<span style="color:var(--red);font-weight:700;">Short ₹' + fmtMoney(-d) + '</span>'
+         : '<span style="color:var(--green);font-weight:700;">Exact</span>';
+  }
+  const untracked = (o.is_paid === null || o.is_paid === undefined) && !o.payment_method;
+  const lbl = 'display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;font-weight:700;';
+  return '<div id="payrow-' + o.id + '" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem 0.9rem;margin-top:0.6rem;padding-top:0.55rem;border-top:1px dashed var(--border);font-size:0.8rem;">' +
+    '<label style="' + lbl + 'color:' + (paid ? 'var(--green)' : 'inherit') + ';"><input type="checkbox" ' + (paid ? 'checked' : '') + ' onchange="orderPaymentSave(' + o.id + ', {paid: this.checked})"> ' + (paid ? '✅ Paid' : 'Paid') + '</label>' +
+    '<label style="' + lbl + '"><input type="checkbox" ' + (isCash ? 'checked' : '') + ' onchange="orderCashToggle(' + o.id + ', this.checked)"> 💵 Cash payment</label>' +
+    '<span style="display:inline-flex;align-items:center;gap:0.3rem;opacity:' + (isCash ? '1' : '0.4') + ';">₹' +
+      '<input id="cash-' + o.id + '" type="number" min="0" step="any" inputmode="decimal" placeholder="Cash received" value="' + escapeHtml(String(cr)) + '" ' + (isCash ? '' : 'disabled') +
+      ' style="width:7.2rem;padding:0.25rem 0.4rem;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:inherit;" onchange="orderCashSave(' + o.id + ', this.value)" onkeydown="if(event.key===&quot;Enter&quot;)this.blur()"> ' + diff + '</span>' +
+    (paid && o.paid_at ? '<span style="color:var(--muted);font-size:0.72rem;">paid ' + escapeHtml(fmtWhen(o.paid_at)) + '</span>' : '') +
+    (!paid && !isCash ? '<button class="btn-quick" onclick="orderCopyPayLink(' + o.id + ', this)">🔗 Copy pay link</button>' : '') +
+    (untracked ? '<span style="font-size:0.68rem;color:var(--muted);">(before payment tracking)</span>' : '') +
+  '</div>';
+}
+
+function orderPaymentSave(id, body) {
+  dashFetch('/api/orders/' + id + '/payment', { method: 'POST', body: JSON.stringify(body) })
+    .then(r => r.json()).then(res => {
+      const el = document.getElementById('payrow-' + id);
+      if (res.status !== 'ok') { alert(res.message || 'Could not save the payment.'); if (el && payOrderCache[id]) el.outerHTML = orderPaymentRowHtml(payOrderCache[id]); return; }
+      const o = Object.assign({}, payOrderCache[id] || {}, { payment_method: res.payment_method, cash_received: res.cash_received, is_paid: res.is_paid ? 1 : 0, paid_at: res.paid_at, grand_total: res.total });
+      if (el) el.outerHTML = orderPaymentRowHtml(o);
+      if (res.payment_method === 'cash' && body.payment_method === 'cash') { const inp = document.getElementById('cash-' + id); if (inp) inp.focus(); }
+    }).catch(() => alert('Could not reach the server — the payment was not saved.'));
+}
+function orderCashToggle(id, on) { orderPaymentSave(id, { payment_method: on ? 'cash' : 'digital' }); }
+function orderCashSave(id, val) { orderPaymentSave(id, { cash_received: String(val).trim() === '' ? null : Number(val) }); }
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+  return new Promise((resolve, reject) => {
+    try {
+      const t = document.createElement('textarea');
+      t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      const ok = document.execCommand('copy'); t.remove();
+      ok ? resolve() : reject(new Error('copy failed'));
+    } catch (e) { reject(e); }
+  });
+}
+function orderCopyPayLink(id, btn) {
+  const original = btn.textContent;
+  dashFetch('/api/orders/' + id + '/pay-link').then(r => r.json()).then(res => {
+    if (res.status !== 'ok') { alert(res.message || 'Could not get the pay link.'); return; }
+    copyText(res.pay_url).then(() => {
+      btn.textContent = '✓ Link copied';
+      setTimeout(() => { btn.textContent = original; }, 1800);
+    }).catch(() => { prompt('Copy this link:', res.pay_url); });
+  }).catch(() => alert('Could not reach the server.'));
+}
+
+function salesPaymentsHtml(P) {
+  if (!P || (P.paid_orders + P.unpaid_orders + P.cash_orders + P.digital_orders) === 0) return '';
+  const row = (a, b, c) => '<div class="sales-row"><span>' + a + '</span><span>' + b + (b && c ? ' · ' : '') + c + '</span></div>';
+  return '<div class="sales-section"><div class="sales-section-title">Payments &amp; Cash</div>' +
+    row('💵 Cash orders', P.cash_orders + ' orders', '₹' + fmtMoney(P.cash_order_value)) +
+    row('💵 Cash received', '', '₹' + fmtMoney(P.cash_received)) +
+    row('📱 Digital (UPI / Card)', P.digital_orders + ' orders', '₹' + fmtMoney(P.digital_order_value)) +
+    row('✅ Marked paid', P.paid_orders + ' orders', '₹' + fmtMoney(P.paid_value)) +
+    row('⏳ NOT marked paid', P.unpaid_orders + ' orders', '₹' + fmtMoney(P.unpaid_value)) +
+    (P.untracked_orders ? row('<span style="color:var(--muted)">Before payment tracking</span>', P.untracked_orders + ' orders', '₹' + fmtMoney(P.untracked_value)) : '') +
+  '</div>';
+}
+
+// ── PAY LINK TAB: UPI link + QR for any exact amount ─────────────────────
+// Type an amount (and an optional note), get a tappable link + a QR to paste or send
+// on WhatsApp. These are separate from orders (they don't appear in Sales); the
+// list below keeps the recent ones so a link can be copied again.
+const PAYLINK_QR_LIB_URL = SERVER_URL + '/qrlib.js';
+let payLinkCurrent = null;
+let payLinks = [];
+
+function loadQrLib() {
+  return new Promise(resolve => {
+    if (typeof qrcode !== 'undefined') return resolve(true);
+    const s = document.createElement('script');
+    s.src = PAYLINK_QR_LIB_URL;
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
+function qrSvgMarkup(text, scalable) {
+  const q = qrcode(0, 'M');
+  q.addData(text); q.make();
+  return scalable ? q.createSvgTag({ cellSize: 4, margin: 1, scalable: true }) : q.createSvgTag({ cellSize: 10, margin: 3 });
+}
+
+// A ready-to-send picture: restaurant name, the amount, the QR and an instruction.
+function plShareImage(link, cb) {
+  let svg;
+  try { svg = qrSvgMarkup(link.upi_link, false); } catch (e) { cb(null); return; }
+  const img = new Image();
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  img.onload = () => {
+    const W = 720, QR = 560, H = 960;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
+    x.textAlign = 'center';
+    x.fillStyle = '#6b5b4e'; x.font = '600 30px system-ui, Arial, sans-serif';
+    x.fillText(String(link.restaurant || 'Payment').toUpperCase(), W / 2, 70);
+    x.fillStyle = '#e5481f'; x.font = '800 96px system-ui, Arial, sans-serif';
+    x.fillText('₹' + fmtMoney(link.amount), W / 2, 190);
+    if (link.note) { x.fillStyle = '#333333'; x.font = '500 30px system-ui, Arial, sans-serif'; x.fillText(String(link.note).slice(0, 40), W / 2, 245); }
+    x.drawImage(img, (W - QR) / 2, 290, QR, QR);
+    x.fillStyle = '#333333'; x.font = '600 30px system-ui, Arial, sans-serif';
+    x.fillText('Scan with any UPI app to pay', W / 2, 910);
+    URL.revokeObjectURL(url);
+    c.toBlob(cb, 'image/png');
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); cb(null); };
+  img.src = url;
+}
+function plDownload(blob, link) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pay-' + fmtMoney(link.amount) + '.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function renderPayLinkTab() {
+  const main = document.getElementById('mainContent');
+  if (!main) return;
+  const field = 'width:100%;padding:0.8rem 0.9rem;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--white);font-size:1.05rem;';
+  main.innerHTML = '<div class="paylink-wrap" style="max-width:640px;margin:0 auto;padding:0.6rem 0.2rem 3rem;">' +
+    '<div style="font-size:1.25rem;font-weight:800;margin:0.3rem 0 0.2rem;">🔗 Payment Link Generator</div>' +
+    '<div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">Enter the exact amount to get a UPI pay link and QR you can paste into WhatsApp. The customer taps the link, their UPI app opens with the amount filled in. UPI can’t confirm payment by itself — tick <b>Paid</b> in the list when it arrives.</div>' +
+    '<div style="display:flex;flex-direction:column;gap:0.6rem;">' +
+      '<label style="font-size:0.72rem;font-weight:800;color:var(--muted);letter-spacing:0.4px;">AMOUNT (₹)</label>' +
+      '<input id="plAmount" type="number" min="1" max="100000" step="any" inputmode="decimal" placeholder="e.g. 450" style="' + field + 'font-size:1.6rem;font-weight:800;" onkeydown="if(event.key===&quot;Enter&quot;)payLinkCreate()">' +
+      '<label style="font-size:0.72rem;font-weight:800;color:var(--muted);letter-spacing:0.4px;">NOTE (OPTIONAL) — what it is for</label>' +
+      '<input id="plNote" type="text" maxlength="40" placeholder="e.g. Order 1234, or Rahul advance" style="' + field + '" onkeydown="if(event.key===&quot;Enter&quot;)payLinkCreate()">' +
+      '<button class="settings-save-btn" id="plBtn" style="padding:0.9rem;font-size:1.05rem;" onclick="payLinkCreate()">Generate link &amp; QR</button>' +
+      '<div id="plStatus" style="min-height:1.1rem;font-size:0.82rem;color:var(--red);"></div>' +
+    '</div>' +
+    '<div id="plResult"></div><div id="plList"></div></div>';
+  loadQrLib().then(() => renderPayLinkResult());
+  loadPayLinks();
+  setTimeout(() => { const a = document.getElementById('plAmount'); if (a) a.focus(); }, 60);
+}
+
+function payLinkCreate() {
+  const amtEl = document.getElementById('plAmount'), noteEl = document.getElementById('plNote'), st = document.getElementById('plStatus'), btn = document.getElementById('plBtn');
+  if (!amtEl) return;
+  const n = Number(amtEl.value.trim());
+  if (!amtEl.value.trim() || isNaN(n) || n < 1 || n > 100000) { st.textContent = 'Enter an amount between ₹1 and ₹1,00,000.'; return; }
+  st.textContent = ''; btn.disabled = true;
+  dashFetch('/api/pay-links', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount: n, note: noteEl.value.trim() }) })
+    .then(r => r.json()).then(res => {
+      btn.disabled = false;
+      if (res.status !== 'ok') { st.textContent = res.message || 'Could not create the link.'; return; }
+      payLinkCurrent = res.link;
+      amtEl.value = ''; noteEl.value = '';
+      loadQrLib().then(() => renderPayLinkResult());
+      loadPayLinks();
+      amtEl.focus();
+    }).catch(() => { btn.disabled = false; st.textContent = 'Network error — please try again.'; });
+}
+
+function renderPayLinkResult() {
+  const el = document.getElementById('plResult');
+  if (!el) return;
+  const L = payLinkCurrent;
+  if (!L) { el.innerHTML = ''; return; }
+  let qr = '';
+  try { qr = qrSvgMarkup(L.upi_link, true); } catch (e) { qr = ''; }
+  const b = 'class="pos-preset-btn" style="padding:0.6rem 0.8rem;font-weight:700;"';
+  el.innerHTML = '<div style="margin-top:1.2rem;border:2px solid var(--orange);border-radius:16px;padding:1.1rem;background:var(--charcoal);text-align:center;">' +
+    '<div style="font-size:0.78rem;color:var(--muted);">' + esc2(L.note || 'Payment') + '</div>' +
+    '<div style="font-size:2.4rem;font-weight:800;color:var(--orange);margin:0.1rem 0 0.6rem;">₹' + fmtMoney(L.amount) + '</div>' +
+    '<input id="plLinkText" readonly value="' + esc2(L.pay_url) + '" onclick="this.select()" style="width:100%;padding:0.6rem;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--white);font-size:0.82rem;margin-bottom:0.6rem;">' +
+    '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;">' +
+      '<button class="settings-save-btn" style="flex:1;min-width:9rem;" onclick="payLinkCopy(' + L.id + ', &quot;link&quot;, this)">📋 Copy link</button>' +
+      '<button ' + b + ' onclick="payLinkCopy(' + L.id + ', &quot;message&quot;, this)">💬 Copy as message</button>' +
+    '</div>' +
+    (qr ? '<div style="background:#fff;border-radius:14px;padding:10px;width:230px;max-width:80%;margin:1rem auto 0.6rem;">' + qr + '</div>' +
+          '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;">' +
+            '<button ' + b + ' onclick="payLinkCopyImage(this)">🖼 Copy QR image</button>' +
+            '<button ' + b + ' onclick="payLinkDownloadImage()">⬇ Save QR image</button>' +
+          '</div>' +
+          '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;">The QR image includes the amount — paste it straight into WhatsApp.</div>'
+        : '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.8rem;">The QR could not be drawn here, but the link above works.</div>') +
+  '</div>';
+}
+
+function payLinkFind(id) {
+  if (payLinkCurrent && payLinkCurrent.id === id) return payLinkCurrent;
+  return payLinks.find(l => l.id === id) || null;
+}
+function payLinkCopy(id, kind, btn) {
+  const L = payLinkFind(id);
+  if (!L) return;
+  const text = kind === 'message' ? L.message : L.pay_url;
+  const original = btn.textContent;
+  copyText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(() => { prompt('Copy this (Ctrl+C):', text); });
+}
+function payLinkCopyImage(btn) {
+  const L = payLinkCurrent;
+  if (!L) return;
+  const original = btn.textContent;
+  plShareImage(L, blob => {
+    if (!blob) { alert('Could not build the image.'); return; }
+    if (navigator.clipboard && window.ClipboardItem && window.isSecureContext) {
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(() => {
+        btn.textContent = '✓ Image copied';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+      }).catch(() => plDownload(blob, L));
+    } else { plDownload(blob, L); }
+  });
+}
+function payLinkDownloadImage() {
+  const L = payLinkCurrent;
+  if (!L) return;
+  plShareImage(L, blob => { if (blob) plDownload(blob, L); else alert('Could not build the image.'); });
+}
+
+function loadPayLinks() {
+  dashFetch('/api/pay-links').then(r => r.json()).then(res => {
+    payLinks = res.links || [];
+    renderPayLinkList();
+  }).catch(() => {});
+}
+function renderPayLinkList() {
+  const el = document.getElementById('plList');
+  if (!el) return;
+  if (!payLinks.length) { el.innerHTML = ''; return; }
+  const btn = 'style="padding:0.3rem 0.6rem;border-radius:7px;border:1px solid var(--border);background:var(--panel);color:var(--white);font-size:0.76rem;font-weight:700;cursor:pointer;"';
+  el.innerHTML = '<div style="margin-top:1.6rem;font-weight:800;">Recent links</div>' +
+    '<div style="font-size:0.74rem;color:var(--muted);margin:0.15rem 0 0.6rem;">Not part of Sales — a quick record of links you made.</div>' +
+    payLinks.map(l => {
+      const st = l.cancelled ? '<span style="color:var(--muted);">cancelled</span>' : (l.is_paid ? '<span style="color:var(--green);font-weight:800;">✅ paid</span>' : '<span style="color:var(--orange);">waiting</span>');
+      return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem 0.7rem;padding:0.55rem 0.7rem;border:1px solid var(--border);border-radius:10px;margin-bottom:0.4rem;background:var(--charcoal);' + (l.cancelled ? 'opacity:0.55;' : '') + '">' +
+        '<b style="font-size:1rem;">₹' + fmtMoney(l.amount) + '</b>' +
+        '<span style="font-size:0.78rem;color:var(--muted);flex:1;min-width:6rem;">' + esc2(l.note || '—') + ' · ' + esc2(fmtWhen(l.created_at)) + '</span>' +
+        st +
+        (l.cancelled ? '' :
+          '<button ' + btn + ' onclick="payLinkCopy(' + l.id + ', &quot;link&quot;, this)">🔗 Copy</button>' +
+          '<button ' + btn + ' onclick="payLinkCopy(' + l.id + ', &quot;message&quot;, this)">💬</button>' +
+          '<button ' + btn + ' onclick="payLinkShow(' + l.id + ')">QR</button>' +
+          '<label style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.76rem;cursor:pointer;"><input type="checkbox" ' + (l.is_paid ? 'checked' : '') + ' onchange="payLinkPaid(' + l.id + ', this.checked)"> Paid</label>' +
+          '<button ' + btn + ' onclick="payLinkCancel(' + l.id + ')" title="Make this link stop working">✕</button>') +
+      '</div>';
+    }).join('');
+}
+function payLinkShow(id) {
+  const L = payLinkFind(id);
+  if (!L) return;
+  payLinkCurrent = L;
+  loadQrLib().then(() => { renderPayLinkResult(); const r = document.getElementById('plResult'); if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+}
+function payLinkPaid(id, paid) {
+  dashFetch('/api/pay-links/' + id + '/paid', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ paid: paid }) })
+    .then(r => r.json()).then(res => { if (res.status !== 'ok') alert(res.message || 'Could not save.'); loadPayLinks(); })
+    .catch(() => alert('Network error — try again.'));
+}
+function payLinkCancel(id) {
+  if (!confirm('Cancel this payment link? The customer’s link will stop working.')) return;
+  dashFetch('/api/pay-links/' + id + '/cancel', { method: 'POST' }).then(r => r.json()).then(res => {
+    if (res.status !== 'ok') alert(res.message || 'Could not cancel.');
+    if (payLinkCurrent && payLinkCurrent.id === id) { payLinkCurrent = null; renderPayLinkResult(); }
+    loadPayLinks();
+  }).catch(() => alert('Network error — try again.'));
+}
+
 function renderOrderCard(order) {
   let items = [];
   try { items = JSON.parse(order.items_json || '[]'); } catch(e) {}
@@ -846,6 +1135,7 @@ function renderOrderCard(order) {
     (order.out_for_delivery_at ? '<span class="status-tag printed" style="margin-left:0.4rem;">🛵 Out ' + escapeHtml((order.out_for_delivery_at || '').split(', ')[1] || order.out_for_delivery_at) + (order.driver_name ? ' • ' + escapeHtml(order.driver_name) : '') + '</span>' : '') +
     (order.status === 'voided' && order.void_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.void_reason) + '</div>' : '') +
     (order.status === 'rejected' && order.reject_reason ? '<div style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">Reason: ' + escapeHtml(order.reject_reason) + '</div>' : '') +
+    ((order.status === 'printed' || order.status === 'print_failed') ? orderPaymentRowHtml(order) : '') +
     actionButtons +
   '</div>';
 }
